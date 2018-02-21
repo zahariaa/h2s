@@ -1,0 +1,209 @@
+% TEST_hypersphere2sphere
+
+% hs2s tests: comparison to MDS
+%       - two touching equal-radius hyperspheres in 1-10 dimensions
+%       - two concentric hyperspheres of different radius in 1-10 dimensions
+%       - larger hypersphere enclosing smaller one, touching in one surface point
+%       - two intersecting hypershperes
+%       - 3 spheres (two intersecting) -> 2D circles
+%       - 5 hyperspheres in 1-100 dimensions
+%       - as previous, but illustrate effect of sample size changes
+
+
+
+%% general control variables
+scenarios = 6; %[1 2 3];
+
+psFilespec = '';
+pdfFilespec = '';
+
+
+%% scenario 1: two touching equal-radius hyperspheres in 1-200 dimensions
+if find(scenarios==1)
+    radius = 1;
+
+    nsDim = [1 2 3 5 10 20 40 200]
+
+    for nPointsPerCat = [10 40]
+        h=figure(1000+nPointsPerCat); set(h,'Color','w'); clf;
+        set(gcf,'Name','scenario 1: two touching equal-radius hyperspheres in 1-200 dimensions');
+        for nDimI = 1: numel(nsDim)
+            nDim = nsDim(nDimI);
+            points = randsphere(2*nPointsPerCat,nDim,radius);
+            %points = randn(2*nPointsPerCat,nDim);
+            points(end/2+1:end,1) = points(end/2+1:end,1)+2; % shift second half by 2 along first dimension
+
+            categories.labels = {'category 1','category 2'};
+            categories.colors = [0.8 0 0; 0 0 0];
+            categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
+
+            figPanelSpec = [h 4 4 1+(nDimI-1)*2];
+            titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
+        end
+    end
+end
+
+%% scenario 2: two identical hyperspheres in 1-200 dimensions
+if find(scenarios==2)
+    radius1 = 1;
+    radius2 = 1;
+
+    nsDim = [1 2 3 5 10 20 40 200];
+
+    for nPointsPerCat = [20 100]
+        h=figure(2000+nPointsPerCat); set(h,'Color','w'); clf;
+        set(gcf,'Name','scenario 2: two identical hyperspheres in 1-200 dimensions');
+        for nDimI = 1: numel(nsDim)
+            h=figure(2000+nPointsPerCat);
+            nDim = nsDim(nDimI);
+            points = nan(2*nPointsPerCat,nDim);
+            points(1:nPointsPerCat,:) = randsphere(nPointsPerCat,nDim,radius1);
+            points(nPointsPerCat+1:end,:) = randsphere(nPointsPerCat,nDim,radius2);
+            
+            % gaussian instead: points = randn(2*nPointsPerCat,nDim);
+
+            categories.labels = {'category 1','category 2'};
+            categories.colors = [0.8 0 0; 0 0 0];
+            categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
+
+            figPanelSpec = [h 4 4 1+(nDimI-1)*2];
+            titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
+        end
+    end
+end
+
+
+%% scenario 3: two concentric hyperspheres of different radius in 1-200 dimensions
+if find(scenarios==3)
+    radius1 = 1;
+    radius2 = 2;
+
+    nsDim = [1 2 3 5 10 20 40 200];
+
+    for nPointsPerCat = [50]
+        h=figure(2000+nPointsPerCat); set(h,'Color','w'); clf;
+        set(gcf,'Name','scenario 3: two concentric hyperspheres of different radius in 1-200 dimensions');
+        for nDimI = 1: numel(nsDim)
+            h=figure(2000+nPointsPerCat);
+            nDim = nsDim(nDimI);
+            points = nan(2*nPointsPerCat,nDim);
+            points(1:nPointsPerCat,:) = randsphere(nPointsPerCat,nDim,radius1);
+            points(nPointsPerCat+1:end,:) = randsphere(nPointsPerCat,nDim,radius2);
+            %points = randn(2*nPointsPerCat,nDim);
+
+            categories.labels = {'category 1','category 2'};
+            categories.colors = [0.8 0 0; 0 0 0];
+            categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
+
+            figPanelSpec = [h 4 4 1+(nDimI-1)*2];
+            titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
+        end
+    end
+end
+
+%% scenario 4: larger hypersphere enclosing smaller one, touching in one surface point
+if find(scenarios==4)
+    radius1 = 1;
+    radius2 = 2;
+
+    nsDim = [1 2 3 5 10 20 40 200];
+
+    for nPointsPerCat = [100]
+        h=figure(3000+nPointsPerCat); set(h,'Color','w'); clf;
+        set(gcf,'Name','scenario 4: larger hypersphere enclosing smaller one, touching in one surface point');
+        for nDimI = 1: numel(nsDim)
+            h=figure(3000+nPointsPerCat);
+            nDim = nsDim(nDimI);
+            points = nan(2*nPointsPerCat,nDim);
+            points(1:nPointsPerCat,:) = randsphere(nPointsPerCat,nDim,radius1);
+            points(nPointsPerCat+1:end,:) = randsphere(nPointsPerCat,nDim,radius2);
+            points(nPointsPerCat+1:end,1) = points(nPointsPerCat+1:end,1) + 1;
+            %points = randn(2*nPointsPerCat,nDim);
+
+            categories.labels = {'category 1','category 2'};
+            categories.colors = [0.8 0 0; 0 0 0];
+            categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
+
+            figPanelSpec = [h 4 4 1+(nDimI-1)*2];
+            titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
+        end
+    end
+end
+
+
+
+%% scenario 5: two intersecting hypershperes
+if find(scenarios==5)
+    radius1 = 2;
+    radius2 = 2;
+
+    nsDim = [1 2 3 5 10 20 40 200];
+
+    for nPointsPerCat = [50]
+        h=figure(2000+nPointsPerCat); set(h,'Color','w'); clf;
+        set(gcf,'Name','scenario 5: two intersecting hypershperes');
+        for nDimI = 1: numel(nsDim)
+            h=figure(2000+nPointsPerCat);
+            nDim = nsDim(nDimI);
+            points = nan(2*nPointsPerCat,nDim);
+            points(1:nPointsPerCat,:) = randsphere(nPointsPerCat,nDim,radius1);
+            points(nPointsPerCat+1:end,:) = randsphere(nPointsPerCat,nDim,radius2);
+            points(nPointsPerCat+1:end,1) = points(nPointsPerCat+1:end,1) + 1;
+            %points = randn(2*nPointsPerCat,nDim);
+
+            categories.labels = {'category 1','category 2'};
+            categories.colors = [0.8 0 0; 0 0 0];
+            categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
+
+            figPanelSpec = [h 4 4 1+(nDimI-1)*2];
+            titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
+        end
+    end
+end
+
+
+
+%% scenario 6: as previous, but illustrate effect of sample size changes
+if find(scenarios==6)
+    radius1 = 2;
+    radius2 = 2;
+    
+    fac = 5;
+
+    nsDim = [1 2 3 5 10 20 40 200];
+
+    for nPointsPerCat = [20]
+        h=figure(2000+nPointsPerCat); set(h,'Color','w'); clf;
+        set(gcf,'Name','scenario 6: two intersecting hyperspheres with different numbers of points');
+        for nDimI = 1: numel(nsDim)
+            h=figure(2000+nPointsPerCat);
+            nDim = nsDim(nDimI);
+            points = nan((1+fac)*nPointsPerCat,nDim);
+            points(1:nPointsPerCat,:) = randsphere(nPointsPerCat,nDim,radius1);
+            points(nPointsPerCat+1:end,:) = randsphere(fac*nPointsPerCat,nDim,radius2);
+            points(nPointsPerCat+1:end,1) = points(nPointsPerCat+1:end,1) + 1;
+            %points = randn(2*nPointsPerCat,nDim);
+
+            categories.labels = {'category 1','category 2'};
+            categories.colors = [0.8 0 0; 0 0 0];
+            categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
+            categories.vectors = [categories.vectors; repmat(categories.vectors(end/2+1:end,:),[(fac-1) 1])];
+            
+            figPanelSpec = [h 4 4 1+(nDimI-1)*2];
+            titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
+        end
+    end
+end
+
+
+
+%% scenario 7: 3 spheres (two intersecting) -> 2D circles
+%% scenario 8: 5 hyperspheres in 1-100 dimensions
+
+
