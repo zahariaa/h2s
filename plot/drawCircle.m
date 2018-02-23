@@ -13,13 +13,25 @@ if ~exist('border','var') || isempty(border);   border = 2;         end
 %% Recurse
 nr = numel(radius);
 nc = numel(center)/2;
-switch (nr>1)*10+(nc>1)
-   case  1;   h = arrayfun(@(c1,c2  ) drawCircle([c1 c2],radius,color,border,alpha,n),...
-                  center(:,1),center(:,2)); return;
-   case 10;   h = arrayfun(@(      r) drawCircle(center,r,color,border,alpha,n),...
-                  radius); return;
-   case 11;   h = arrayfun(@(c1,c2,r) drawCircle([c1 c2],r,color,border,alpha,n),...
-                  center(:,1),center(:,2),radius(:)); return;
+nl = numel(color )/3;
+mn = max([nr nc nl]);
+if mn > 1
+   % Embed inputs in cell; duplicate variables when necessary
+   if nc> 1;   center = num2cell(center,2);
+   else        center = repmat({center(:)'},[mn 1]);
+   end
+   if nr> 1;   radius = num2cell(radius);
+   else        radius = repmat({radius     },[mn 1]);
+   end
+   if nl> 1;    color = num2cell(color,2);
+   else         color = repmat({ color(:)'},[mn 1]);
+   end
+   if numel(border) < mn;   border = repmat({border},[mn 1]);   end
+   if numel(alpha ) < mn;   alpha  = repmat({alpha },[mn 1]);   end
+   if numel(n     ) < mn;   n      = repmat({n     },[mn 1]);   end
+   % RECURSE!
+   h = cellfun( @drawCircle, center,radius(:),color,border,alpha,n);
+   return
 end
 
 %% Generate plot
