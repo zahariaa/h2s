@@ -14,7 +14,10 @@ if ~exist('n'     ,'var') || isempty(n     );   n      = 100;       end
 %% Recurse if given multiple inputs
 nr = numel(radius);
 nc = numel(center)/2;
-nl = numel(color )/3;
+nl = numel(color );
+if isnumeric(color);  nl    = nl/3;     % color is a [1x3] vector
+else                  color = color(:); % color is a string
+end
 mn = max([nr nc nl]);
 if mn > 1
    % Embed inputs in cell; duplicate variables when necessary
