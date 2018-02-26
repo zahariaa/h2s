@@ -1,4 +1,4 @@
-function model = hypersphere2sphere(pointsOrDistMat,categories,estimator)
+function model = hypersphere2sphere(pointsOrDistMat,categories,estimator,dimLow)
 
 % or should it be nball2ball?
 
@@ -65,9 +65,8 @@ monitor = false;
 [~,nCats] = size(categories.vectors);
 
 %if ~exist('estimator','var'), estimator = 'MCMC'; end
-if ~exist('estimator','var'), estimator = 'meanDist'; end
-
-
+if ~exist('estimator','var') || isempty(estimator), estimator = 'meanDist'; end
+if ~exist('dimLow'   ,'var'),                       dimLow    =          3; end
 
 %% create point data from distances if necessary
 
@@ -148,9 +147,8 @@ if isequal(estimator,'MCMC')
     disp(any2str('median margins: ',estMargins));
 end
 
-
 %% initialize 3D model
-mdsCenters_3d = mdscale(estDists,3,'criterion','metricstress');
+mdsCenters_3d = mdscale(estDists,dimLow,'criterion','metricstress');
 model.centers = mdsCenters_3d;
 model.radii = estRadii;
 model.categories = categories;

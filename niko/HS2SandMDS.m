@@ -1,16 +1,17 @@
-function HS2SandMDS(pointsOrDistMat,categories,figPanelSpec,titleStr,psOutput,pdfOutput)
+function HS2SandMDS(pointsOrDistMat,categories,figPanelSpec,titleStr,dimLow)
 
 % create hypersphere-to-sphere visualization and show it alongside the MDS solution for comparison 
 
 
 %%  preparations
-
+if ~exist('dimLow','var'), dimLow = 3; end
 [~,nCats] = size(categories.vectors);
 
 %% hypersphere to sphere visualization
-model = hypersphere2sphere(pointsOrDistMat,categories);
-showSpheresModel(model, figPanelSpec, titleStr)
-
+model = hypersphere2sphere(pointsOrDistMat,categories,[],dimLow);
+if     dimLow==2;   showCirclesModel(model, figPanelSpec, titleStr);
+elseif dimLow==3;   showSpheresModel(model, figPanelSpec, titleStr);
+end
 
 %% multidimensional scaling visualization
 dists = pdist(pointsOrDistMat,'Euclidean');
