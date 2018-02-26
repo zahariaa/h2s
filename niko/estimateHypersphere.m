@@ -1,4 +1,4 @@
-function [loc locCI rad radCI] = estimateHypersphere(points,nBootstrapSamples)
+function [loc,locCI,rad,radCI] = estimateHypersphere(points,nBootstrapSamples)
 
 % uses expected distance between pairs of points to estimate the radius of
 % the hypersphere.
@@ -8,8 +8,7 @@ function [loc locCI rad radCI] = estimateHypersphere(points,nBootstrapSamples)
 
 
 %% preparation
-[n d] = size(points);
-
+[n,d] = size(points);
 
 %% estimate the expected-distance-to-radius ratio
 % by interpolation among estimates precomputed in QT_expectedDistBetweenTwoPointsWithinHypersphere
@@ -22,19 +21,16 @@ else
     expDistPerRad = sqrt(2);
 end
 
-
 %% estimate location
 loc1 = mean(points,1);   % optimises L2 cost, corresponds to L1 force equilibrium
 loc2 = median(points,1); % optimises L1 cost, corresponds to L0 force equilibrium
 loc = mean([loc1; loc2],1);
-
 
 %% estimate radius
 dists = pdist(points,'Euclidean');
 meanDist = mean(dists);
 
 rad = meanDist/expDistPerRad;
-
 
 %% bootstrap confidence intervals
 dists_sq = squareform(dists);
@@ -61,5 +57,4 @@ end
 
 locCI = prctile(loc_bs,[2.5 97.5]);
 radCI = prctile(loc_bs,[2.5 97.5]);
-
 

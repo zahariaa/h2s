@@ -4,8 +4,8 @@ function HS2SandMDS(pointsOrDistMat,categories,figPanelSpec,titleStr,psOutput,pd
 
 
 %%  preparations
-[nPoints nCats] = size(categories.vectors);
 
+[~,nCats] = size(categories.vectors);
 
 %% hypersphere to sphere visualization
 model = hypersphere2sphere(pointsOrDistMat,categories);

@@ -61,9 +61,8 @@ function model = hypersphere2sphere(pointsOrDistMat,categories,estimator)
 nPostSamples = 1000; % number of samples from the post over the parameters of each hypershpere
 monitor = false;
 
-
 %% preparations
-[nPoints nCats] = size(categories.vectors);
+[~,nCats] = size(categories.vectors);
 
 %if ~exist('estimator','var'), estimator = 'MCMC'; end
 if ~exist('estimator','var'), estimator = 'meanDist'; end
@@ -77,7 +76,7 @@ if ~exist('estimator','var'), estimator = 'meanDist'; end
 
 points = pointsOrDistMat;
 
-[nPoints nDim] = size(points);
+[~,nDim] = size(points);
 
 
 %% infer posts over hypersphere parameters
@@ -101,7 +100,6 @@ switch estimator
             [estLocs(catI,:) locCI estRadii(catI) radCI] = estimateHypersphere(points(logical(categories.vectors(:,catI)),:),nBootstrapSamples);
         end
 end
-
 
 %% compute posteriors for distances and margins
 % margin = distance - r1 - r2
@@ -139,7 +137,6 @@ switch estimator
         end
 end
 
-
 %% compute target point estimates to be visualized
 if isequal(estimator,'MCMC')
     % use posterior medians as estimates
@@ -160,8 +157,6 @@ model.categories = categories;
 model.error = NaN;
 
 %showSpheresModel(model, 200, '\bfinitial model based on MDS')
-
-
 
 
 %% optimize 3D model

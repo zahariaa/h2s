@@ -3,7 +3,7 @@ function [patterns,errorSSQ]=rdm2patternEnsemble(rdm,nDim,distanceMeasure)
 
 %% preparations
 rdm=squareRDMs(unwrapRDMs(rdm));
-[nCond,nCond]=size(rdm);
+[~,nCond]=size(rdm);
 if ~exist('distanceMeasure','var'), distanceMeasure='euclidean'; end
 
 stepSize=10;

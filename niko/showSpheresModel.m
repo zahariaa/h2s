@@ -14,7 +14,7 @@ title(titleStr);
 
 
 %% draw spheres
-[nPoints nCats] = size(model.categories.vectors);
+[~,nCats] = size(model.categories.vectors);
 objHs = nan(nCats,1);
 for catI = 1:nCats
     objHs(catI) = draw3dEllipsoid(model.centers(catI,:),eye(3)*model.radii(catI)^2,model.categories.colors(catI,:),patchDetail,opacity);
@@ -50,6 +50,3 @@ lighting phong;
 set(objHs,'AmbientStrength',  0,...
           'SpecularStrength', 1,...
           'DiffuseStrength',  1);
-
-
-      

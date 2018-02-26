@@ -1,4 +1,4 @@
-function [posteriorSamplesLoc posteriorSamplesRad logLikelihoods] = inferHyperspherePosterior(points, nSamples, monitor)
+function [posteriorSamplesLoc,posteriorSamplesRad,logLikelihoods] = inferHyperspherePosterior(points, nSamples, monitor)
 
 % FUNCTION
 % Given data points in argument 'points', this function infers the
@@ -33,7 +33,7 @@ function [posteriorSamplesLoc posteriorSamplesRad logLikelihoods] = inferHypersp
 if ~exist('nSamples','var'), nSamples = 1000; end
 if ~exist('monitor','var'), monitor = true; end
 
-[nPoints nDim] = size(points);
+[nPoints,nDim] = size(points);
 
 nSamples = max(400,nSamples); % forbid less than 400 samples
 posteriorSamplesLoc = nan(nSamples,nDim);
