@@ -25,7 +25,7 @@ if mn > 1
    else        center = repmat({center(:)'},[mn 1]);
    end
    if nr> 1;   radius = num2cell(radius);
-   else        radius = repmat({radius     },[mn 1]);
+   else        radius = repmat({radius    },[mn 1]);
    end
    if nl> 1;    color = num2cell(color,2);
    else         color = repmat({ color(:)'},[mn 1]);
@@ -39,8 +39,8 @@ if mn > 1
 end
 
 %% Generate plot
-if border==0;   opts = {'LineStyle','none','FaceAlpha',alpha};
-else            opts = {'LineWidth',border,'FaceAlpha',alpha};
+if border==0;   opts = {'LineStyle','none','FaceAlpha',alpha,'EdgeColor',color};
+else            opts = {'LineWidth',border,'FaceAlpha',alpha,'EdgeColor',color};
 end
 
 t = linspace(0,2*pi,n);
@@ -50,3 +50,7 @@ axis equal off
 hold on
 
 return
+
+
+%% Debug
+figure;drawCircle([1 2;3 4;5 6],3:5,'krg',0);
