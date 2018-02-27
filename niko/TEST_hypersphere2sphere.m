@@ -198,6 +198,64 @@ if find(scenarios==6)
 end
 
 
+%% scenario 7: gaussian ellipsoid version of scenario 2
+%%           : two overlapping, random covariance hyperellipsoids in 1-200 dimensions
+if find(scenarios==1)
+    radius = 1;
+
+    nsDim = [1 2 3 5 10 20 40 200]
+
+    for nPointsPerCat = [10 40]
+        h=figure(2007);clf;
+        set(h,'Name','scenario 7: 2 overlap hyperellipsoids w rand covar 1-200 dims');
+        for nDimI = 1: numel(nsDim)
+            nDim = nsDim(nDimI);
+	    SIGMA{1} = rand(nDim);  SIGMA{1} = SIGMA{1}*SIGMA{1}';
+	    SIGMA{2} = rand(nDim);  SIGMA{2} = SIGMA{2}*SIGMA{2}';
+            points = nan(nPointsPerCat,nDim);
+	    points(1:nPointsPerCat,:) = mvnrnd(zeros(nDim,1),SIGMA{1},nPointsPerCat);
+	    points(nPointsPerCat+1:2*nPointsPerCat,:) = ...
+	                               mvnrnd(zeros(nDim,1),SIGMA{2},nPointsPerCat);
+            categories.labels = {'category 1','category 2'};
+            categories.colors = [0.8 0 0; 0 0 0];
+            categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
+
+            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
+            titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
+        end
+    end
+end
+
+%% scenario 8: gaussian ellipsoid version of scenario 5
+%%           : two intersecting equal-covariance hyperellipsoids in 1-200 dimensions
+if find(scenarios==1)
+    radius = 1;
+
+    nsDim = [1 2 3 5 10 20 40 200]
+
+    for nPointsPerCat = [10 40]
+        h=figure(2008);clf;
+        set(h,'Name','scenario 8: 2 adj hyperellipsoids w same rand covar 1-200 dims');
+        for nDimI = 1: numel(nsDim)
+            nDim = nsDim(nDimI);
+	    SIGMA{1} = rand(nDim);  SIGMA{1} = SIGMA{1}*SIGMA{1}';
+            points = nan(nPointsPerCat,nDim);
+	    points(1:nPointsPerCat,:) = mvnrnd( ones(nDim,1),SIGMA{1},nPointsPerCat);
+	    points(nPointsPerCat+1:2*nPointsPerCat,:) = ...
+	                                mvnrnd(-ones(nDim,1),SIGMA{1},nPointsPerCat);
+            categories.labels = {'category 1','category 2'};
+            categories.colors = [0.8 0 0; 0 0 0];
+            categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
+
+            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
+            titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
+        end
+    end
+end
+
+
 
 %% scenario 7: 3 spheres (two intersecting) -> 2D circles
 %% scenario 8: 5 hyperspheres in 1-100 dimensions
