@@ -12,7 +12,8 @@
 
 
 %% general control variables
-scenarios = 6; %[1 2 3];
+scenarios = 1:6; %[1 2 3];
+dimLow    = 2; % 2=showCircles, 3=showSpheres
 
 psFilespec = '';
 pdfFilespec = '';
@@ -39,7 +40,7 @@ if find(scenarios==1)
 
             figPanelSpec = [h 4 6 1+(nDimI-1)*3];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
-            HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
     end
 end
@@ -68,7 +69,7 @@ if find(scenarios==2)
 
             figPanelSpec = [h 4 6 1+(nDimI-1)*3];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
-            HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
     end
 end
@@ -97,7 +98,7 @@ if find(scenarios==3)
 
             figPanelSpec = [h 4 6 1+(nDimI-1)*3];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
-            HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
     end
 end
@@ -126,7 +127,7 @@ if find(scenarios==4)
 
             figPanelSpec = [h 4 6 1+(nDimI-1)*3];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
-            HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
     end
 end
@@ -157,7 +158,7 @@ if find(scenarios==5)
 
             figPanelSpec = [h 4 6 1+(nDimI-1)*3];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
-            HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
     end
 end
@@ -191,7 +192,7 @@ if find(scenarios==6)
             
             figPanelSpec = [h 4 6 1+(nDimI-1)*3];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
-            HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
+            HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
     end
 end
