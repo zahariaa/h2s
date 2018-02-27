@@ -25,8 +25,8 @@ if find(scenarios==1)
     nsDim = [1 2 3 5 10 20 40 200]
 
     for nPointsPerCat = [10 40]
-        h=figure(1000+nPointsPerCat); set(h,'Color','w'); clf;
-        set(gcf,'Name','scenario 1: two touching equal-radius hyperspheres in 1-200 dimensions');
+        h=figure(2001);clf;
+        set(h,'Name','scenario 1: two touching equal-radius hyperspheres in 1-200 dimensions');
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
             points = randsphere(2*nPointsPerCat,nDim,radius);
@@ -52,10 +52,9 @@ if find(scenarios==2)
     nsDim = [1 2 3 5 10 20 40 200];
 
     for nPointsPerCat = [20 100]
-        h=figure(2000+nPointsPerCat); set(h,'Color','w'); clf;
-        set(gcf,'Name','scenario 2: two identical hyperspheres in 1-200 dimensions');
+        h=figure(2002);clf;
+        set(h,'Name','scenario 2: two identical hyperspheres in 1-200 dimensions');
         for nDimI = 1: numel(nsDim)
-            h=figure(2000+nPointsPerCat);
             nDim = nsDim(nDimI);
             points = nan(2*nPointsPerCat,nDim);
             points(1:nPointsPerCat,:) = randsphere(nPointsPerCat,nDim,radius1);
@@ -83,10 +82,9 @@ if find(scenarios==3)
     nsDim = [1 2 3 5 10 20 40 200];
 
     for nPointsPerCat = [50]
-        h=figure(2000+nPointsPerCat); set(h,'Color','w'); clf;
-        set(gcf,'Name','scenario 3: two concentric hyperspheres of different radius in 1-200 dimensions');
+        h=figure(2003);clf;
+        set(h,'Name','scenario 3: two concentric hyperspheres of different radius in 1-200 dimensions');
         for nDimI = 1: numel(nsDim)
-            h=figure(2000+nPointsPerCat);
             nDim = nsDim(nDimI);
             points = nan(2*nPointsPerCat,nDim);
             points(1:nPointsPerCat,:) = randsphere(nPointsPerCat,nDim,radius1);
@@ -112,10 +110,9 @@ if find(scenarios==4)
     nsDim = [1 2 3 5 10 20 40 200];
 
     for nPointsPerCat = [100]
-        h=figure(3000+nPointsPerCat); set(h,'Color','w'); clf;
-        set(gcf,'Name','scenario 4: larger hypersphere enclosing smaller one, touching in one surface point');
+        h=figure(2004);clf;
+        set(h,'Name','scenario 4: larger hypersphere enclosing smaller one, touching in one surface point');
         for nDimI = 1: numel(nsDim)
-            h=figure(3000+nPointsPerCat);
             nDim = nsDim(nDimI);
             points = nan(2*nPointsPerCat,nDim);
             points(1:nPointsPerCat,:) = randsphere(nPointsPerCat,nDim,radius1);
@@ -144,10 +141,9 @@ if find(scenarios==5)
     nsDim = [1 2 3 5 10 20 40 200];
 
     for nPointsPerCat = [50]
-        h=figure(2000+nPointsPerCat); set(h,'Color','w'); clf;
-        set(gcf,'Name','scenario 5: two intersecting hypershperes');
+       h=figure(2005);clf;
+        set(h,'Name','scenario 5: two intersecting hypershperes');
         for nDimI = 1: numel(nsDim)
-            h=figure(2000+nPointsPerCat);
             nDim = nsDim(nDimI);
             points = nan(2*nPointsPerCat,nDim);
             points(1:nPointsPerCat,:) = randsphere(nPointsPerCat,nDim,radius1);
@@ -178,10 +174,9 @@ if find(scenarios==6)
     nsDim = [1 2 3 5 10 20 40 200];
 
     for nPointsPerCat = [20]
-        h=figure(2000+nPointsPerCat); set(h,'Color','w'); clf;
-        set(gcf,'Name','scenario 6: two intersecting hyperspheres with different numbers of points');
+       h=figure(2006);clf;
+        set(h,'Name','scenario 6: two intersecting hyperspheres with different numbers of points');
         for nDimI = 1: numel(nsDim)
-            h=figure(2000+nPointsPerCat);
             nDim = nsDim(nDimI);
             points = nan((1+fac)*nPointsPerCat,nDim);
             points(1:nPointsPerCat,:) = randsphere(nPointsPerCat,nDim,radius1);
