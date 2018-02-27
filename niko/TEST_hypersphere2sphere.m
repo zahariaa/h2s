@@ -37,7 +37,7 @@ if find(scenarios==1)
             categories.colors = [0.8 0 0; 0 0 0];
             categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
 
-            figPanelSpec = [h 4 4 1+(nDimI-1)*2];
+            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
         end
@@ -67,7 +67,7 @@ if find(scenarios==2)
             categories.colors = [0.8 0 0; 0 0 0];
             categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
 
-            figPanelSpec = [h 4 4 1+(nDimI-1)*2];
+            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
         end
@@ -97,7 +97,7 @@ if find(scenarios==3)
             categories.colors = [0.8 0 0; 0 0 0];
             categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
 
-            figPanelSpec = [h 4 4 1+(nDimI-1)*2];
+            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
         end
@@ -127,7 +127,7 @@ if find(scenarios==4)
             categories.colors = [0.8 0 0; 0 0 0];
             categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
 
-            figPanelSpec = [h 4 4 1+(nDimI-1)*2];
+            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
         end
@@ -159,7 +159,7 @@ if find(scenarios==5)
             categories.colors = [0.8 0 0; 0 0 0];
             categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
 
-            figPanelSpec = [h 4 4 1+(nDimI-1)*2];
+            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
         end
@@ -194,7 +194,7 @@ if find(scenarios==6)
             categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
             categories.vectors = [categories.vectors; repmat(categories.vectors(end/2+1:end,:),[(fac-1) 1])];
             
-            figPanelSpec = [h 4 4 1+(nDimI-1)*2];
+            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,psFilespec,pdfFilespec)
         end

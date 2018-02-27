@@ -16,16 +16,20 @@ end
 %% multidimensional scaling visualization
 dists = pdist(pointsOrDistMat,'Euclidean');
 
-mdsPoints_2d = mdscale(dists,2,'criterion','metricstress');
+points2D{1} = mdscale(dists,2,'criterion','metricstress');
+points2D{2} = tsne(pointsOrDistMat,[],[],min(size(pointsOrDistMat)));
+% Align MDS and t-SNE
+[~,points2D{2}] = procrustes(points2D{1},points2D{2});
 
-subplot(figPanelSpec(2), figPanelSpec(3), figPanelSpec(4)+1); hold on;
-ms=5;
-for catI = 1:nCats
-    plot(mdsPoints_2d(logical(categories.vectors(:,catI)),1), mdsPoints_2d(logical(categories.vectors(:,catI)),2),...
-        'o', 'MarkerFaceColor',categories.colors(catI,:), 'MarkerEdgeColor','none', 'MarkerSize',ms);
+for i = 1:numel(points2D)
+   subplot(figPanelSpec(2), figPanelSpec(3), figPanelSpec(4)+i); hold on;
+   ms=5;
+   for catI = 1:nCats
+       plot(points2D{i}(logical(categories.vectors(:,catI)),1), points2D{i}(logical(categories.vectors(:,catI)),2),...
+           'o', 'MarkerFaceColor',categories.colors(catI,:), 'MarkerEdgeColor','none', 'MarkerSize',ms);
+   end
+   axis equal off;
 end
-axis equal off;
-
 
 % showRDMs(dists,300,0);
 
