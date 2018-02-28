@@ -210,12 +210,12 @@ if find(scenarios==1)
         set(h,'Name','scenario 7: 2 overlap hyperellipsoids w rand covar 1-200 dims');
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
-	    SIGMA{1} = rand(nDim);  SIGMA{1} = SIGMA{1}*SIGMA{1}';
-	    SIGMA{2} = rand(nDim);  SIGMA{2} = SIGMA{2}*SIGMA{2}';
+	    SIG{1} = rand(nDim);  SIG{1} = SIG{1}*SIG{1}';
+	    SIG{2} = rand(nDim);  SIG{2} = SIG{2}*SIG{2}';
             points = nan(nPointsPerCat,nDim);
-	    points(1:nPointsPerCat,:) = mvnrnd(zeros(nDim,1),SIGMA{1},nPointsPerCat);
+	    points(1:nPointsPerCat,:) = mvnrnd(zeros(nDim,1),SIG{1},nPointsPerCat);
 	    points(nPointsPerCat+1:2*nPointsPerCat,:) = ...
-	                               mvnrnd(zeros(nDim,1),SIGMA{2},nPointsPerCat);
+	                               mvnrnd(zeros(nDim,1),SIG{2},nPointsPerCat);
             categories.labels = {'category 1','category 2'};
             categories.colors = [0.8 0 0; 0 0 0];
             categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
@@ -240,11 +240,11 @@ if find(scenarios==1)
         set(h,'Name','scenario 8: 2 adj hyperellipsoids w same rand covar 1-200 dims');
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
-	    SIGMA{1} = rand(nDim);  SIGMA{1} = SIGMA{1}*SIGMA{1}';
+	    SIG{1} = rand(nDim);  SIG{1} = SIG{1}*SIG{1}';
             points = nan(nPointsPerCat,nDim);
-	    points(1:nPointsPerCat,:) = mvnrnd( ones(nDim,1),SIGMA{1},nPointsPerCat);
+	    points(1:nPointsPerCat,:) = mvnrnd( ones(nDim,1),SIG{1},nPointsPerCat);
 	    points(nPointsPerCat+1:2*nPointsPerCat,:) = ...
-	                                mvnrnd(-ones(nDim,1),SIGMA{1},nPointsPerCat);
+	                                mvnrnd(-ones(nDim,1),SIG{1},nPointsPerCat);
             categories.labels = {'category 1','category 2'};
             categories.colors = [0.8 0 0; 0 0 0];
             categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
@@ -272,9 +272,9 @@ if find(scenarios==1)
             nDim = nsDim(nDimI);
 	    SIGMA{1} = rand(nDim);  SIGMA{1} = SIGMA{1}*SIGMA{1}';
             points = nan((1+fac)*nPointsPerCat,nDim);
-	    points(1:nPointsPerCat,:) = mvnrnd( ones(nDim,1),SIGMA{1},nPointsPerCat);
+	    points(1:nPointsPerCat,:) = mvnrnd( ones(nDim,1),SIG,nPointsPerCat);
 	    points(nPointsPerCat+1:(1+fac)*nPointsPerCat,:) = ...
-	                              mvnrnd(-ones(nDim,1),SIGMA{1},fac*nPointsPerCat);
+	                                mvnrnd(-ones(nDim,1),SIG,fac*nPointsPerCat);
             categories.labels = {'category 1','category 2'};
             categories.colors = [0.8 0 0; 0 0 0];
             categories.vectors = logical(blockDiagonalMatrix(2*nPointsPerCat,2,2));
