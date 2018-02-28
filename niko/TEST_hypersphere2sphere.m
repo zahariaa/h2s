@@ -280,9 +280,9 @@ if find(scenarios==1)
 	       SIG   = V(ix,ix)*D(ix,ix)*V(ix,ix)';
 	    end
             points = nan((1+fac)*nPointsPerCat,nDim);
-	    points(1:nPointsPerCat,:) = mvnrnd( ones(nDim,1),SIG,nPointsPerCat);
+	    points(1:nPointsPerCat,:) = -1+randsphere(nPointsPerCat,nDim,radius)*SIG;
 	    points(nPointsPerCat+1:(1+fac)*nPointsPerCat,:) = ...
-	                                mvnrnd(-ones(nDim,1),SIG,fac*nPointsPerCat);
+                                         1+randsphere(fac*nPointsPerCat,nDim,radius)*SIG;
             categories.labels = {'category 1','category 2'};
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat*fac,1));
