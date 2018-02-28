@@ -268,9 +268,18 @@ if find(scenarios==1)
     for nPointsPerCat = [20]
         h=figure(2009);clf;
         set(h,'Name','scenario 9: 2 overlap hyperellipsoids w rand covar 1-200 dims');
-        for nDimI = 1: numel(nsDim)
+
+	% Generate random covariance matrix. Will remove low PCs in lower dimensions
+	SIG = rand(nsDim(end));  SIG = SIG*SIG';
+
+	for nDimI = numel(nsDim):-1:1
             nDim = nsDim(nDimI);
-	    SIGMA{1} = rand(nDim);  SIGMA{1} = SIGMA{1}*SIGMA{1}';
+            % remove low PCs
+	    if nDim ~= nsDim(end)
+	       [V,D] =  eig(SIG);
+	       ix    = (nsDim(nDimI+1)-nDim+1):nsDim(nDimI+1);
+	       SIG   = V(ix,ix)*D(ix,ix)*V(ix,ix)';
+	    end
             points = nan((1+fac)*nPointsPerCat,nDim);
 	    points(1:nPointsPerCat,:) = mvnrnd( ones(nDim,1),SIG,nPointsPerCat);
 	    points(nPointsPerCat+1:(1+fac)*nPointsPerCat,:) = ...
