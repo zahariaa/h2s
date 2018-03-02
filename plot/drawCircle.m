@@ -1,4 +1,4 @@
-function h = drawCircle(center,radius,color,border,alpha,n)
+function [h,XY] = drawCircle(center,radius,color,border,alpha,n)
 % h = drawCircle(center,radius,<color='k'>,<border=2>,<alpha=0.2>,<n=100>)
 % -  center must be Nx2
 % -  accepts multiple inputs and draws multiple circles
@@ -34,8 +34,10 @@ if mn > 1
    if numel(alpha ) < mn;   alpha  = repmat({alpha },[mn 1]);   end
    if numel(n     ) < mn;   n      = repmat({n     },[mn 1]);   end
    % RECURSE!
-   h = cellfun( @drawCircle, center,radius(:),color,border,alpha,n);
-   return
+   [h,XY] = cellfun( @drawCircle, center,radius(:),color,border,alpha,n,...
+                     'UniformOutput',false');
+    h  = vertcat (h{:});   XY = vertcat(XY{:});
+    return
 end
 
 %% Generate plot
@@ -44,7 +46,8 @@ else            opts = {'LineWidth',border,'FaceAlpha',alpha,'EdgeColor',color};
 end
 
 t = linspace(0,2*pi,n);
-h = fill(radius*cos(t)+center(1),radius*sin(t)+center(2),color);
+XY = radius*[cos(t(:)) sin(t(:))] + repmat(center,[n 1]);
+h = fill(XY(:,1),XY(:,2),color);
 set(h,opts{:});
 axis equal off
 hold on
