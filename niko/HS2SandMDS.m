@@ -16,10 +16,15 @@ end
 %% multidimensional scaling visualization
 dists = pdist(pointsOrDistMat,'Euclidean');
 
-points2D{1} = mdscale(dists,2,'criterion','metricstress');
-points2D{2} = tsne(pointsOrDistMat,[],[],min(size(pointsOrDistMat)));
-% Align MDS and t-SNE
-[~,points2D{2}] = procrustes(points2D{1},points2D{2});
+points2D{1} = simplepca(pointsOrDistMat,dimLow);
+points2D{2} = mdscale(dists,2,'criterion','metricstress');
+points2D{3} = tsne(pointsOrDistMat,[],[],min(size(pointsOrDistMat)));
+
+% Align MDS and t-SNE relative to PCA
+if size(pointsOrDistMat,2) > 1
+   [~,points2D{2}] = procrustes(points2D{1},points2D{2});
+   [~,points2D{3}] = procrustes(points2D{1},points2D{3});
+end
 
 for i = 1:numel(points2D)
    subplot(figPanelSpec(2), figPanelSpec(3), figPanelSpec(4)+i); hold on;

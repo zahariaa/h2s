@@ -38,7 +38,7 @@ if find(scenarios==1)
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
-            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
+            figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
@@ -67,7 +67,7 @@ if find(scenarios==2)
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
-            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
+            figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
@@ -96,7 +96,7 @@ if find(scenarios==3)
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
-            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
+            figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
@@ -125,7 +125,7 @@ if find(scenarios==4)
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
-            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
+            figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
@@ -156,7 +156,7 @@ if find(scenarios==5)
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
-            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
+            figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
@@ -189,7 +189,7 @@ if find(scenarios==6)
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat*fac,1));
             
-            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
+            figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
@@ -219,7 +219,7 @@ if find(scenarios==1)
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
-            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
+            figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
@@ -248,7 +248,7 @@ if find(scenarios==1)
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
-            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
+            figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
@@ -287,7 +287,7 @@ if find(scenarios==1)
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat*fac,1));
 
-            figPanelSpec = [h 4 6 1+(nDimI-1)*3];
+            figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
         end
