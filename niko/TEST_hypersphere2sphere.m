@@ -209,8 +209,8 @@ if find(scenarios==1)
         set(h,'Name','scenario 7: 2 overlap hyperellipsoids w rand covar 1-200 dims');
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
-	    SIG{1} = rand(nDim);  SIG{1} = SIG{1}*SIG{1}';
-	    SIG{2} = rand(nDim);  SIG{2} = SIG{2}*SIG{2}';
+	    SIG = rand(nDim,nDim,2);
+	    for i = 1:2;   SIG(:,:,i) = SIG(:,:,i)*SIG(:,:,i)';   end
             points = nan(nPointsPerCat,nDim);
 	    points(1:nPointsPerCat,:) = mvnrnd(zeros(nDim,1),SIG{1},nPointsPerCat);
 	    points(nPointsPerCat+1:2*nPointsPerCat,:) = ...
@@ -239,7 +239,7 @@ if find(scenarios==1)
         set(h,'Name','scenario 8: 2 adj hyperellipsoids w same rand covar 1-200 dims');
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
-	    SIG{1} = rand(nDim);  SIG{1} = SIG{1}*SIG{1}';
+	    SIG = rand(nDim);  SIG = SIG*SIG';
             points = nan(nPointsPerCat,nDim);
 	    points(1:nPointsPerCat,:) = mvnrnd( ones(nDim,1),SIG{1},nPointsPerCat);
 	    points(nPointsPerCat+1:2*nPointsPerCat,:) = ...
