@@ -9,7 +9,7 @@ if ~exist('dimLow','var'), dimLow = 3; end
 
 %% hypersphere to sphere visualization
 model = hypersphere2sphere(pointsOrDistMat,categories,[],dimLow);
-if     dimLow==2;   [~,XY] = showCirclesModel(model, figPanelSpec, titleStr,ceil(nPoints/nCats));
+if     dimLow==2;   showCirclesModel(model, figPanelSpec, titleStr);
 elseif dimLow==3;   showSpheresModel(model, figPanelSpec, titleStr);
 end
 
@@ -22,9 +22,8 @@ points2D{3} = tsne(pointsOrDistMat,[],[],min(size(pointsOrDistMat)));
 
 % Align MDS and t-SNE relative to PCA
 if size(pointsOrDistMat,2) > 1
-   [~,points2D{1}] = procrustes(XY,points2D{1});
-   [~,points2D{2}] = procrustes(XY,points2D{2});
-   [~,points2D{3}] = procrustes(XY,points2D{3});
+   [~,points2D{2}] = procrustes(points2D{1},points2D{2});
+   [~,points2D{3}] = procrustes(points2D{1},points2D{3});
 end
 
 for i = 1:numel(points2D)
