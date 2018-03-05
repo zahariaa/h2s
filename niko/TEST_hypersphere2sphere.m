@@ -212,9 +212,9 @@ if find(scenarios==1)
 	    SIG = rand(nDim,nDim,2);
 	    for i = 1:2;   SIG(:,:,i) = SIG(:,:,i)*SIG(:,:,i)';   end
             points = nan(nPointsPerCat,nDim);
-	    points(1:nPointsPerCat,:) = mvnrnd(zeros(nDim,1),SIG{1},nPointsPerCat);
+	    points(1:nPointsPerCat,:) = mvnrnd(zeros(nDim,1),SIG(:,:,1),nPointsPerCat);
 	    points(nPointsPerCat+1:2*nPointsPerCat,:) = ...
-	                               mvnrnd(zeros(nDim,1),SIG{2},nPointsPerCat);
+	                                mvnrnd(zeros(nDim,1),SIG(:,:,2),nPointsPerCat);
             categories.labels = {'category 1','category 2'};
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
@@ -241,9 +241,9 @@ if find(scenarios==1)
             nDim = nsDim(nDimI);
 	    SIG = rand(nDim);  SIG = SIG*SIG';
             points = nan(nPointsPerCat,nDim);
-	    points(1:nPointsPerCat,:) = mvnrnd( ones(nDim,1),SIG{1},nPointsPerCat);
+	    points(1:nPointsPerCat,:) = mvnrnd( ones(nDim,1),SIG,nPointsPerCat);
 	    points(nPointsPerCat+1:2*nPointsPerCat,:) = ...
-	                                mvnrnd(-ones(nDim,1),SIG{1},nPointsPerCat);
+	                                mvnrnd(-ones(nDim,1),SIG,nPointsPerCat);
             categories.labels = {'category 1','category 2'};
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
@@ -280,9 +280,9 @@ if find(scenarios==1)
 	       SIG   = V(ix,ix)*D(ix,ix)*V(ix,ix)';
 	    end
             points = nan((1+fac)*nPointsPerCat,nDim);
-	    points(1:nPointsPerCat,:) = -1+randsphere(nPointsPerCat,nDim,radius)*SIG;
+	    points(1:nPointsPerCat,:) = radius*mvnrnd( ones(nDim,1),SIG,nPointsPerCat);
 	    points(nPointsPerCat+1:(1+fac)*nPointsPerCat,:) = ...
-                                         1+randsphere(fac*nPointsPerCat,nDim,radius)*SIG;
+                                        radius*mvnrnd(-ones(nDim,1),SIG,fac*nPointsPerCat);
             categories.labels = {'category 1','category 2'};
             categories.colors = [0.8 0 0; 0 0 0];
 	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat*fac,1));
