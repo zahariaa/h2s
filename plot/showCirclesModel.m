@@ -2,7 +2,7 @@ function [objHs,XY] = showCirclesModel(model, figPanelSpec, titleStr,nCircPts)
 
 %% control variables
 if ~exist('nCircPts','var') || isempty(nCircPts),   nCircPts = 100;   end
-opacity = 0.7;
+opacity = 0.2;
 
 %% preparations
 figurePanel(figPanelSpec);

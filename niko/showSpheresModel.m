@@ -2,7 +2,7 @@ function showSpheresModel(model, figPanelSpec, titleStr)
 
 %% control variables
 patchDetail = 100;
-opacity = 0.7;
+opacity = 0.5;
 
 
 %% preparations
