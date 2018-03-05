@@ -75,11 +75,11 @@ for roiI = 1:numel(roi.name)
     [patterns,errorSSQ] = rdm2patternEnsemble(avgRdm_nonNeg,nDim,distanceMeasure);
     
     % hs2s & MDS
-    figPanelSpec = [150 4 4 2*(roiI-1)+1];
+    figPanelSpec = [150 4 8 4*(roiI-1)+1];
     titleStr = any2str(roi.hemisphere{hemisphereI},' \bf',roi.name{roiI},'\rm (',roi.size(roiSizeI),' vox)');
     psOutput='';
     pdfOutput='';
-    HS2SandMDS(patterns,categories,figPanelSpec,titleStr,psOutput,pdfOutput)
+    HS2SandMDS(patterns,categories,figPanelSpec,titleStr,3);%,psOutput,pdfOutput)
 
     %model = multidimensionalCategoryScaling(avgRDMs(1,:,1),categoryVectors,catLabels,[],'ellipsoid',3);
     
