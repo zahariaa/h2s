@@ -86,7 +86,7 @@ switch estimator
         postSampleLogLikelihoods = nan(nPostSamples,1,nCats);
 
         for catI = 1:nCats
-            [postSampleLocs(:,:,catI) postSampleRadii(:,:,catI) postSampleLogLikelihoods(:,:,catI)] =...
+            [postSampleLocs(:,:,catI),postSampleRadii(:,:,catI),postSampleLogLikelihoods(:,:,catI)] =...
                 inferHyperspherePosterior(points(logical(categories.vectors(:,catI)),:), nPostSamples, monitor);
         end
 
@@ -96,7 +96,7 @@ switch estimator
         
         nBootstrapSamples = 0;
         for catI = 1:nCats
-            [estLocs(catI,:) locCI estRadii(catI) radCI] = estimateHypersphere(points(logical(categories.vectors(:,catI)),:),nBootstrapSamples);
+            [estLocs(catI,:),locCI,estRadii(catI),radCI] = estimateHypersphere(points(logical(categories.vectors(:,catI)),:),nBootstrapSamples);
         end
 end
 
