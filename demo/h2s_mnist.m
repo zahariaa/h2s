@@ -21,14 +21,6 @@ categories.colors = [250   138   117
                      135   184    98
                      182   173    74
                      223   157    79]/255;
-titlestr = sprintf('MNIST %u images',numel(chunk));
-
-% MNIST, raw
-h=figure(101);clf;
-HS2SandMDS(images(:,chunk)',categories,[h 1 4 1],titlestr,2)
-h=figure(102);clf;
-HS2SandMDS(images(:,chunk)',categories,[h 1 4 1],titlestr,3)
-
 % MNIST, trained model responses, from pyTorch
 modelcats = load('data/mnist_fcBNx3.mat'); % Trained 3 layer FC net on MNIST
 modelcats.labels = categories.labels;
@@ -40,6 +32,16 @@ if max(modelcats.outputs(:)) <= 0
    modelcats.outputs= modelcats.outputs - min(modelcats.outputs(:)) + 1;
 end
 
+
+% MNIST, raw
+titlestr = sprintf('MNIST %u images',numel(chunk));
+h=figure(101);clf;
+HS2SandMDS(images(:,chunk)',categories,[h 1 4 1],titlestr,2)
+h=figure(102);clf;
+HS2SandMDS(images(:,chunk)',categories,[h 1 4 1],titlestr,3)
+
+% MNIST, trained
+titlestr = sprintf('MNIST %u trained NN activations',numel(chunk));
 h=figure(103);clf;
 HS2SandMDS(modelcats.outputs(chunk,:),modelcats,[h 1 4 1],titlestr,2)
 h=figure(104);clf;
