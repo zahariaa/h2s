@@ -5,7 +5,7 @@ function HS2SandMDS(pointsOrDistMat,categories,figPanelSpec,titleStr,dimLow)
 
 %%  preparations
 if ~exist('dimLow','var'), dimLow = 3; end
-[~,nCats] = size(categories.vectors);
+[nPoints,nCats] = size(categories.vectors);
 
 %% hypersphere to sphere visualization
 model = hypersphere2sphere(pointsOrDistMat,categories,[],dimLow);
@@ -20,10 +20,18 @@ points2D{1} = simplepca(pointsOrDistMat,dimLow);
 points2D{2} = mdscale(dists,2,'criterion','metricstress');
 points2D{3} = tsne(pointsOrDistMat,[],[],min(size(pointsOrDistMat)));
 
-% Align MDS and t-SNE relative to PCA
+% Draw points from circle/sphere to align other visualizations to
+modelPointsAlign = NaN(0,dimLow);
+for catI = 1:nCats
+   modelPointsAlign = [modelPointsAlign;
+                       randsphere(nPoints/nCats,dimLow,model.radii(catI)) ...
+                       + repmat(model.centers(catI,:),[nPoints/nCats 1])];
+end
+% Align PCA, MDS, and t-SNE relative to H2S
 if size(pointsOrDistMat,2) > 1
-   [~,points2D{2}] = procrustes(points2D{1},points2D{2});
-   [~,points2D{3}] = procrustes(points2D{1},points2D{3});
+   for i = 1:numel(points2D)
+      [~,points2D{i}] = procrustes(modelPointsAlign,points2D{i});
+   end
 end
 
 for i = 1:numel(points2D)
