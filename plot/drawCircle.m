@@ -1,11 +1,13 @@
 function [h,XY] = drawCircle(center,radius,color,border,alpha,n)
-% h = drawCircle(center,radius,<color='k'>,<border=2>,<alpha=0.2>,<n=100>)
+% h=drawCircle(center=[0 0],radius=1,color='k',border=2,alpha=0.2,n=100)
 % -  center must be Nx2
 % -  accepts multiple inputs and draws multiple circles
 % 
 % 2018-02-22 AZ Created
 
 %% Initialize defaults
+if ~exist('center','var') || isempty(center);   center = [0 0];     end
+if ~exist('radius','var') || isempty(radius);   radius = 1;         end
 if ~exist('color' ,'var') || isempty(color );   color  = [0 0 0];   end
 if ~exist('border','var') || isempty(border);   border = 2;         end
 if ~exist('alpha' ,'var') || isempty(alpha );   alpha  = 0.2;       end
