@@ -1,40 +1,28 @@
-function h2s_radii(n,d,type)
+function h2s_radii(n,ds,type)
 
 N = 100; % bootstraps
 
-for d = d
+s = NaN(N,5,numel(ds)); % container for sampled estimators
+colors = {[1 0 0],[0 1 0],[0 0 1],[1 1 0],[1 0 1]};
+
+for d = ds
+   dindex = find(d==ds);
+   % Sample & measure radii
    X  = sampleSpheres(n,d,N,type);
    radii = sqrt(sum(X.^2,2));
-   % 0.5*CDF method
-   radii = sort(radii,1,'ascend');
-   cdf = cumsum(~~radii,1)/n;
-   mx = radii(minix(abs(0.5-cdf)))*2^(1/d);
-   mx = mean(mx(:));
-   md = mean(median(radii,1)   );
-%   mx = mean(max(   radii,[],1));
+   % Estimators
    % expDistPerRad method
-   [~,~,mn] = arrayfun(@(i) estimateHypersphere(X(:,:,i)),1:N,'UniformOutput',false);
-   mn = mean(cell2mat(mn));
+   [~,~,tmp] = arrayfun(@(i) estimateHypersphere(X(:,:,i)),1:N,'UniformOutput',false);
+   s(:,1,dindex) = cell2mat(tmp);
+   s(:,3,dindex) = median(radii,1);
+   s(:,2,dindex) = s(:,3,dindex).*2^(1/d);   % median*2^(1/d)
+   maxradii = max(radii,[],1);
+   s(:,4,dindex) = maxradii + maxradii/n;                      % MVUE for uniform distribution
+   s(:,5,dindex) = ones(1,N)*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2)); % MVUE for gaussian distribution
 
-   figure;clf;
-   subplot(1,3,2:3);hold on;
-   [h,c]=hist(radii(:));bar(c,h);
-   plot(squeeze(radii),1.1*max(h)*squeeze(cdf),'k-')
-   plot([mn mn],[0 1.1*max(h)],'r-')
-   plot([mx mx],[0 1.1*max(h)],'g-')
-   plot([md md],[0 1.1*max(h)],'b-')
-   xlabel('L2 norm')
-   title({type;
-          sprintf('%u points in %u dimensions',n,d)});
-   subplot(1,3,1);hold on;
-   plot(X(:,1,1),X(:,2,1),'ko');
-   plot([0 mn]./sqrt(2),[0 mn]./sqrt(2),'r-','LineWidth',8);
-   plot([0 mx]./sqrt(2),[0 mx]./sqrt(2),'g-','LineWidth',4);
-   plot([0 md]./sqrt(2),[0 md]./sqrt(2),'b-','LineWidth',2);
-   axis equal square
-   drawCircle;
-   title({'r=expDistPreRad method,';
-          'g=CDF*2^{1/d}, b=median' })
+   % Results
+   figure(98);clf;plotEstimators(X,radii,mat2cell(s(:,:,dindex),100,ones(1,5)),colors);
+%   skewness(radii(:))
 end
 1-[mn md mx]
 
