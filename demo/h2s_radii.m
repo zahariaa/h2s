@@ -4,6 +4,7 @@ N = 100; % bootstraps
 
 s = NaN(N,5,numel(ds)); % container for sampled estimators
 colors = {[1 0 0],[0 1 0],[0 0 1],[1 1 0],[1 0 1]};
+target = NaN(1,numel(ds));
 
 for d = ds
    dix = find(d==ds);
@@ -23,8 +24,25 @@ for d = ds
    % Results
    figure(98);clf;plotEstimators(X,radii,mat2cell(s(:,:,dix),100,ones(1,5)),colors);
 %   skewness(radii(:))
+
+   m(dix,:) = 1-mean(s(:,:,dix),1);
+   if     strcmpi(type,'gaussian'),   target(dix) = median(radii(:));
+   elseif strcmpi(type,'uniform' ),   target(dix) = 1;
+   end
+   if dix > 1
+      figure(99);cla;hold on;
+      for e = 1:5
+         err = (repmat(target,[N 1])-squeeze(s(:,e,:)))./repmat(target,[N 1]);
+         plotErrorPatch(log2(ds),log10(err.^2),colors{e});
+      end
+   end
+   xlabel('dimensions')
+   ylabel('log_{10} error')
+   title([type ' distribution, radius estimation'])
+   legend('','expDistPerRad','','median2^{1/d}',...
+          '','median','','MVUE-Unif','','MVUE-Gauss',...
+          'Location','EastOutside')
 end
-1-[mn md mx]
 
 return
 
