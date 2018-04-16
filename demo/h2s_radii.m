@@ -46,6 +46,17 @@ end
 
 return
 
+%% DEMOS/DEBUG
+h2s_radii(200,log2space(1,12,12),'Uniform');xlim([1 12]);
+set(gca,'XTick',1:3:12,'XTickLabel',num2str(2.^(1:3:12)'))
+set(99,'Name','RadiusUniform','renderer','painters');
+axesSeparate;printFig(99,'~/Desktop/','eps');
+
+h2s_radii(200,log2space(1,12,12),'Gaussian');xlim([1 12]);
+set(gca,'XTick',1:3:12,'XTickLabel',num2str(2.^(1:3:12)'))
+set(99,'Name','RadiusGaussian','renderer','painters');
+axesSeparate;printFig(99,'~/Desktop/','eps');
+
 end
 
 
