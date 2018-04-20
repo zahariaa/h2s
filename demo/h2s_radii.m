@@ -59,17 +59,17 @@ return
 %% PLOT function
 function plotRadiusEsts(ds,s,target,colors,type)
 
-figure(99);cla;hold on;
+figure(99);clf;hold on;
 for e = 1:ne
    err = (repmat(target,[N 1])-squeeze(s(:,e,:)))./repmat(target,[N 1]);
    plotErrorPatch(log2(ds),log10(err.^2),colors{e});
 end
-ylabel('log_{10} error')
+ylabel('log_{10}(error^2)')
 title([type ' distribution, radius estimation'])
 legend('','expDistPerRad','','median2^{1/d}',...
        '','median','','MVUE-Unif','','MVUE-Gauss',...
        'Location','EastOutside')
-
+set(legend,'Box','off')
 return
 end
 
@@ -77,11 +77,13 @@ end
 h2s_radii(200,log2space(1,12,12),'Uniform',true);
 set(gca,'XLim',[1 12],'XTick',1:3:12,'XTickLabel',num2str(2.^(1:3:12)'))
 set(99,'Name','RadiusUniform','renderer','painters');
+delete(findobj(get(legend,'Children'),'type','patch'))
 axesSeparate;printFig(99,'~/Desktop/','eps');
 
 h2s_radii(200,log2space(1,12,12),'Gaussian',true);
 set(gca,'XLim',[1 12],'XTick',1:3:12,'XTickLabel',num2str(2.^(1:3:12)'))
 set(99,'Name','RadiusGaussian','renderer','painters');
+delete(findobj(get(legend,'Children'),'type','patch'))
 axesSeparate;printFig(99,'~/Desktop/','eps');
 
 end
