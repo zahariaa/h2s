@@ -33,6 +33,7 @@ end
 
 %% Sample & measure radii
 X  = sampleSpheres(n,d,N,type);
+for i = 1:N;   meanDists(i) = mean(pdist(X(:,:,i),'Euclidean'));   end
 radii = sqrt(sum(X.^2,2));
 maxradii = max(radii,[],1);
 % Target to measure estimates against
@@ -41,9 +42,7 @@ elseif strcmpi(type,'uniform' ),   target = 1;
 end
 
 %% Estimators
-% expDistPerRad method
-[~,~,tmp] = arrayfun(@(i) estimateHypersphere(X(:,:,i)),1:N,'UniformOutput',false);
-s(:,1) = cell2mat(tmp);
+s(:,1) = meanDists/expDistPerRad(d);
 s(:,3) = median(radii,1);
 s(:,2) = s(:,3).*2^(1/d);   % median*2^(1/d)
 s(:,4) = maxradii + maxradii/(n*(d-1));                % MVUE for uniform distribution
@@ -72,6 +71,21 @@ legend('','expDistPerRad','','median2^{1/d}',...
 set(legend,'Box','off')
 return
 end
+
+
+%% expDistPerRad function
+function r = expDistPerRad(d)
+% by interpolation among estimates precomputed in QT_expectedDistBetweenTwoPointsWithinHypersphere
+ds= [1 2 3 5 8 15 30 60 100 1000];
+expectedDists = [0.6582    0.9073    1.0261    1.1490    1.2343    1.3181    1.3651    1.3877    1.3993  1.4127];
+if d<1000
+    r = interp1(ds,expectedDists,d);
+else
+    r = sqrt(2);
+end
+return
+end
+
 
 %% DEMOS/DEBUG
 h2s_radii(200,log2space(1,12,12),'Uniform',true);
