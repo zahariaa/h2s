@@ -29,21 +29,16 @@ end
 % optimises L2 cost, corresponds to L1 force equilibrium
 loc = mean(points,1);
 
-%% estimate the expected-distance-to-radius ratio
-% by interpolation among estimates precomputed in QT_expectedDistBetweenTwoPointsWithinHypersphere
-ds= [1 2 3 5 8 15 30 60 100 1000];
-expectedDists = [0.6582    0.9073    1.0261    1.1490    1.2343    1.3181    1.3651    1.3877    1.3993  1.4127];
-if d<1000
-    expDistPerRad = interp1(ds,expectedDists,d);
-else 
-    expDistPerRad = sqrt(2);
+%% estimate radius via skew-based MVUEs
+points = points - repmat(loc,[n 1]);
+radii = sqrt(sum(points.^2,2));
+radskew = skewness(radii);
+if radskew > 0.1 % Assume Gaussian
+   rad = std(points(:))*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2));
+else             % Assume Uniform
+   maxradii = max(radii);
+   rad = maxradii + maxradii*(n^-d);
 end
-
-%% estimate radius
-dists = pdist(points,'Euclidean');
-meanDist = mean(dists);
-
-rad = meanDist/expDistPerRad;
 
 return
 
