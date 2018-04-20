@@ -10,21 +10,19 @@ function [loc,locCI,rad,radCI] = estimateHypersphere(points,nBootstrapSamples)
 %% preparation
 [n,d] = size(points);
 
+%% estimate location
+% optimises L2 cost, corresponds to L1 force equilibrium
+loc = mean(points,1);
+
 %% estimate the expected-distance-to-radius ratio
 % by interpolation among estimates precomputed in QT_expectedDistBetweenTwoPointsWithinHypersphere
 ds= [1 2 3 5 8 15 30 60 100 1000];
 expectedDists = [0.6582    0.9073    1.0261    1.1490    1.2343    1.3181    1.3651    1.3877    1.3993  1.4127];
-
 if d<1000
     expDistPerRad = interp1(ds,expectedDists,d);
 else 
     expDistPerRad = sqrt(2);
 end
-
-%% estimate location
-loc1 = mean(points,1);   % optimises L2 cost, corresponds to L1 force equilibrium
-loc2 = median(points,1); % optimises L1 cost, corresponds to L0 force equilibrium
-loc = mean([loc1; loc2],1);
 
 %% estimate radius
 dists = pdist(points,'Euclidean');
