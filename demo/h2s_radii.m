@@ -2,9 +2,10 @@ function [s,target] = h2s_radii(n,d,type,PLOT)
 
 % Preliminaries
 if ~exist('PLOT','var') || isempty(PLOT),   PLOT = false;   end
-colors = {[1 0 0],[0 1 0],[0 0 1],[1 1 0],[1 0 1]};
+colors = {[1 0 0],[0 1 0],[0 0 1],[1 1 0],[1 0 1],[0 1 1]};
+ne = numel(colors);
 N = 100; % bootstraps
-s = NaN(N,5); % container for sampled estimators
+s = NaN(N,ne); % container for sampled estimators
 
 % Recurse if more than one dimension or number of samples input argument given
 nd = numel(d);
@@ -48,6 +49,7 @@ s(:,2) = s(:,3).*2^(1/d);   % median*2^(1/d)
 s(:,4) = maxradii + maxradii/(n*(d-1));                % MVUE for uniform distribution
 v = std(reshape(X,[n*d N])); % squeeze(mean(std(X,[],2))); %v(i) = max(diag(cov(X(:,:,i))));
 s(:,5) = v*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2)); % MVUE for gaussian distribution
+s(:,6) = maxradii + maxradii*(n^-d);
 
 % Results
 if PLOT,   figure(98);clf;plotEstimators(X,radii,mat2cell(s,100,ones(1,5)),colors);   end
@@ -59,7 +61,7 @@ return
 function plotRadiusEsts(ds,s,target,colors,type)
 
 figure(99);cla;hold on;
-for e = 1:5
+for e = 1:ne
    err = (repmat(target,[N 1])-squeeze(s(:,e,:)))./repmat(target,[N 1]);
    plotErrorPatch(log2(ds),log10(err.^2),colors{e});
 end
