@@ -1,13 +1,13 @@
 function [s,target] = h2s_radii(n,d,type,PLOT)
 
-% Preliminaries
+%% Preliminaries
 if ~exist('PLOT','var') || isempty(PLOT),   PLOT = false;   end
 colors = {[1 0 0],[0 1 0],[0 0 1],[1 1 0],[1 0 1],[0 1 1]};
 ne = numel(colors);
 N = 100; % bootstraps
 s = NaN(N,ne); % container for sampled estimators
 
-% Recurse if more than one dimension or number of samples input argument given
+%% Recurse if more than one dimension or number of samples input argument given
 nd = numel(d);
 nn = numel(n);
 if nd > 1
@@ -31,7 +31,7 @@ if nn > 1
    return
 end
 
-% Sample & measure radii
+%% Sample & measure radii
 X  = sampleSpheres(n,d,N,type);
 radii = sqrt(sum(X.^2,2));
 maxradii = max(radii,[],1);
@@ -40,7 +40,7 @@ if     strcmpi(type,'gaussian'),   target = median(radii(:));
 elseif strcmpi(type,'uniform' ),   target = 1;
 end
 
-% Estimators
+%% Estimators
 % expDistPerRad method
 [~,~,tmp] = arrayfun(@(i) estimateHypersphere(X(:,:,i)),1:N,'UniformOutput',false);
 s(:,1) = cell2mat(tmp);
@@ -51,7 +51,6 @@ v = std(reshape(X,[n*d N])); % squeeze(mean(std(X,[],2))); %v(i) = max(diag(cov(
 s(:,5) = v*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2)); % MVUE for gaussian distribution
 s(:,6) = maxradii + maxradii*(n^-d);
 
-% Results
 if PLOT,   figure(98);clf;plotEstimators(X,radii,mat2cell(s,100,ones(1,5)),colors);   end
 
 return
