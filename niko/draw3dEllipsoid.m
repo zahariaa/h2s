@@ -25,11 +25,13 @@ Z2 = location(3) + reshape(xyz2(3,:),size(Z));
 %% draw 3d ellipsoid
 % figure(1); clf;
 
+hold on;
 try
     h=surf(X2,Y2,Z2,'FaceColor',col,'EdgeColor','none','FaceAlpha',opacity);
 catch
     disp('Could not draw.')
 end
+axis vis3d off
 
     % h=surf(X2,Y2,Z2,'FaceColor',col,'EdgeColor','none');
 % alpha(h,opacity);
