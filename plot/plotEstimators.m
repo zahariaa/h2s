@@ -12,6 +12,13 @@ if ~exist('fig','var') || isempty(fig),   fig = gcf;   end
 if exist('estimates','var') && ~isempty(estimates) && isnumeric(estimates)
    ne = last(size(estimates));
    if ndims(estimates)==3
+      type = 'center'; % Determine estimate type by dimensionality of estimates
+      estimates = squeeze(mat2cell(estimates,d,N,ones(1,ne)));
+      % Estimates mean of center estimates
+      meanCenters = cellfun(@(x) mean(x,2),estimates,'UniformOutput',false);
+      % Quick and dirty radius estimate of center estimates, calculated from means above
+      % NOTE: these are essentially "100% confidence intervals"
+      varCenters  = cellfun(@(x,m) median(sqrt(2*mean((x-repmat(m,[1 N])).^2)))*2^(1/d),estimates,meanCenters);
    else
       type =  'radii'; % Determine estimate type by dimensionality of estimates
       estimates = mat2cell(estimates,N,ones(1,ne));
@@ -35,6 +42,10 @@ if strcmpi(type,'radii')
    for e = 1:numel(estimates)
       plotErrorPatch([estimates{e}(:) estimates{e}(:)] ,[0 1.1*max(h)],colors{e});
    end
+else
+   for e = 1:numel(estimates)
+      plotErrorPatch(repmat(log10(sum((varToHist - estimates{e}).^2)),[2 1])',[0 1],colors{e});
+   end
 end
 xlabel('L2 norm')
 title({type; sprintf('%u points in %u dimensions',n,d)});
@@ -45,6 +56,10 @@ for e = 1:numel(estimates)
    if strcmpi(type,'radii')
       plot([0 mean(estimates{e}(:))]./sqrt(2),...
            [0 mean(estimates{e}(:))]./sqrt(2),'Color',colors{e},'LineWidth',16);
+   elseif strcmpi(type,'center')
+      plot(0,0,'kx')
+      plot(meanCenters{e}(1),meanCenters{e}(2),'x','Color',colors{e});
+      drawCircle(meanCenters{e}(1:2),varCenters(e),colors{e});
    end
 end
 axis equal square off
