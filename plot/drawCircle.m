@@ -48,11 +48,11 @@ else            opts = {'LineWidth',border,'FaceAlpha',alpha,'EdgeColor',color};
 end
 
 t = linspace(0,2*pi,n);
-XY = radius*[cos(t(:)) sin(t(:))] + repmat(center,[n 1]);
+XY = radius*[cos(t(:)) sin(t(:))] + repmat(center(:)',[n 1]);
+hold on
 h = fill(XY(:,1),XY(:,2),color);
 set(h,opts{:});
 axis equal off
-hold on
 
 return
 
