@@ -3,7 +3,7 @@ function [s,target] = h2s_radii(n,d,type,PLOT)
 %% Preliminaries
 if ~exist('PLOT','var') || isempty(PLOT),   PLOT = false;   end
 colors = {[1 0 0],[0 1 0],[0 0 1],[1 1 0],[1 0 1],[0 1 1]};
-ne = numel(colors);
+ne = 5;%numel(colors);
 N = 100; % bootstraps
 s = NaN(N,ne); % container for sampled estimators
 
@@ -45,10 +45,9 @@ end
 s(:,1) = meanDists/expDistPerRad(d);
 s(:,3) = median(radii,1);
 s(:,2) = s(:,3).*2^(1/d);   % median*2^(1/d)
-s(:,4) = maxradii + maxradii/(n*(d-1));                % MVUE for uniform distribution
+s(:,4) = maxradii + maxradii*(n^-d);                   % MVUE for uniform distribution
 v = std(reshape(X,[n*d N])); % squeeze(mean(std(X,[],2))); %v(i) = max(diag(cov(X(:,:,i))));
 s(:,5) = v*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2)); % MVUE for gaussian distribution
-s(:,6) = maxradii + maxradii*(n^-d);
 
 if PLOT,   figure(98);clf;plotEstimators(X,radii,mat2cell(s,100,ones(1,5)),colors);   end
 
