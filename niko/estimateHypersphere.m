@@ -6,9 +6,24 @@ function [loc,locCI,rad,radCI] = estimateHypersphere(points,nBootstrapSamples)
 % uses bootstrap resampling of the points to estimate 95% confidence
 % intervals for both.
 
-
 %% preparation
 [n,d] = size(points);
+
+%% Bootstrap via recursion
+if exist('nBootstrapSamples','var') && nBootstrapSamples > 1
+   [loc,~,rad] = estimateHypersphere(points); % All-data estimate
+   % Bootstrap
+   locs = NaN(nBoostrapSamples,d);
+   rads = NaN(nBoostrapSamples,1);
+   for bootstrapI = 1:nBootstrapSamples
+      bsIs = ceil(rand(n,1)*n); % boostrap sample indices
+      [locs(bootstrapI,:),~,rads(bootstrapI)] = estimateHypersphere(points(bsIs,:));
+   end
+   locCI = prctile(locs,[2.5 97.5]);
+   radCI = prctile(rads,[2.5 97.5]);
+   return
+else  locCI = [];   radCI = [];
+end
 
 %% estimate location
 % optimises L2 cost, corresponds to L1 force equilibrium
@@ -30,29 +45,5 @@ meanDist = mean(dists);
 
 rad = meanDist/expDistPerRad;
 
-%% bootstrap confidence intervals
-dists_sq = squareform(dists);
-
-loc_bs = nan(nBootstrapSamples,d);
-rad_bs = nan(nBootstrapSamples,1);
-
-for bootstrapI = 1:nBootstrapSamples
-    
-    % boostrap sample indices
-    bsIs = ceil(rand(n,1)*n);
-    
-    % location estimate
-    points_bs = points(bsIs,:);
-    loc1 = mean(points_bs,1);   % optimises L2 cost, corresponds to L1 force equilibrium
-    loc2 = median(points_bs,1); % optimises L1 cost, corresponds to L0 force equilibrium
-    loc_bs(bootstrapI) = mean([loc1; loc2],1);
-    
-    % radius estimate
-    dists_sq_bs = dists_sq(bsIs,bsIs); showRDMs(dists_sq_bs);
-    rad_bs(bootstrapI) = mean(squareform(dists_sq_bs))/expDistPerRad;
-    
-end
-
-locCI = prctile(loc_bs,[2.5 97.5]);
-radCI = prctile(loc_bs,[2.5 97.5]);
+return
 
