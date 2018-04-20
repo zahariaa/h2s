@@ -13,7 +13,7 @@ if nd > 1
    s = repmat(s,[1 1 nd]);
    target = NaN(1,nd);
    for ix = 1:nd
-      [s(:,:,ix),target(ix)] = h2s_radii(n,d(ix),type);
+      [s(:,:,ix),target(ix)] = h2s_radii(n,d(ix),type,PLOT);
       if PLOT,   plotRadiusEsts(d,s,target,colors,type);   end
       xlabel('dimensions')
    end
@@ -23,7 +23,7 @@ if nn > 1
    s = repmat(s,[1 1 nn]);
    target = NaN(1,nn);
    for ix = 1:nn
-      [s(:,:,ix),target(ix)] = h2s_radii(n(ix),d,type);
+      [s(:,:,ix),target(ix)] = h2s_radii(n(ix),d,type,PLOT);
       if PLOT,   plotRadiusEsts(n,s,target,colors,type);   end
       xlabel('samples')
    end
