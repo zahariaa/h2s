@@ -2,11 +2,11 @@ function h=draw3dEllipsoid(location,covariance,col,n,opacity)
 
 
 %% defaults
-if ~exist('location','var')||isempty(location), col = [0.5 0.5 0.5]; end
 if ~exist('col','var')||isempty(col), col = [0.5 0.5 0.5]; end
 if ~exist('covariance','var')||isempty(covariance), covariance = [1 0 0; 0 1 0; 0 0 1]; end
 if ~exist('n','var')||isempty(n), n=50; end
 if ~exist('opacity','var')||isempty(opacity), opacity=0.5; end
+if ~exist('location'  ,'var') || isempty(location  ), location = [0 0 0];  end
 
 
 %% find principal axes and corresponding radii
