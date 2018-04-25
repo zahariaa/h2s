@@ -36,9 +36,19 @@ dvarrad = sqrt(d)*var(radii/median(radii));
 if dvarrad > 0.2 % Assume Gaussian
    rad = std(points(:))*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2));
 else             % Assume Uniform
-   maxradii = max(radii);
-   rad = maxradii + maxradii*(n^-d);
+   rad = stdPer(d)*std(radii) + median(radii);
 end
 
 return
+end
+
+
+%% stdPer
+function v = stdPer(d)
+
+expectedStds = [1.2733    1.0115    0.8796    0.8107    0.8384    0.8638    0.9579    1.0403    1.1938  1.4268    1.8384    2.4485];
+v = interp1(2.^(1:12),expectedStds,d);
+return
+end
+
 
