@@ -1,4 +1,4 @@
-function [s,target] = h2s_radii(n,d,type,PLOT)
+function [s,target,ev] = h2s_radii(n,d,type,PLOT)
 
 %% Preliminaries
 if ~exist('PLOT','var') || isempty(PLOT),   PLOT = false;   end
@@ -14,7 +14,7 @@ if nd > 1
    s = repmat(s,[1 1 nd]);
    target = NaN(1,nd);
    for ix = 1:nd
-      [s(:,:,ix),target(ix)] = h2s_radii(n,d(ix),type,PLOT);
+      [s(:,:,ix),target(ix),ev(:,ix)] = h2s_radii(n,d(ix),type,PLOT);
       if PLOT,   plotRadiusEsts(d,s,target,colors,type);   end
       xlabel('dimensions')
    end
@@ -48,7 +48,16 @@ end
 s(:,1) = meanDists/expDistPerRad(d);
 s(:,3) = median(radii,1);
 s(:,2) = s(:,3).*2^(1/d);   % median*2^(1/d)
-s(:,4) = maxradii + maxradii*(n^-d);                   % MVUE for uniform distribution
+% s(:,3) = s(:,3) + stdPer(d)*vectify(std(radii));
+ev=NaN(N,1);
+% cv = cvindex(n,10);
+% for i = 1:N
+%    tmpCenter = mean(cell2mat_concat(cv.crossvalidate(@mean,X(:,:,i))));
+%    tmpRadii = sqrt(sum((X(:,:,i) - repmat(tmpCenter,[n 1])).^2,2));
+%    s(i,3) = median(tmpRadii) + stdPer(d)*std(tmpRadii);
+%    ev(i) = std(tmpRadii/median(tmpRadii));
+% end
+s(:,4) = maxradii - maxradii*(n^-d);                   % MVUE for uniform distribution
 v = std(reshape(Xc,[n*d N])); % squeeze(mean(std(X,[],2))); %v(i) = max(diag(cov(X(:,:,i))));
 s(:,5) = v*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2)); % MVUE for gaussian distribution
 [~,~,tmp] = arrayfun(@(i) estimateHypersphere(X(:,:,i)),1:N,'UniformOutput',false);
@@ -74,6 +83,20 @@ legend('','expDistPerRad','','median2^{1/d}',...
        '','median','','MVUE-Unif','','MVUE-Gauss',...
        'Location','EastOutside')
 set(legend,'Box','off')
+return
+end
+
+
+%% stdPer
+function v = stdPer(d)
+
+% expectedStds = [1.2376    0.9772    0.8577    0.7869    0.7336    0.6689    0.5802    0.4274    0.2904   0.1846    0.1071    0.0430];
+expectedStds = [1.2733    1.0115    0.8796    0.8107    0.8384    0.8638    0.9579    1.0403    1.1938  1.4268    1.8384    2.4485];
+v = interp1(2.^(1:12),expectedStds,d);
+% d = log2(d);
+% v = -0.1*d+1.2;
+% v = 0.00049*d^4 - 0.013*d^3 + 0.12*d^2 - 0.51*d + 1.6;
+
 return
 end
 
