@@ -23,8 +23,10 @@ switch lodim
 end
 
 %% Draw loop
-               figure(1001);set(gcf,'Name',sprintf('%usamples' ,n),'Renderer','painters');
-if lodim==2;   figure(1002);set(gcf,'Name',sprintf('%usamplesD',n),'Renderer','painters');   end
+   figure(1001);    set(gcf,'Name',sprintf('%usamples' ,n),'Renderer','painters');
+if lodim==2
+   figure(1002);clf;set(gcf,'Name',sprintf('%usamplesD',n),'Renderer','painters');
+end
 for t = 1:2
    i = 0;
    for d = ds
