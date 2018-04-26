@@ -30,7 +30,7 @@ end
 
 H = hyperdist2dist(data(:,:,1)); % for visualization
 
-%% PLOT
+%% PLOT L2 norms
 subplot(1,3,2:3);hold on;
 if strcmpi(type,'radii')
    % make CDF
@@ -50,6 +50,7 @@ end
 xlabel('L2 norm')
 title({type; sprintf('%u points in %u dimensions',n,d)});
 
+%% PLOT first 2 dimensions and estimates
 subplot(2,3,1);hold on;
 plot(data(:,1,1),data(:,2,1),'ko');
 for e = 1:numel(estimates)
@@ -67,6 +68,7 @@ if strcmpi(type,'radii');   drawCircle;   end
 title({'r=expDistPerRad method,';
        'g=median*2^{1/d}, b=median' })
 
+%% PLOT hyperdist2dist and estimates
 subplot(2,3,4);hold on;
 plot(H(:,1),H(:,2),'ko');
 for e = 1:numel(estimates)
