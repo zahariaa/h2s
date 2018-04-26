@@ -32,8 +32,8 @@ loc = mean(points,1);
 %% estimate radius via skew-based MVUEs
 points = points - repmat(loc,[n 1]);
 radii = sqrt(sum(points.^2,2));
-dvarrad = sqrt(d)*var(radii/median(radii));
-if dvarrad > 0.2 % Assume Gaussian
+dvarrad = log2(std(radii/median(radii)))+log2(d)/1.5;
+if dvarrad > -0.5 % Assume Gaussian
    rad = std(points(:))*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2));
 else             % Assume Uniform
    rad = stdPer(d)*std(radii) + median(radii);
