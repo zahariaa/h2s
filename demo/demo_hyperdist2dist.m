@@ -1,11 +1,12 @@
-function demo_hyperdist2dist(lodim)
-% demo_hyperdist2dist(lodim=2,FAST=true)
+function demo_hyperdist2dist(lodim,JITTER,FAST)
+% demo_hyperdist2dist(lodim=2,JITTER=false,FAST=true)
 % Demo visualizing high dimensional vector magnitudes in lodim (e.g., 2D),
 % for Gaussian and Uniform n-ball distributions of varying dimensionality
 % 
 % 2018-04-19 AZ Created
 
 %% Preliminaries
+if ~exist('JITTER','var') || isempty(JITTER),   JITTER = false;  end
 if ~exist('FAST'  ,'var') || isempty(FAST  ),   FAST   = true;   end
 if FAST, IMSIZE = [200 200]; 
 else     IMSIZE = [1800 1800];
@@ -34,6 +35,8 @@ for t = 1:2
          case 2,   X = randn(    bign,d);
                    r = sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2));
       end
+      if JITTER,   X = X - repmat(mean(X(1:n,:)),[bign 1]);      end
+
       H = hyperdist2dist(X,lodim);
       figure(1001);subplot(3,4,i+(t-1)*4);
       switch lodim
