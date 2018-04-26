@@ -34,7 +34,10 @@ end
 %% Sample & measure radii
 X  = sampleSpheres(n,d,N,type);
 for i = 1:N;   meanDists(i) = mean(pdist(X(:,:,i),'Euclidean'));   end
-radii = sqrt(sum(X.^2,2));
+
+% Center X
+Xc = X - repmat(mean(X,1),[n 1 1]);
+radii = sqrt(sum(Xc.^2,2));
 maxradii = max(radii,[],1);
 % Target to measure estimates against
 if     strcmpi(type,'gaussian'),   target = median(radii(:));
@@ -46,13 +49,13 @@ s(:,1) = meanDists/expDistPerRad(d);
 s(:,3) = median(radii,1);
 s(:,2) = s(:,3).*2^(1/d);   % median*2^(1/d)
 s(:,4) = maxradii + maxradii*(n^-d);                   % MVUE for uniform distribution
-v = std(reshape(X,[n*d N])); % squeeze(mean(std(X,[],2))); %v(i) = max(diag(cov(X(:,:,i))));
+v = std(reshape(Xc,[n*d N])); % squeeze(mean(std(X,[],2))); %v(i) = max(diag(cov(X(:,:,i))));
 s(:,5) = v*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2)); % MVUE for gaussian distribution
 [~,~,tmp] = arrayfun(@(i) estimateHypersphere(X(:,:,i)),1:N,'UniformOutput',false);
 s(:,6) = cell2mat(tmp);
 
-if PLOT,   figure(98);clf;plotEstimators(X,radii,mat2cell(s,100,ones(1,5)),colors);   end
 
+if PLOT,   figure(98);clf;plotEstimators(Xc,radii/target,s/target,colors);   end
 
 return
 
