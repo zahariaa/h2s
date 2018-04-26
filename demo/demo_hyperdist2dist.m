@@ -56,7 +56,7 @@ for t = 1:2
       % Histogram of radii
       radii = sqrt(sum(X.^2,2));
       maxbin = max(radii/r)+0.2;
-      bins = 0:0.1:maxbin;
+      bins = 0:0.01:maxbin;
       h = hist(radii/r,bins);
       figure(1001); subplot(3,4,i+8); hold on;
       plot([-flip(bins) bins],[flip(h/sum(h)) h/sum(h)],'Color',colors{t})
