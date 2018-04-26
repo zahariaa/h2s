@@ -13,8 +13,8 @@ function [loc,locCI,rad,radCI] = estimateHypersphere(points,nBootstrapSamples)
 if exist('nBootstrapSamples','var') && nBootstrapSamples > 1
    [loc,~,rad] = estimateHypersphere(points); % All-data estimate
    % Bootstrap
-   locs = NaN(nBoostrapSamples,d);
-   rads = NaN(nBoostrapSamples,1);
+   locs = NaN(nBootstrapSamples,d);
+   rads = NaN(nBootstrapSamples,1);
    for bootstrapI = 1:nBootstrapSamples
       bsIs = ceil(rand(n,1)*n); % boostrap sample indices
       [locs(bootstrapI,:),~,rads(bootstrapI)] = estimateHypersphere(points(bsIs,:));
