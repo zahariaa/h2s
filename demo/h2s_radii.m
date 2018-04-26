@@ -60,8 +60,7 @@ ev=NaN(N,1);
 s(:,4) = maxradii - maxradii*(n^-d);                   % MVUE for uniform distribution
 v = std(reshape(Xc,[n*d N])); % squeeze(mean(std(X,[],2))); %v(i) = max(diag(cov(X(:,:,i))));
 s(:,5) = v*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2)); % MVUE for gaussian distribution
-[~,~,tmp] = arrayfun(@(i) estimateHypersphere(X(:,:,i)),1:N,'UniformOutput',false);
-s(:,6) = cell2mat(tmp);
+s(:,6) = arrayfun(@(i) undeal(3,@() estimateHypersphere(X(:,:,i))),1:N);
 
 
 if PLOT,   figure(98);clf;plotEstimators(Xc,radii/target,s/target,colors);   end
