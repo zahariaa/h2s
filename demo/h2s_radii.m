@@ -40,7 +40,7 @@ Xc = X - repmat(mean(X,1),[n 1 1]);
 radii = sqrt(sum(Xc.^2,2));
 maxradii = max(radii,[],1);
 % Target to measure estimates against
-if     strcmpi(type,'gaussian'),   target = median(radii(:));
+if     strcmpi(type,'gaussian'),   target = sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2));%median(radii(:));
 elseif strcmpi(type,'uniform' ),   target = 1;
 end
 
