@@ -1,17 +1,21 @@
 function demo_hyperdist2dist(lodim)
-% demo_hyperdist2dist(lodim=2)
+% demo_hyperdist2dist(lodim=2,FAST=true)
 % Demo visualizing high dimensional vector magnitudes in lodim (e.g., 2D),
 % for Gaussian and Uniform n-ball distributions of varying dimensionality
 % 
 % 2018-04-19 AZ Created
 
 %% Preliminaries
-ds = 2.^(1:2:8); n = 100;
-types = {'Uniform','Gaussian'};
-colors = {[0 0 0],[1 0 0]};
+if ~exist('FAST'  ,'var') || isempty(FAST  ),   FAST   = true;   end
+if FAST, IMSIZE = [200 200]; 
+else     IMSIZE = [1800 1800];
+end
 if ~exist('lodim','var') || isempty(lodim),   lodim = 2;
 elseif lodim==3                               ds(1) = 3;
 end
+ds = 2.^(1:2:8); n = 100;
+types = {'Uniform','Gaussian'};
+colors = {[0 0 0],[1 0 0]};
 switch lodim
    case 2,  bign = 10000;
    case 3,  bign = n;
@@ -43,7 +47,7 @@ for t = 1:2
       title(sprintf('%uD %s',d,types{t}))
       if lodim==2 % 2D "density" histogram of transparent points
          figure(1002); subplot(3,4,i+(t-1)*4);
-         scatterDensity(H,[1800 1800]/2,true); axis equal off;
+         scatterDensity(H,IMSIZE,true,0.01); axis equal off;
          title(sprintf('%uD %s',d,types{t}))
       end
       % Histogram of radii
