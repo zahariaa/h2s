@@ -3,7 +3,7 @@ function s = h2s_center(n,d,type,PLOT)
 %% Preliminaries
 if ~exist('PLOT','var') || isempty(PLOT),   PLOT = false;   end
 colors = {[1 0 0],[0 1 0],[0 0 1],[1 1 0],[1 0 1],[0 1 1]};
-ne = 3;
+ne = 4;
 N = 100; % bootstraps
 
 %% Recurse if more than one dimension or number of samples input argument given
@@ -34,6 +34,10 @@ X = sampleSpheres(n,d,N,type);
 s(:,:,1) = mean(X);
 s(:,:,2) = median(X);
 s(:,:,3) = mean(s(:,:,1:2),3);
+cv = cvindex(n,10);
+for i = 1:N
+   s(:,i,4) = mean(cell2mat_concat(cv.crossvalidate(@mean,X(:,:,i))));
+end
 % try
 % for i = 1:N
 %    K = convhulln(X(:,:,i));
@@ -61,7 +65,7 @@ end
 ylabel('log_{10}(error^2)')
 title([type ' distribution, center estimation'])
 legend('','mean','','median',...
-       '','mean of mean & median','','convhull mean',...
+       '','mean of mean & median','','cv mean',...
        'Location','EastOutside')
 set(legend,'Box','off')
 return
