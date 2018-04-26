@@ -36,9 +36,9 @@ if strcmpi(type,'radii')
    % make CDF
    varToHist = sort(varToHist,1,'ascend');
    cdf = cumsum(~~varToHist,1)/size(data,1);
-   [h,c]=hist(varToHist(:));bar(c,h);
-   %[h,c]=hist(varToHist(:),numel(varToHist)/100);barh(c,h);
-   plot(squeeze(varToHist),1.1*max(h)*squeeze(cdf),'k-')
+   %[h,c]=hist(varToHist(:));bar(c,h);
+   [h,c]=hist(varToHist(:),numel(varToHist)/100);bar(c,h);
+   plot(squeeze(varToHist),1.1*max(h)*squeeze(cdf),'r-')
    for e = 1:numel(estimates)
       plotErrorPatch([estimates{e}(:) estimates{e}(:)] ,[0 1.1*max(h)],colors{e});
    end
