@@ -26,8 +26,7 @@ else  locCI = [];   radCI = [];
 end
 
 %% estimate location
-% optimises L2 cost, corresponds to L1 force equilibrium
-loc = mean(points,1);
+loc = mean(points,1); % optimises L2 cost, corresponds to L1 force equilibrium
 
 %% estimate radius via skew-based MVUEs
 points = points - repmat(loc,[n 1]);
