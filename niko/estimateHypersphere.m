@@ -34,7 +34,7 @@ points = points - repmat(loc,[n 1]);
 radii = sqrt(sum(points.^2,2));
 dvarrad = log2(std(radii/median(radii)))+log2(d)/1.5;
 if dvarrad > -0.5 % Assume Gaussian
-   rad = std(points(:))*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2));
+   rad = stdEst(points)*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2));
 else             % Assume Uniform
    rad = stdPer(d)*std(radii) + median(radii);
 end
@@ -43,9 +43,16 @@ return
 end
 
 
-%% stdPer
-function v = stdPer(d)
+%% auxiliary functions
+function s = stdEst(X)
+% Estimate standard deviation by calculating variance along shorter matrix dimension
+% (for numerical accuracy)
+[n,d] = size(X);
+s = sqrt(sum(var(X,[],maxix([d n])))/(max([n d])-1));
+return
+end
 
+function v = stdPer(d)
 expectedStds = [1.2733    1.0115    0.8796    0.8107    0.8384    0.8638    0.9579    1.0403    1.1938  1.4268    1.8384    2.4485];
 v = interp1(2.^(1:12),expectedStds,d);
 return
