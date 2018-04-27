@@ -1,10 +1,12 @@
-function radius_variance
+function radius_variance(noise)
 % radius_variance()
 % 
 % Demo comparing variance of measured radii as a function
 % of dimensionality, for uniform n-ball and gaussian distributions
 % 
 % 2018-04-19 AZ Created
+
+if ~exist('noise','var') || isempty(noise),   noise = 0;   end
 
 n = 20;
 N = 100;
@@ -21,13 +23,14 @@ for i = 1:9
          case 2,   target = targetg;
       end
       X = sampleSpheres(n,d,N,types{t});
+      if noise,   X = X + noise*randn(size(X))/targetg;   end
       radii = squeeze(sqrt(sum(X.^2,2)));
       rv(t,i,:) = var(radii/target);
    end
 end
 
 
-figure;set(gcf,'Name','radiusvariance');hold on;
+figure;set(gcf,'Name',sprintf('radiusvariance_%1.3f',noise));hold on;
 plotErrorPatch(1:9,log10(squeeze(rv(1,:,:)))',[0 0 0])
 plotErrorPatch(1:9,log10(squeeze(rv(2,:,:)))',[1 0 0])
 legend('','Uniform','','Gaussian','Location','SouthWest')
