@@ -13,13 +13,15 @@ types = {'Uniform','Gaussian'};
 rv = NaN(2,9,N);
 
 for i = 1:9
+   d = 2^i;
+   targetg = sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2));
    for t = 1:2
-      X = sampleSpheres(n,2^i,N,types{t});
-      radii = squeeze(sqrt(sum(X.^2,2)));
       switch t
          case 1,   target = 1;
-         case 2,   target = sqrt(2)*exp(gammaln(((2^i)+1)/2)-gammaln((2^i)/2));
+         case 2,   target = targetg;
       end
+      X = sampleSpheres(n,d,N,types{t});
+      radii = squeeze(sqrt(sum(X.^2,2)));
       rv(t,i,:) = var(radii/target);
    end
 end
