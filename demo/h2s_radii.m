@@ -55,6 +55,12 @@ v = std(reshape(Xc,[n*d N])); % squeeze(mean(std(X,[],2))); %v(i) = max(diag(cov
 s(:,5) = v*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2)); % MVUE for gaussian distribution
 s(:,6) = arrayfun(@(i) undeal(3,@() estimateHypersphere(X(:,:,i))),1:N);
 
+%% Testing ML joint center & radius estimator
+fcn = @(m,X) sqrt(sum((X - repmat(m(:)',[n 1])).^2,2));
+opts = optimoptions('fminunc','TolX',1e-8,'TolFun',1e-8,'Algorithm','trust-region');
+mest = arrayfun(@(i) fminunc(@(m) max(fcn(m,Xc(:,:,i))),mean(Xc(:,:,i)),opts),1:N,'UniformOutput',false);
+maxradii = arrayfun(@(i) max(fcn(mest{i},Xc(:,:,i))),1:N)';
+s(:,3) = maxradii + maxradii*(n^-d);
 
 if PLOT,   figure(98);clf;plotEstimators(Xc,radii/target,s/target,colors);   end
 
@@ -72,7 +78,7 @@ end
 ylabel('log_{10}(error^2)')
 title([type ' distribution, radius estimation'])
 legend('','expDistPerRad','','median2^{1/d}',...
-       '','median','','MVUE-Unif','','MVUE-Gauss','','EH',...
+       '','Joint ML','','MVUE-Unif','','MVUE-Gauss','','EH',...
        'Location','EastOutside')
 set(legend,'Box','off')
 return
