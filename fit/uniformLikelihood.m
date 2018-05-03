@@ -10,7 +10,11 @@ center = rad_center(2:end);
 volsphere = ((rad^d)*(pi^(d/2)))/gamma((d+1)/2);
 radii = sqrt(sum((X - repmat(center(:)',[n 1])).^2,2));
 
-L = sum(radii<=rad)/volsphere;
+if any(radii>rad)
+   L = 0;
+else
+   L = n/volsphere;
+end
 
 return
 
