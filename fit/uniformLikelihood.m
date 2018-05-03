@@ -18,6 +18,7 @@ return
 %% DEBUG
 n=200;d=8;N=1;X=sampleSpheres(n,d,N,'Uniform');
 rs = 0.5:0.01:2;
+est = NaN(100,numel(rs),100);
 for b = 1:100 %bootstrap 
    stationarycounter(b,100);
    cnoise = randn(100,d);
