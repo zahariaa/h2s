@@ -1,4 +1,4 @@
-function [posteriorSamplesLoc,posteriorSamplesRad,logLikelihoods] = inferHyperspherePosterior(points, nSamples, monitor)
+function [posteriorSamplesLoc,posteriorSamplesRad,logLikelihoods] = inferHyperspherePosterior(points, nSamples, monitor,VERBOSE)
 
 % FUNCTION
 % Given data points in argument 'points', this function infers the
@@ -32,6 +32,7 @@ function [posteriorSamplesLoc,posteriorSamplesRad,logLikelihoods] = inferHypersp
 %% preparations
 if ~exist('nSamples','var'), nSamples = 1000; end
 if ~exist('monitor','var'), monitor = true; end
+if ~exist('VERBOSE','var') || isempty(VERBOSE), VERBOSE = false; end
 
 [nPoints,nDim] = size(points);
 
@@ -84,15 +85,15 @@ while true
                 nStableCycles = 0;
                 proposalStdLoc = proposalStdLoc/f;
                 proposalStdRad = proposalStdRad/f;
-                disp(any2str('MCMC: accept rate = ',nAccepted/sampleI,'. Reducing step size.'));
+                if VERBOSE, disp(any2str('MCMC: accept rate = ',nAccepted/sampleI,'. Reducing step size.')); end
             elseif 0.5<acceptRate
                 nStableCycles = 0;
                 proposalStdLoc = proposalStdLoc*f;
                 proposalStdRad = proposalStdRad*f;
-                disp(any2str('MCMC: accept rate = ',nAccepted/sampleI,'. Increasing step size.'));
+                if VERBOSE, disp(any2str('MCMC: accept rate = ',nAccepted/sampleI,'. Increasing step size.')); end
             else
                 nStableCycles = nStableCycles + 1;
-                disp(any2str('MCMC: step-size tuning ',nStableCycles,'/5 successful.'))
+                if VERBOSE, disp(any2str('MCMC: step-size tuning ',nStableCycles,'/5 successful.')); end
             end
 
             if nStableCycles == 5
@@ -105,7 +106,7 @@ while true
     else
         % freeze step size         
         if sampleI > nSamples, break; end
-        if mod(sampleI,10000)==0,
+        if mod(sampleI,10000)==0 && VERBOSE,
             disp([num2str(round(sampleI/nSamples*100)),'% done']);
         end
     end
@@ -131,7 +132,7 @@ if ~monitor, return; end
 
 % show joint posterior for radius and location (dimension 1)
 h=figure(100); clf; set(h,'Color','w');
-disp(['accepted ',num2str(nAccepted),' proposals']);
+if VERBOSE, disp(['accepted ',num2str(nAccepted),' proposals']); end
 
 subplot(2,1,1); 
 plot(posteriorSamplesLoc(:,1),posteriorSamplesRad,'k.','MarkerSize',1); hold on;
