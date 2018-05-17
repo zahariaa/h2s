@@ -49,10 +49,12 @@ s(:,1) = meanDists/expDistPerRad(d);
 s(:,3) = median(radii,1);
 s(:,2) = s(:,3).*2^(1/d);   % median*2^(1/d)
 % s(:,3) = s(:,3) + stdPer(d)*vectify(std(radii));
-s(:,4) = maxradii + maxradii*(n^-d);                   % MVUE for uniform distribution
+% MVUEs
+if     strcmpi(type,'uniform' ),   s(:,4) = maxradii + maxradii*(n^-d);
+elseif strcmpi(type,'gaussian'),   s(:,4) = std(reshape(Xc,[n*d N]))*target;
+end
+
 ev=NaN(N,1);
-v = std(reshape(Xc,[n*d N])); % squeeze(mean(std(X,[],2))); %v(i) = max(diag(cov(X(:,:,i))));
-s(:,5) = v*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2)); % MVUE for gaussian distribution
 s(:,6) = arrayfun(@(i) undeal(3,@() estimateHypersphere(X(:,:,i))),1:N);
 
 %% Testing ML joint center & radius estimator
@@ -78,7 +80,7 @@ end
 ylabel('log_{10}(error^2)')
 title([type ' distribution, radius estimation'])
 legend('','expDistPerRad','','median2^{1/d}',...
-       '','Joint ML','','MVUE-Unif','','MVUE-Gauss','','EH',...
+       '','Joint ML','','MVUE','','MCMC','','EH',...
        'Location','EastOutside')
 set(legend,'Box','off')
 return
