@@ -46,10 +46,14 @@ return
 
 %% DeBUG
 nc = 100; nr = 151; n = 200; N = 100;
-est = NaN(nc,nr,N,10);
+est = NaN(nc,nr,N,10); rs = linspace(0.5,3,nr);
 for d = 2:2:20
    est(:,:,:,d/2) = demo_uniformLikelihood(n,d,N);
-   [a,b]=ind2sub([size(est,1) size(est,2)],maxix(nansum(nansum(est(:,:,:,d/2),3))));
-   goodr(d/2)=rs(b);
+   goodr(d/2)=rs(maxix(nansum(nansum(est(:,:,:,d/2),3))));
+   [a,b]=ind2sub([size(est,1) size(est,2)],maxix(vectify(nansum(est(:,:,:,d/2),3))));
+   bestr(d/2)=rs(b);
 end
+figure;hold on;plot(2:2:20,bestr);plot(2:2:20,goodr,'g-')
+set(gcf,'Name','goodbestrs'); printFig;
+
 
