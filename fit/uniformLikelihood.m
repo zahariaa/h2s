@@ -1,4 +1,5 @@
 function L = uniformLikelihood(rad_center,X)
+% Prob(data=X | params=rad_center)
 % rad_center: first element is radius, rest is center
 
 %% Preliminaries

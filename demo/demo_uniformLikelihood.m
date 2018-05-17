@@ -20,7 +20,7 @@ for b = 1:N
    cs = repmat(mean(X),[nc 1]) + cnoise;
    for i = 1:nc
       for j = 1:nr
-est(i,j,b) = log(uniformLikelihood([rs(j) cs(i,:)],X));
+         est(i,j,b) = log(uniformLikelihood([rs(j) cs(i,:)],X));
       end
    end
 end
