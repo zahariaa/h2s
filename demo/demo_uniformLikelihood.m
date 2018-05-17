@@ -29,14 +29,14 @@ est(est == 0  ) = NaN;
 
 %% Plot
 figure;plot(rs,nansum(nansum(est,3)));
-set(gcf,'Name',sprintf('%uD-UniformLikeSum',d));
+set(gcf,'Name',sprintf('UniformLikeSum_%uD',d));
 xlabel('radius');ylabel('log likelihood')
 figure;imagesc(rs,cscales,nansum(est,3))
-set(gcf,'Name',sprintf('%uD-UniformLike',d));
+set(gcf,'Name',sprintf('UniformLike_%uD',d));
 xlabel('radius'); ylabel('distance from best center')
 title('log likelihood'); colorbar
 figure;plot(rs,nansum(est,3)');
-set(gcf,'Name',sprintf('%uD-UniformLikeMargs',d));
+set(gcf,'Name',sprintf('UniformLikeMargs_%uD',d));
 xlabel('radius');ylabel('log likelihood')
 
 printFig(gcf-2:gcf,[],'pdf')
