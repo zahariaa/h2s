@@ -17,6 +17,8 @@ scenarios = [1 3:6]; %[1 2 3];
 dimLow    = 2; % 2=showCircles, 3=showSpheres
 nScen     = numel(scenarios);
 
+
+PLOTALL = false;
 psFilespec = '';
 pdfFilespec = '';
 
@@ -32,8 +34,9 @@ if find(scenarios==1)
     nsDim = [1 2 3 5 10 20 40 200]
 
     for nPointsPerCat = [40]
-        h=figure(2001);clf;
-        set(h,'Name','scenario 1: two touching equal-radius hyperspheres in 1-200 dimensions');
+        if PLOTALL, h=figure(2001);clf;
+           set(h,'Name','scenario 1: two touching equal-radius hyperspheres in 1-200 dimensions');
+        end
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
             points = randsphere(2*nPointsPerCat,nDim,radius);
@@ -43,11 +46,11 @@ if find(scenarios==1)
             categories.labels  = {'category 1','category 2'};
             categories.colors  = [0.8 0 0; 0 0 0];
 	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
-
+            if PLOTALL
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
-
+            end
             iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
@@ -61,8 +64,9 @@ if find(scenarios==2)
     nsDim = [1 2 3 5 10 20 40 200];
 
     for nPointsPerCat = [20 100]
-        h=figure(2002);clf;
+        if PLOTALL, h=figure(2002);clf;
         set(h,'Name','scenario 2: two identical hyperspheres in 1-200 dimensions');
+        end
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
             points = nan(2*nPointsPerCat,nDim);
@@ -74,11 +78,11 @@ if find(scenarios==2)
             categories.labels  = {'category 1','category 2'};
             categories.colors  = [0.8 0 0; 0 0 0];
 	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
-
+            if PLOTALL
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
-
+            end
             iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
@@ -93,8 +97,9 @@ if find(scenarios==3)
     nsDim = [1 2 3 5 10 20 40 200];
 
     for nPointsPerCat = [50]
-        h=figure(2003);clf;
+        if PLOTALL, h=figure(2003);clf;
         set(h,'Name','scenario 3: two concentric hyperspheres of different radius in 1-200 dimensions');
+        end
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
             points = nan(2*nPointsPerCat,nDim);
@@ -105,11 +110,11 @@ if find(scenarios==3)
             categories.labels  = {'category 1','category 2'};
             categories.colors  = [0.8 0 0; 0 0 0];
 	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
-
+            if PLOTALL
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
-
+            end
             iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
@@ -123,8 +128,9 @@ if find(scenarios==4)
     nsDim = [1 2 3 5 10 20 40 200];
 
     for nPointsPerCat = [100]
-        h=figure(2004);clf;
+        if PLOTALL, h=figure(2004);clf;
         set(h,'Name','scenario 4: larger hypersphere enclosing smaller one, touching in one surface point');
+        end
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
             points = nan(2*nPointsPerCat,nDim);
@@ -136,11 +142,11 @@ if find(scenarios==4)
             categories.labels  = {'category 1','category 2'};
             categories.colors  = [0.8 0 0; 0 0 0];
 	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
-
+            if PLOTALL
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
-
+            end
             iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
@@ -156,8 +162,9 @@ if find(scenarios==5)
     nsDim = [1 2 3 5 10 20 40 200];
 
     for nPointsPerCat = [50]
-       h=figure(2005);clf;
+       if PLOTALL, h=figure(2005);clf;
         set(h,'Name','scenario 5: two intersecting hypershperes');
+        end
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
             points = nan(2*nPointsPerCat,nDim);
@@ -169,11 +176,11 @@ if find(scenarios==5)
             categories.labels  = {'category 1','category 2'};
             categories.colors  = [0.8 0 0; 0 0 0];
 	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
-
+            if PLOTALL
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
-
+            end
             iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
@@ -191,8 +198,9 @@ if find(scenarios==6)
     nsDim = [1 2 3 5 10 20 40 200];
 
     for nPointsPerCat = [20]
-       h=figure(2006);clf;
+       if PLOTALL, h=figure(2006);clf;
         set(h,'Name','scenario 6: two intersecting hyperspheres with different numbers of points');
+        end
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
             points = nan((1+fac)*nPointsPerCat,nDim);
@@ -204,11 +212,11 @@ if find(scenarios==6)
             categories.labels  = {'category 1','category 2'};
             categories.colors  = [0.8 0 0; 0 0 0];
 	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat*fac,1));
-            
+            if PLOTALL            
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
-
+            end
             iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
@@ -223,8 +231,9 @@ if find(scenarios==7)
     nsDim = [1 2 3 5 10 20 40 200]
 
     for nPointsPerCat = [10 40]
-        h=figure(2007);clf;
+        if PLOTALL, h=figure(2007);clf;
         set(h,'Name','scenario 7: 2 overlap hyperellipsoids w rand covar 1-200 dims');
+        end
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
 	   SIG  = rand(nDim,nDim,2);
@@ -236,11 +245,11 @@ if find(scenarios==7)
             categories.labels  = {'category 1','category 2'};
             categories.colors  = [0.8 0 0; 0 0 0];
 	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
-
+            if PLOTALL
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
-
+            end
             iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
@@ -255,8 +264,9 @@ if find(scenarios==8)
     nsDim = [1 2 3 5 10 20 40 200]
 
     for nPointsPerCat = [10 40]
-        h=figure(2008);clf;
+        if PLOTALL, h=figure(2008);clf;
         set(h,'Name','scenario 8: 2 adj hyperellipsoids w same rand covar 1-200 dims');
+        end
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
 	   SIG  = rand(nDim);  SIG = SIG*SIG';
@@ -267,11 +277,11 @@ if find(scenarios==8)
             categories.labels  = {'category 1','category 2'};
             categories.colors  = [0.8 0 0; 0 0 0];
 	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
-
+            if PLOTALL
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
-
+            end
             iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
@@ -287,9 +297,9 @@ if find(scenarios==9)
     nsDim = [1 2 3 5 10 20 40 200]
 
     for nPointsPerCat = [50]
-        h=figure(2009);clf;
+        if PLOTALL, h=figure(2009);clf;
         set(h,'Name','scenario 9: 2 overlap hyperellipsoids w rand covar 1-200 dims');
-
+        end
 	for nDimI = numel(nsDim):-1:1
             nDim = nsDim(nDimI);
 	   SIG  = rand(nDim);  SIG = SIG*SIG';
@@ -300,11 +310,11 @@ if find(scenarios==9)
             categories.labels  = {'category 1','category 2'};
             categories.colors  = [0.8 0 0; 0 0 0];
 	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat*fac,1));
-
+            if PLOTALL
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
-
+            end
             iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
