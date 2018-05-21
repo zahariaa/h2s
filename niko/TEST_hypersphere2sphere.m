@@ -40,9 +40,9 @@ if find(scenarios==1)
             %points = randn(2*nPointsPerCat,nDim);
             points(end/2+1:end,1) = points(end/2+1:end,1)+2; % shift second half by 2 along first dimension
 
-            categories.labels = {'category 1','category 2'};
-            categories.colors = [0.8 0 0; 0 0 0];
-	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
+            categories.labels  = {'category 1','category 2'};
+            categories.colors  = [0.8 0 0; 0 0 0];
+	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
@@ -71,9 +71,9 @@ if find(scenarios==2)
             
             % gaussian instead: points = randn(2*nPointsPerCat,nDim);
 
-            categories.labels = {'category 1','category 2'};
-            categories.colors = [0.8 0 0; 0 0 0];
-	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
+            categories.labels  = {'category 1','category 2'};
+            categories.colors  = [0.8 0 0; 0 0 0];
+	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
@@ -102,9 +102,9 @@ if find(scenarios==3)
             points(nPointsPerCat+1:end,:) = randsphere(nPointsPerCat,nDim,radius2);
             %points = randn(2*nPointsPerCat,nDim);
 
-            categories.labels = {'category 1','category 2'};
-            categories.colors = [0.8 0 0; 0 0 0];
-	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
+            categories.labels  = {'category 1','category 2'};
+            categories.colors  = [0.8 0 0; 0 0 0];
+	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
@@ -133,9 +133,9 @@ if find(scenarios==4)
             points(nPointsPerCat+1:end,1) = points(nPointsPerCat+1:end,1) + 1;
             %points = randn(2*nPointsPerCat,nDim);
 
-            categories.labels = {'category 1','category 2'};
-            categories.colors = [0.8 0 0; 0 0 0];
-	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
+            categories.labels  = {'category 1','category 2'};
+            categories.colors  = [0.8 0 0; 0 0 0];
+	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
@@ -166,9 +166,9 @@ if find(scenarios==5)
             points(nPointsPerCat+1:end,1) = points(nPointsPerCat+1:end,1) + 1;
             %points = randn(2*nPointsPerCat,nDim);
 
-            categories.labels = {'category 1','category 2'};
-            categories.colors = [0.8 0 0; 0 0 0];
-	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
+            categories.labels  = {'category 1','category 2'};
+            categories.colors  = [0.8 0 0; 0 0 0];
+	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
@@ -201,9 +201,9 @@ if find(scenarios==6)
             points(nPointsPerCat+1:end,1) = points(nPointsPerCat+1:end,1) + 1;
             %points = randn(2*nPointsPerCat,nDim);
 
-            categories.labels = {'category 1','category 2'};
-            categories.colors = [0.8 0 0; 0 0 0];
-	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat*fac,1));
+            categories.labels  = {'category 1','category 2'};
+            categories.colors  = [0.8 0 0; 0 0 0];
+	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat*fac,1));
             
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
@@ -227,15 +227,15 @@ if find(scenarios==7)
         set(h,'Name','scenario 7: 2 overlap hyperellipsoids w rand covar 1-200 dims');
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
-	    SIG = rand(nDim,nDim,2);
-	    for i = 1:2;   SIG(:,:,i) = SIG(:,:,i)*SIG(:,:,i)';   end
+	   SIG  = rand(nDim,nDim,2);
+	   for i = 1:2;   SIG(:,:,i) = SIG(:,:,i)*SIG(:,:,i)';   end
             points = nan(nPointsPerCat,nDim);
-	    points(1:nPointsPerCat,:) = mvnrnd(zeros(nDim,1),SIG(:,:,1),nPointsPerCat);
-	    points(nPointsPerCat+1:2*nPointsPerCat,:) = ...
+	   points(1:nPointsPerCat,:) = mvnrnd(zeros(nDim,1),SIG(:,:,1),nPointsPerCat);
+	   points(nPointsPerCat+1:2*nPointsPerCat,:) = ...
 	                                mvnrnd(zeros(nDim,1),SIG(:,:,2),nPointsPerCat);
-            categories.labels = {'category 1','category 2'};
-            categories.colors = [0.8 0 0; 0 0 0];
-	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
+            categories.labels  = {'category 1','category 2'};
+            categories.colors  = [0.8 0 0; 0 0 0];
+	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
@@ -259,14 +259,14 @@ if find(scenarios==8)
         set(h,'Name','scenario 8: 2 adj hyperellipsoids w same rand covar 1-200 dims');
         for nDimI = 1: numel(nsDim)
             nDim = nsDim(nDimI);
-	    SIG = rand(nDim);  SIG = SIG*SIG';
+	   SIG  = rand(nDim);  SIG = SIG*SIG';
             points = nan(nPointsPerCat,nDim);
-	    points(1:nPointsPerCat,:) = mvnrnd( ones(nDim,1),SIG,nPointsPerCat);
-	    points(nPointsPerCat+1:2*nPointsPerCat,:) = ...
+	   points(1:nPointsPerCat,:) = mvnrnd( ones(nDim,1),SIG,nPointsPerCat);
+	   points(nPointsPerCat+1:2*nPointsPerCat,:) = ...
 	                                mvnrnd(-ones(nDim,1),SIG,nPointsPerCat);
-            categories.labels = {'category 1','category 2'};
-            categories.colors = [0.8 0 0; 0 0 0];
-	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
+            categories.labels  = {'category 1','category 2'};
+            categories.colors  = [0.8 0 0; 0 0 0];
+	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat,1));
 
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
