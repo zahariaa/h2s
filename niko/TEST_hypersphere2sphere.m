@@ -1,3 +1,4 @@
+function TEST_hypersphere2sphere
 % TEST_hypersphere2sphere
 
 % hs2s tests: comparison to MDS
@@ -12,7 +13,7 @@
 
 
 %% general control variables
-scenarios = 1:6; %[1 2 3];
+scenarios = [1 3:6]; %[1 2 3];
 dimLow    = 2; % 2=showCircles, 3=showSpheres
 
 psFilespec = '';
@@ -25,7 +26,7 @@ if find(scenarios==1)
 
     nsDim = [1 2 3 5 10 20 40 200]
 
-    for nPointsPerCat = [10 40]
+    for nPointsPerCat = [40]
         h=figure(2001);clf;
         set(h,'Name','scenario 1: two touching equal-radius hyperspheres in 1-200 dimensions');
         for nDimI = 1: numel(nsDim)
@@ -199,7 +200,7 @@ end
 
 %% scenario 7: gaussian ellipsoid version of scenario 2
 %%           : two overlapping, random covariance hyperellipsoids in 1-200 dimensions
-if find(scenarios==1)
+if find(scenarios==7)
     radius = 1;
 
     nsDim = [1 2 3 5 10 20 40 200]
@@ -229,7 +230,7 @@ end
 
 %% scenario 8: gaussian ellipsoid version of scenario 5
 %%           : two intersecting equal-covariance hyperellipsoids in 1-200 dimensions
-if find(scenarios==1)
+if find(scenarios==8)
     radius = 1;
 
     nsDim = [1 2 3 5 10 20 40 200]
@@ -259,12 +260,12 @@ end
 %% scenario 9: gaussian ellipsoid version of scenario 6
 %%           : two overlapping, identical hyperellipsoids in 1-200 dimensions
 %%             different sampling
-if find(scenarios==1)
+if find(scenarios==9)
     radius = 1;
     fac    = 5;
     nsDim = [1 2 3 5 10 20 40 200]
 
-    for nPointsPerCat = [20]
+    for nPointsPerCat = [50]
         h=figure(2009);clf;
         set(h,'Name','scenario 9: 2 overlap hyperellipsoids w rand covar 1-200 dims');
 
