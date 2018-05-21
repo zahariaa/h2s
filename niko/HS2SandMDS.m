@@ -1,5 +1,4 @@
-function HS2SandMDS(pointsOrDistMat,categories,figPanelSpec,titleStr,dimLow)
-
+function HS2SandMDS(pointsOrDistMat,categories,ax,titleStr,dimLow)
 % create hypersphere-to-sphere visualization and show it alongside the MDS solution for comparison 
 
 
@@ -9,8 +8,8 @@ if ~exist('dimLow','var'), dimLow = 3; end
 
 %% hypersphere to sphere visualization
 model = hypersphere2sphere(pointsOrDistMat,categories,[],dimLow);
-if     dimLow==2;   showCirclesModel(model, figPanelSpec, titleStr);
-elseif dimLow==3;   showSpheresModel(model, figPanelSpec, titleStr);
+if     dimLow==2;   showCirclesModel(model, ax(1), titleStr);
+elseif dimLow==3;   showSpheresModel(model, ax(1), titleStr);
 end
 
 %% multidimensional scaling visualization
@@ -35,7 +34,7 @@ if size(pointsOrDistMat,2) > 1
 end
 
 for i = 1:numel(points2D)
-   subplot(figPanelSpec(2), figPanelSpec(3), figPanelSpec(4)+i); hold on;
+   axtivate(ax(i+1));
    ms=5;
    for catI = 1:nCats
        plot(points2D{i}(logical(categories.vectors(:,catI)),1), ...

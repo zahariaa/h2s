@@ -6,7 +6,10 @@ opacity = 0.5;
 
 
 %% preparations
-figurePanel(figPanelSpec);
+if numel(figPanelSpec)==4,   figurePanel(figPanelSpec);
+elseif numel(figPanelSpec)==1 && ishandle(figPanelSpec), axtivate(figPanelSpec)
+end
+
 if ~exist('titleStr','var')
     titleStr = {'\bfhypersphere2sphere',any2str('error <= ',ceil(model.error*100),'%')}
 end
