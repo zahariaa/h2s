@@ -270,14 +270,14 @@ if find(scenarios==1)
 
 	for nDimI = numel(nsDim):-1:1
             nDim = nsDim(nDimI);
-	    SIG = rand(nDim);  SIG = SIG*SIG';
+	   SIG  = rand(nDim);  SIG = SIG*SIG';
             points = nan((1+fac)*nPointsPerCat,nDim);
-	    points(1:nPointsPerCat,:) = radius*mvnrnd( ones(nDim,1),SIG,nPointsPerCat);
-	    points(nPointsPerCat+1:(1+fac)*nPointsPerCat,:) = ...
+	   points(1:nPointsPerCat,:) = radius*mvnrnd( ones(nDim,1),SIG,nPointsPerCat);
+	   points(nPointsPerCat+1:(1+fac)*nPointsPerCat,:) = ...
                                         radius*mvnrnd(-ones(nDim,1),SIG,fac*nPointsPerCat);
-            categories.labels = {'category 1','category 2'};
-            categories.colors = [0.8 0 0; 0 0 0];
-	    categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat*fac,1));
+            categories.labels  = {'category 1','category 2'};
+            categories.colors  = [0.8 0 0; 0 0 0];
+	   categories.vectors = blkdiag(true(nPointsPerCat,1),true(nPointsPerCat*fac,1));
 
             figPanelSpec = [h 4 8 1+(nDimI-1)*4];
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');

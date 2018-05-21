@@ -2,7 +2,7 @@ function demo_swissroll
 
 dimLow = 2;
 
-%% set up swiss roll
+%% set up samples for swiss roll and sine waves
 rng(10); % for reproducibility
 N = 150;
 noise = 0.1;
@@ -61,15 +61,14 @@ for i = 1:numel(ca.labels)
 end
 
 %% PLOT
-figure;hold on;
-set(gcf,'Name','sine waves');
+figure;set(gcf,'Name','sine waves');hold on;
 for i = 1:numel(ca.labels)
     srf = reshape(sinewaves{i}(T(:),R(:)),[size(T) 3]);
     surf(srf(:,:,1),srf(:,:,2),srf(:,:,3),zeros(size(T(:))),...
         'FaceColor',ca.colors(i,:),'FaceAlpha',0.5)
    plot3(points(ca.vectors(:,i),1),points(ca.vectors(:,i),2),...
          points(ca.vectors(:,i),3),'o','MarkerFaceColor',ca.colors(i,:),...
-         'MarkerEdgeColor','w')
+                                       'MarkerEdgeColor','w')
 end
 axis vis3d off;view(88,6);draw3Daxes
 
