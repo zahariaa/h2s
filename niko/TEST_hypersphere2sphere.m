@@ -324,6 +324,16 @@ end
 %% scenario 8: 5 hyperspheres in 1-100 dimensions
 
 
+%% Finish up combo figure
+set(fh.a.h(1:9:end),'CameraPosition',[0 0 -33]); % make 3D views consistent
+papsz = [6.5 4];
+set(fh.f,'PaperUnits','inches','PaperSize',papsz,'PaperPosition',[0.01*papsz papsz],'PaperPositionMode','manual');
+set(findobj(fh.f,'type','line'),'MarkerSize',3); % make dots slightly smaller
+subplotResize([],0.01,0.01);
+set(fh.f,'Renderer','painters');   printFig;
+delete(fh.a.h(2:9:end));
+set(fh.f,'Renderer','openGL');     printFig(fh.f,[],'png',1200);
+
 %% Add 3D & 2D renders to "Combo plot" for paper
 function iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow)
 if     nDim==3
