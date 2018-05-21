@@ -22,7 +22,7 @@ pdfFilespec = '';
 
 
 %% initialize combo figure (scenarios 1, 3-6, for 3D and 200D); h2s in 2D & 3D
-hh = figure(3000);clf;set(hh,'Name','whatsthescenario');
+fh = newfigure([nScen 9],'whatsthescenario');
 iCombo = 0;
 
 %% scenario 1: two touching equal-radius hyperspheres in 1-200 dimensions
@@ -48,7 +48,7 @@ if find(scenarios==1)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
 
-            iCombo = updateComboPlot(hh,iCombo,nDim,points,categories,dimLow,nScen);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
 end
@@ -79,7 +79,7 @@ if find(scenarios==2)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
 
-            iCombo = updateComboPlot(hh,iCombo,nDim,points,categories,dimLow,nScen);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
 end
@@ -110,7 +110,7 @@ if find(scenarios==3)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
 
-            iCombo = updateComboPlot(hh,iCombo,nDim,points,categories,dimLow,nScen);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
 end
@@ -141,7 +141,7 @@ if find(scenarios==4)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
 
-            iCombo = updateComboPlot(hh,iCombo,nDim,points,categories,dimLow,nScen);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
 end
@@ -174,7 +174,7 @@ if find(scenarios==5)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
 
-            iCombo = updateComboPlot(hh,iCombo,nDim,points,categories,dimLow,nScen);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
 end
@@ -209,7 +209,7 @@ if find(scenarios==6)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
 
-            iCombo = updateComboPlot(hh,iCombo,nDim,points,categories,dimLow,nScen);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
 end
@@ -241,7 +241,7 @@ if find(scenarios==7)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
 
-            iCombo = updateComboPlot(hh,iCombo,nDim,points,categories,dimLow,nScen);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
 end
@@ -272,7 +272,7 @@ if find(scenarios==8)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
 
-            iCombo = updateComboPlot(hh,iCombo,nDim,points,categories,dimLow,nScen);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
 end
@@ -305,7 +305,7 @@ if find(scenarios==9)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
 
-            iCombo = updateComboPlot(hh,iCombo,nDim,points,categories,dimLow,nScen);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
         end
     end
 end
@@ -315,15 +315,15 @@ end
 
 
 %% Add 3D & 2D renders to "Combo plot" for paper
-function iCombo = updateComboPlot(hh,iCombo,nDim,points,categories,dimLow,nScen)
+function iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow)
 if     nDim==3
    iCombo = iCombo+1;
-   comboPanel = [hh nScen 9 1+(iCombo-1)*9];
-   showSpheresModel(hypersphere2sphere(points,categories,[],3,[]), comboPanel);
-   comboPanel = [hh nScen 9 2+(iCombo-1)*9];
-   HS2SandMDS(points,categories,comboPanel,[],dimLow);
+   ax = fh.a.h(1+(iCombo-1)*9);
+   showSpheresModel(hypersphere2sphere(points,categories,[],3), ax,[]);
+   ax = fh.a.h((2:5)+(iCombo-1)*9);
+   HS2SandMDS(points,categories,ax,[],dimLow);
 elseif nDim==200
-   comboPanel = [hh nScen 9 6+(iCombo-1)*9];
-   HS2SandMDS(points,categories,comboPanel,[],dimLow);
+   ax = fh.a.h((6:9)+(iCombo-1)*9);
+   HS2SandMDS(points,categories,ax,[],dimLow);
 end
 
