@@ -2,7 +2,7 @@
 
 
 %% control variables
-
+DEBUG = false;
 
 
 
@@ -61,14 +61,14 @@ for roiI = 1:numel(roi.name)
     avgRdm_nonNeg(avgRdm<0) = 0;
     
     % DEBUG: rand_rdm = pdist(randn(30,500),'Euclidean');
-
+   if DEBUG
     showRDMs(cat(3,avgRdm,avgRdm_nonNeg));
     subplot(2,2,1); title(any2str(roi.hemisphere{hemisphereI},' ',roi.name{roiI},' (',roi.size(roiSizeI),' vox)'));
     subplot(2,2,2); title('non-negative version');
     subplot(2,2,4); plot(avgRdm(:),avgRdm_nonNeg(:),'k.');
     xlabel('rdm');
     ylabel('rdm-nonNeg');
-
+   end
     % re-embed as points in high-dimensional space to reflect the representational geometry
     nDim = 100;
     distanceMeasure = 'Euclidean';
