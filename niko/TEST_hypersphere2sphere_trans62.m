@@ -42,6 +42,8 @@ avgRDMs=nan(1,1891,2);
 
 selectedROIs = [1 4 2 6 3 7];
 nROIs        = numel(selectedROIs);
+fh = newfigure([nROIs/2 2*2],'trans62');
+figrowI = 0;
 
 for roiI = selectedROIs
     skipRoi = false;
@@ -78,15 +80,25 @@ for roiI = selectedROIs
     [patterns,errorSSQ] = rdm2patternEnsemble(avgRdm_nonNeg,nDim,distanceMeasure);
     
     % hs2s & MDS
-    figPanelSpec = [150 4 8 4*(roiI-1)+1];
     titleStr = any2str(roi.hemisphere{hemisphereI},' \bf',roi.name{roiI},'\rm (',roi.size(roiSizeI),' vox)');
-    psOutput='';
-    pdfOutput='';
-    HS2SandMDS(patterns,categories,figPanelSpec,titleStr,3);%,psOutput,pdfOutput)
+    figrowI = figrowI + 1;
+    HS2SandMDS(patterns,categories,fh.a.h(figrowI*2+(-1:0)),titleStr,3);
 
     %model = multidimensionalCategoryScaling(avgRDMs(1,:,1),categoryVectors,catLabels,[],'ellipsoid',3);
     
     
 end % roiI
-          
+
+%% Finish up comparison figure
+papsz = [4 3];
+set(fh.f,'PaperUnits','inches','PaperSize',papsz,'PaperPosition',[0.01*papsz papsz],'PaperPositionMode','manual');
+set(findobj(fh.f,'type','line'),'MarkerSize',3); % make dots slightly smaller
+subplotResize([],0.01,0.01);
+set(fh.a.h(11)   ,'CameraViewAngle',5  );
+set(fh.a.h([3 7]),'CameraViewAngle',3.5);
+set(fh.f,'Renderer','painters');   printFig;
+delete(fh.a.h(2:2:end));
+set(fh.f,'Renderer','openGL');     printFig(fh.f,[],'png',1200);
+
+
 
