@@ -22,10 +22,20 @@ if nax==4,   points2D{1} = simplepca(pointsOrDistMat,dimLow);   end
 
 % Draw points from circle/sphere to align other visualizations to
 modelPointsAlign = NaN(0,dimLow);
+nPointsPerCat = sum(categories.vectors);
+% if all vectors are less than nPoints, add more proportionally
+if sum(nPointsPerCat)<nPoints
+   nPointsPerCat = nPointsPerCat + floor((nPoints-sum(nPointsPerCat))*nPointsPerCat/sum(nPointsPerCat));
+   catI = 1;
+   while sum(nPointsPerCat)<nPoints
+      nPointsPerCat(catI) = nPointsPerCat(catI) + 1;
+      catI=catI+1;
+   end
+end
 for catI = 1:nCats
    modelPointsAlign = [modelPointsAlign;
-                       randsphere(nPoints/nCats,dimLow,model.radii(catI)) ...
-                       + repmat(model.centers(catI,:),[nPoints/nCats 1])];
+                       randsphere(nPointsPerCat(catI),dimLow,model.radii(catI)) ...
+                       + repmat(model.centers(catI,:),[nPointsPerCat(catI) 1])];
 end
 % Align PCA, MDS, and t-SNE relative to H2S
 if size(pointsOrDistMat,2) > 1
