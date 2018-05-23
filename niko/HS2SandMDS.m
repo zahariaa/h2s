@@ -1,6 +1,11 @@
 function HS2SandMDS(pointsOrDistMat,categories,ax,titleStr,dimLow)
 % create hypersphere-to-sphere visualization and show it alongside the MDS solution for comparison 
-
+% 
+% pass 4 axis handles for: h2s, PCA, MDS, t-SNE
+%      3              for: h2s,      MDS, t-SNE
+%      2              for: h2s,      MDS
+%
+% NK & AZ 2017-8
 
 %%  preparations
 if ~exist('dimLow','var'), dimLow = 3; end
@@ -13,14 +18,14 @@ if     dimLow==2;   showCirclesModel(model, ax(1), titleStr);
 elseif dimLow==3;   showSpheresModel(model, ax(1), titleStr);
 end
 
-%% multidimensional scaling visualization
+%% other visualizations
 dists = pdist(pointsOrDistMat,'Euclidean');
 points2D{floor(nax/2)} = mdscale(dists,2,'criterion','metricstress');
 % only run requested visualizations
 if nax>=3,   points2D{nax-1} = tsne(pointsOrDistMat,[],[],min(size(pointsOrDistMat)));   end
 if nax==4,   points2D{1} = simplepca(pointsOrDistMat,dimLow);   end
 
-% Draw points from circle/sphere to align other visualizations to
+%% Draw points from circle/sphere to align other visualizations to
 modelPointsAlign = NaN(0,dimLow);
 nPointsPerCat = sum(categories.vectors);
 % if all vectors are less than nPoints, add more proportionally
@@ -37,13 +42,15 @@ for catI = 1:nCats
                        randsphere(nPointsPerCat(catI),dimLow,model.radii(catI)) ...
                        + repmat(model.centers(catI,:),[nPointsPerCat(catI) 1])];
 end
-% Align PCA, MDS, and t-SNE relative to H2S
+
+%% Align PCA, MDS, and t-SNE relative to H2S
 if size(pointsOrDistMat,2) > 1
    for i = 1:numel(points2D)
       [~,points2D{i}] = procrustes(modelPointsAlign,points2D{i});
    end
 end
 
+%% PLOT
 for i = 1:nax-1
    axtivate(ax(i+1));
    ms=5;
