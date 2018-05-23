@@ -40,7 +40,10 @@ hemisphereI = 2;
 load('crossvalidatedRDMs_leaveOneRunOut_concatYtest_alldata.mat');
 avgRDMs=nan(1,1891,2);
 
-for roiI = 1:numel(roi.name)
+selectedROIs = [1 4 2 6 3 7];
+nROIs        = numel(selectedROIs);
+
+for roiI = selectedROIs
     skipRoi = false;
     rdms = [];
     for sessI=1:2
