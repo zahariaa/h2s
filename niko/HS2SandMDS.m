@@ -5,6 +5,7 @@ function HS2SandMDS(pointsOrDistMat,categories,ax,titleStr,dimLow)
 %%  preparations
 if ~exist('dimLow','var'), dimLow = 3; end
 [nPoints,nCats] = size(categories.vectors);
+nax = numel(ax);
 
 %% hypersphere to sphere visualization
 model = hypersphere2sphere(pointsOrDistMat,categories,[],dimLow);
@@ -14,10 +15,10 @@ end
 
 %% multidimensional scaling visualization
 dists = pdist(pointsOrDistMat,'Euclidean');
-
-points2D{1} = simplepca(pointsOrDistMat,dimLow);
-points2D{2} = mdscale(dists,2,'criterion','metricstress');
-points2D{3} = tsne(pointsOrDistMat,[],[],min(size(pointsOrDistMat)));
+points2D{floor(nax/2)} = mdscale(dists,2,'criterion','metricstress');
+% only run requested visualizations
+if nax>=3,   points2D{nax-1} = tsne(pointsOrDistMat,[],[],min(size(pointsOrDistMat)));   end
+if nax==4,   points2D{1} = simplepca(pointsOrDistMat,dimLow);   end
 
 % Draw points from circle/sphere to align other visualizations to
 modelPointsAlign = NaN(0,dimLow);
@@ -33,7 +34,7 @@ if size(pointsOrDistMat,2) > 1
    end
 end
 
-for i = 1:numel(points2D)
+for i = 1:nax-1
    axtivate(ax(i+1));
    ms=5;
    for catI = 1:nCats
