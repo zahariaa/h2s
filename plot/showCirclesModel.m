@@ -5,7 +5,8 @@ if ~exist('nCircPts','var') || isempty(nCircPts),   nCircPts = 100;   end
 opacity = 0.2;
 
 %% preparations
-if numel(figPanelSpec)==4,   figurePanel(figPanelSpec);
+if ~exist('figPanelSpec','var') || isempty(figPanelSpec),   axtivate(gca);
+elseif numel(figPanelSpec)==4,   figurePanel(figPanelSpec);
 elseif numel(figPanelSpec)==1 && ishandle(figPanelSpec), axtivate(figPanelSpec)
 end
 if ~exist('titleStr','var')

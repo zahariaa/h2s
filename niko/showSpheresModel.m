@@ -6,7 +6,8 @@ opacity = 0.5;
 
 
 %% preparations
-if numel(figPanelSpec)==4,   figurePanel(figPanelSpec);
+if ~exist('figPanelSpec','var') || isempty(figPanelSpec),   axtivate(gca);
+elseif numel(figPanelSpec)==4,   figurePanel(figPanelSpec);
 elseif numel(figPanelSpec)==1 && ishandle(figPanelSpec), axtivate(figPanelSpec)
 end
 
