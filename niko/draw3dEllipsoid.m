@@ -35,9 +35,8 @@ elseif ~exist('RECURSED','var'), RECURSED = false;
 end
 
 %% find principal axes and corresponding radii
-[eigenvec eigenval]=pcacov(covariance);
-eigen = eigenvec.*repmat(sqrt(eigenval)',[3 1]);
-
+[V,D] = eig(covariance);
+eigen = V.*repmat(sqrt(diag(D)),[1 3]);
 
 %% contruct sphere and distort its coordinates
 [X,Y,Z] = sphere(n);
