@@ -28,7 +28,7 @@ if mn > 1
    if numel(n      ) < mn;   n       = repmat({n      },[mn 1]);   end
    if numel(opacity) < mn;   opacity = repmat({opacity},[mn 1]);   end
    % Recursive call, with RECURSED flag set to true ...
-   h = cellfun( @draw3dEllipsoid, location,covariance,col,n,opacity,true);
+   h = cellfun( @draw3dEllipsoid, location,covariance,col,n,opacity,repmat({true},[mn 1]));
    camlight('left'); lighting phong; % ... so that lighting is only applied 1x
    return
 elseif ~exist('RECURSED','var'), RECURSED = false;
