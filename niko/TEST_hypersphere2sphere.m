@@ -51,7 +51,7 @@ if find(scenarios==1)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
             end
-            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow,centers,radii);
         end
     end
 end
@@ -80,7 +80,7 @@ if find(scenarios==2)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
             end
-            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow,centers,radii);
         end
     end
 end
@@ -109,7 +109,7 @@ if find(scenarios==3)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
             end
-            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow,centers,radii);
         end
     end
 end
@@ -138,7 +138,7 @@ if find(scenarios==4)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
             end
-            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow,centers,radii);
         end
     end
 end
@@ -169,7 +169,7 @@ if find(scenarios==5)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
             end
-            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow,centers,radii);
         end
     end
 end
@@ -201,7 +201,7 @@ if find(scenarios==6)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
             end
-            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow,centers,radii);
         end
     end
 end
@@ -232,7 +232,7 @@ if find(scenarios==7)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
             end
-            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow,centers,radii);
         end
     end
 end
@@ -262,7 +262,7 @@ if find(scenarios==8)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
             end
-            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow,centers,radii);
         end
     end
 end
@@ -294,7 +294,7 @@ if find(scenarios==9)
             titleStr = any2str(nPointsPerCat, ' points/cat. in ',nDim,' dim.');
             HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
             end
-            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow);
+            iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow,centers,radii);
         end
     end
 end
@@ -304,7 +304,7 @@ end
 
 
 %% Finish up combo figure
-set(fh.a.h(1:9:end),'CameraPosition',[0 0 -33]); % make 3D views consistent
+%set(fh.a.h(1:9:end),'CameraPosition',[0 0 -33]); % make 3D views consistent
 papsz = [6.5 4];
 set(fh.f,'PaperUnits','inches','PaperSize',papsz,'PaperPosition',[0.01*papsz papsz],'PaperPositionMode','manual');
 set(findobj(fh.f,'type','line'),'MarkerSize',3); % make dots slightly smaller
@@ -314,11 +314,17 @@ delete(fh.a.h(2:9:end));
 set(fh.f,'Renderer','openGL');     printFig(fh.f,[],'png',1200);
 
 %% Add 3D & 2D renders to "Combo plot" for paper
-function iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow)
+function iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow,centers,radii)
 if     nDim==3
    iCombo = iCombo+1;
-   ax = fh.a.h(1+(iCombo-1)*9);
-   showSpheresModel(hypersphere2sphere(points,categories,[],3), ax,[]);
+   % format abbreviated radii and centers into full 3D vectors/matrices
+   locations  = zeros(numel(centers),3); locations(:,1) = centers(:);
+   covariance = arrayfun(@(r) r*eye(3),radii.^2,'UniformOutput',false)';
+
+   axtivate(fh.a.h(1+(iCombo-1)*9));
+   draw3dEllipsoid(locations,covariance,categories.colors,[],1/3);
+   view([180 90]);
+
    ax = fh.a.h((2:5)+(iCombo-1)*9);
    HS2SandMDS(points,categories,ax,[],dimLow);
 elseif nDim==200
