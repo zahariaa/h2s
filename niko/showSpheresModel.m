@@ -18,12 +18,8 @@ title(titleStr);
 
 %% draw spheres
 [~,nCats] = size(model.categories.vectors);
-objHs = nan(nCats,1);
-for catI = 1:nCats
-    objHs(catI) = draw3dEllipsoid(model.centers(catI,:),eye(3)*model.radii(catI)^2,model.categories.colors(catI,:),patchDetail,opacity);
-    % plot3(model.samples(:,1,catI),model.samples(:,2,catI),model.samples(:,3,catI),'.k');
-end
-% xlabel({any2str('# samples/category: ',model.nSamplesPerCat)});
+covs = arrayfun(@(r) eye(3)*r^2,model.radii,'UniformOutput',false);
+objHs = draw3dEllipsoid(model.centers,covs,model.categories.colors,patchDetail,opacity);
 
 axis equal tight off;
 set(gcf,'Renderer','OpenGL');
@@ -44,12 +40,9 @@ camPos = objectsCentroid'-normal*camDist;
 
 set(gca,'CameraPosition',camPos,'CameraTarget',objectsCentroid);
 
-%camlight('headlight');
-camlight('left');
-%camlight('right');
-lighting phong;
 %delete(findall(gca,'type','light'));
 
 set(objHs,'AmbientStrength',  0,...
           'SpecularStrength', 1,...
           'DiffuseStrength',  1);
+

@@ -1,5 +1,4 @@
-function h=draw3dEllipsoid(location,covariance,col,n,opacity)
-
+function h = draw3dEllipsoid(location,covariance,col,n,opacity,RECURSED)
 
 %% defaults
 if ~exist('location'  ,'var') || isempty(location  ), location = [0 0 0];  end
@@ -8,6 +7,32 @@ if ~exist('covariance','var') || isempty(covariance), covariance = eye(3); end
 if ~exist('n'         ,'var') || isempty(n         ), n = 50;              end
 if ~exist('opacity'   ,'var') || isempty(opacity   ), opacity = 0.5;       end
 
+%% Recurse if given multiple inputs
+nl = numel(location  )/3;
+nc = numel(col       )/3;
+if iscell(covariance), nr = numel(covariance);
+else                   nr = numel(covariance)/9;
+end
+mn = max([nl nc nr]);
+if mn > 1
+   if nl>1,     location   = num2cell(location,2);
+   else         location   = repmat({ location(:)'},[mn 1]);
+   end
+   if iscell(covariance) && nr==mn, covariance = covariance(:);
+   elseif nr>1, covariance = num2cell(covariance,3);
+   else         covariance = repmat({ covariance  },[mn 1]);
+   end
+   if nc>1,     col        = num2cell(col,2);
+   else         col        = repmat({ col(:)'     },[mn 1]);
+   end
+   if numel(n      ) < mn;   n       = repmat({n      },[mn 1]);   end
+   if numel(opacity) < mn;   opacity = repmat({opacity},[mn 1]);   end
+   % Recursive call, with RECURSED flag set to true ...
+   h = cellfun( @draw3dEllipsoid, location,covariance,col,n,opacity,true);
+   camlight('left'); lighting phong; % ... so that lighting is only applied 1x
+   return
+elseif ~exist('RECURSED','var'), RECURSED = false;
+end
 
 %% find principal axes and corresponding radii
 [eigenvec eigenval]=pcacov(covariance);
@@ -21,31 +46,11 @@ X2 = location(1) + reshape(xyz2(1,:),size(X));
 Y2 = location(2) + reshape(xyz2(2,:),size(Y));
 Z2 = location(3) + reshape(xyz2(3,:),size(Z));
 
-
 %% draw 3d ellipsoid
-% figure(1); clf;
-
 hold on;
-try
-    h=surf(X2,Y2,Z2,'FaceColor',col,'EdgeColor','none','FaceAlpha',opacity);
-catch
-    disp('Could not draw.')
-end
+h = surf(X2,Y2,Z2,'FaceColor',col,'EdgeColor','none','FaceAlpha',opacity);
 axis vis3d off
 
-    % h=surf(X2,Y2,Z2,'FaceColor',col,'EdgeColor','none');
-% alpha(h,opacity);
+% Make sure lighting is only created after last call
+if ~RECURSED,   lighting phong;   camlight('left');   end
 
-% CHECK
-% for i = 1:350;
-%     x=[X2(i) Y2(i) Z2(i)];
-%     c=location;
-%     val(i)=(x-c)*inv(covariance)*(x-c)'
-% end
-% val
-
-% lighting phong;
-% camlight('left');
-% set(gcf,'Renderer','OpenGL');
-% xlabel('x'); ylabel('y'); zlabel('z');
-% axis equal;
