@@ -175,7 +175,7 @@ nCats = numel(model.radii);
 
 model.dists = pdist(model.centers);
 model.margins = squareform(model.dists) - ...
-    ( repmat(model.radii,[nCats 1])+repmat(model.radii',[1 nCats]) )
+    ( repmat(model.radii,[nCats 1])+repmat(model.radii',[1 nCats]) );
 model.margins(logical(eye(nCats)))=0;
 model.margins = squareform(model.margins);
 
