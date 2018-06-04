@@ -25,7 +25,7 @@ points(ca.vectors(:,1),:) = points(ca.vectors(:,1),:) + swissroll{1}(t,r);
 points(ca.vectors(:,2),:) = points(ca.vectors(:,2),:) + swissroll{2}(t,r);
 
 %% PLOT
-figure;set(gcf,'Name','swiss roll');hold on;
+newfigure('swiss roll');
 for i = 1:numel(ca.labels)
    srf = reshape(swissroll{i}(T(:),R(:)),[size(T) 3]);
    surf(srf(:,:,1),srf(:,:,2),srf(:,:,3),zeros(size(T(:))),...
@@ -37,12 +37,9 @@ end
 axis vis3d off;view(-6,2);draw3Daxes
 
 %% H2S
-h=figure(2010);clf;
-set(h,'Name','H2S swiss roll');
-i=1;
-figPanelSpec = [h 2 4 1+(i-1)*4];
+fh = newfigure([2 4],'H2S swiss roll');
 titleStr = sprintf('%u points/cat',N);
-HS2SandMDS(points,ca,figPanelSpec,titleStr,dimLow)
+HS2SandMDS(points,ca,fh.a.h(1:4),titleStr,dimLow)
 
 
 %% siiiiiiine waaaaaves
@@ -61,7 +58,7 @@ for i = 1:numel(ca.labels)
 end
 
 %% PLOT
-figure;set(gcf,'Name','sine waves');hold on;
+newfigure('sine waves');
 for i = 1:numel(ca.labels)
     srf = reshape(sinewaves{i}(T(:),R(:)),[size(T) 3]);
     surf(srf(:,:,1),srf(:,:,2),srf(:,:,3),zeros(size(T(:))),...
@@ -73,13 +70,11 @@ end
 axis vis3d off;view(88,6);draw3Daxes
 
 %% H2S
-i=2;
-figPanelSpec = [h 2 4 1+(i-1)*4];
 titleStr = sprintf('%u points/cat',N);
-HS2SandMDS(points,ca,figPanelSpec,titleStr,dimLow)
+HS2SandMDS(points,ca,fh.a.h(5:8),titleStr,dimLow)
 
 %% MESH PLOTS
-figure;set(gcf,'Name','meshes');
+newfigure('meshes');
 subplot(2,1,1);hold on;
 for i = 1:2
    srf = reshape(swissroll{i}(T(:),R(:)),[size(T) 3]);
