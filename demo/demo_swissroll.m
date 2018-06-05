@@ -1,16 +1,17 @@
 function demo_swissroll
 
-dimLow = 2;
+dimLow   = 2;
+swlength = 5; % length of sine wave planes on axis orthogonal to wave
 
 %% set up samples for swiss roll and sine waves
 rng(10); % for reproducibility
 N = 150;
 noise = 0.1;
 t = 3*pi/2 * (1 + 2*rand(N,1));
-r = 5 * rand(N,1);
+r = swlength * rand(N,1);
 
 %% set up meshgrid for mesh versions of plots
-[T,R] = meshgrid(3*pi/2 * linspace(1,3,125),linspace(0,5,5));
+[T,R] = meshgrid(3*pi/2 * linspace(1,3,125),linspace(0,swlength,swlength));
 
 %% set up points and categories
 ca.labels  = {'category 1','category 2'};
