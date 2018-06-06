@@ -35,19 +35,22 @@ classdef Hypersphere
             end
             return
          end
+         % Collect dimensionality and radii, compute V if hyperspheres are
+         % separate or enclosed
          d = objs.dist;
-         if     d >= sum([objs.r]),       V = 0;   return
-         elseif d <= abs(diff([objs.r])), V = objs(minix([objs.r])).volume;  return
+         r = [objs.r];
+         if     d >= sum(r),       V = 0;   return
+         elseif d <= abs(diff(r)), V = objs(minix(r)).volume;  return
          else % continue
          end
-         % Compute sector cap heights
-         h = [(objs(2).r - objs(1).r + d)*(objs(2).r + objs(1).r + d)/(2*d);
-              (objs(1).r - objs(2).r + d)*(objs(1).r + objs(2).r + d)/(2*d) ];
+         % Assume partial overlap of hyperspheres. Compute sector cap heights.
+         h = [(r(2)-r(1)+d)*(r(2)+r(1)+d); (r(1)-r(2)+d)*(r(1)+r(2)+d)]/(2*d);
+         h = h(:)';
          % Compute overlap (lens) volume by computing each sector cap volume
          % see http://mathworld.wolfram.com/Sphere-SphereIntersection.html
          % and https://en.wikipedia.org/wiki/Spherical_cap#Hyperspherical_cap
          V = 0.5*objs.volume ...
-               .*betainc((2*[objs.r].*h(:)'-h(:)'.^2)/([objs.r].^2),([objs.d]+1)/2,1/2) ...
+               .*betainc((2*r.*h(:)'-h(:)'.^2)/(r.^2),([objs.d]+1)/2,1/2) ...
                ./beta(([objs.d]+1)/2,1/2);
          V = sum(V);
       end
