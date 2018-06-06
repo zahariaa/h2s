@@ -1,8 +1,8 @@
 classdef Hypersphere
    properties
-      cntr       % [1 x d] vector: center of hypersphere
-      r          % scalar:         radius of hypersphere
-      d          % scalar: number of dimensions
+      cntr  = [0 0];   % [1 x d] vector: center of hypersphere
+      r     = 1;       % scalar:         radius of hypersphere
+      d     = 2;       % scalar: number of dimensions
    end
    methods
       function obj = Hypersphere(center,radius)     % Constructor
