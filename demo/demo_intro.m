@@ -16,9 +16,7 @@ for i = 1:4
    points((i-1)*n+1:i*n,:) = points((i-1)*n+1:i*n,:) + repmat(v(i,:),[n 1]);
 end
 
-categories.labels  = {'category 1','category 2','category 3','category 4'};
-categories.colors  = [0 0 0; 0.8 0 0; 0 0.8 0; 0 0 0.8];
-categories.vectors = blkdiag(true(n,1),true(n,1),true(n,1),true(n,1));
+categories = Categories(n*ones(1,4));
 
 %% PLOT
 fh = newfigure('intro',[1 3]);
