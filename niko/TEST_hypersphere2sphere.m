@@ -29,7 +29,7 @@ iCombo = 0;
 
 nsDim = [1 2 3 5 10 20 40 200];
 
-scenarios = {'scenario 1: two touching equal-radius hyperspheres in 1-200 dimensions';
+scenarioT = {'scenario 1: two touching equal-radius hyperspheres in 1-200 dimensions';
              'scenario 2: two identical hyperspheres in 1-200 dimensions';
              'scenario 3: two concentric hyperspheres of different radius in 1-200 dimensions';
              'scenario 4: larger hypersphere enclosing smaller one, touching in one surface point';
@@ -44,7 +44,7 @@ nPtsPerCat = {[40 40],[100 100],[50 50],[100 100],[50 50],[20*5 20],[40 40],[40 
 
 %% MAIN LOOP
 for s = scenarios
-   if PLOTALL, fig(s)=newfigure(scenarios{s}); end
+   if PLOTALL, fig(s)=newfigure(scenarioT{s}); end
    for nDimI = 1: numel(nsDim)
       nDim = nsDim(nDimI);
       if s < 7 % UNIFORM
@@ -66,7 +66,13 @@ for s = scenarios
       titleStr = any2str(nPtsPerCat{s}(1), ' points/cat. in ',nDim,' dim.');
       HS2SandMDS(points,categories,figPanelSpec,titleStr,dimLow)
       end
-      iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow,centers{s},radii{s});
+      frow = (find(scenarios==s)-1);
+      ax = fh.a.h(9*frow+1:9*(frow+1));
+      if nDim==3,       HS2SandMDS(points,categories,ax(2:5),[],dimLow);
+                        plotEllipsoids(ax(1),categories,centers{s},radii{s});
+      elseif nDim==200, HS2SandMDS(points,categories,ax(6:9),[],dimLow);
+      end
+      
    end
 end
 
@@ -80,22 +86,12 @@ set(fh.f,'Renderer','painters');   printFig;
 delete(fh.a.h(2:9:end));
 set(fh.f,'Renderer','openGL');     printFig(fh.f,[],'png',1200);
 
-%% Add 3D & 2D renders to "Combo plot" for paper
-function iCombo = updateComboPlot(fh,iCombo,nDim,points,categories,dimLow,centers,radii)
-if     nDim==3
-   iCombo = iCombo+1;
+%% Add 3D renders to "Combo plot" for paper
+function plotEllipsoids(ax,categories,centers,radii)
    % format abbreviated radii and centers into full 3D vectors/matrices
    locations  = zeros(numel(centers),3); locations(:,1) = centers(:);
    covariance = arrayfun(@(r) r*eye(3),radii.^2,'UniformOutput',false)';
 
-   axtivate(fh.a.h(1+(iCombo-1)*9));
+   axtivate(ax);
    draw3dEllipsoid(locations,covariance,categories.colors,[],1/3);
-   view([180 90]);
-
-   ax = fh.a.h((2:5)+(iCombo-1)*9);
-   HS2SandMDS(points,categories,ax,[],dimLow);
-elseif nDim==200
-   ax = fh.a.h((6:9)+(iCombo-1)*9);
-   HS2SandMDS(points,categories,ax,[],dimLow);
-end
 
