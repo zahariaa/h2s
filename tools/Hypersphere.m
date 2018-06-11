@@ -57,14 +57,13 @@ classdef Hypersphere
          % separate or enclosed
          d = obj.dists;
          r = obj.radii;
-         if     d >= sum(r),       V = 0;   return
+         if     d >= sum(r), V = 0;   return
          elseif d < 1e-6 || d-abs(diff(r)) < 1e-6
             V = obj.select(minix(r)).volume;  return
          else % continue
          end
          % Assume partial overlap of hyperspheres. Compute sector cap heights.
-         h = [(r(2)-r(1)+d)*(r(2)+r(1)+d); (r(1)-r(2)+d)*(r(1)+r(2)+d)]/(2*d);
-         h = h(:)';
+         h = [(r(2)-r(1)+d)*(r(2)+r(1)-d) (r(1)-r(2)+d)*(r(1)+r(2)-d)]/(2*d);
          n = numel(r);
          % Compute overlap (lens) volume by computing each sector cap volume
          % see http://mathworld.wolfram.com/Sphere-SphereIntersection.html
