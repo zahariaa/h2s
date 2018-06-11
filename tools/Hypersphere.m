@@ -58,7 +58,8 @@ classdef Hypersphere
          d = obj.dists;
          r = obj.radii;
          if     d >= sum(r),       V = 0;   return
-         elseif d <= abs(diff(r)), V = obj.select(minix(r)).volume;  return
+         elseif d < 1e-6 || d-abs(diff(r)) < 1e-6
+            V = obj.select(minix(r)).volume;  return
          else % continue
          end
          % Assume partial overlap of hyperspheres. Compute sector cap heights.
