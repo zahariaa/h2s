@@ -1,10 +1,29 @@
-function [loc,locCI,rad,radCI] = estimateHypersphere(points,nBootstrapSamples)
-
+function varargout = estimateHypersphere(points,varargin)
+% hyp = estimateHypersphere(points,nBootstrapSamples) % output is a Hypersphere obj
+% hyps = estimateHypersphere(points,categories) % output is an array of Hypersphere objs
+% [loc,locCI,rad,radCI] = estimateHypersphere(points,nBootstrapSamples)
 % uses expected distance between pairs of points to estimate the radius of
 % the hypersphere.
 % uses the mean (or median) to estimate the location of the center.
 % uses bootstrap resampling of the points to estimate 95% confidence
 % intervals for both.
+
+for v = 2:nargin
+   if isa(varargin{v-1},'Categories'), categories = varargin{v-1};
+   elseif  isnumeric(varargin{v-1}),   nBootstrapSamples = varargin{v-1};
+   end
+end
+if ~exist('nBootstrapSamples','var'),  nBootstrapSamples = 1; end
+%% recurse cell array of points
+if exist('categories','var')
+   for i = 1:numel(categories.labels)
+      p{i} = points(~~categories.vectors(:,i),:);
+   end
+   hyp = cellfun(@(p) estimateHypersphere(p,nBootstrapSamples), ...
+                      p,'UniformOutput',false);
+   varargout{1} = [hyp{:}];
+   return
+end
 
 %% preparation
 [n,d] = size(points);
@@ -36,6 +55,11 @@ if dvarrad > -0.5 % Assume Gaussian
    rad = stdEst(points)*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2));
 else             % Assume Uniform
    rad = stdPer(d)*std(radii) + median(radii);
+end
+
+if nargout==1, varargout = {Hypersphere(loc,rad)};
+else           varargout = {loc,locCI,rad,radCI};
+               varargout = varargout(1:nargout);
 end
 
 return
