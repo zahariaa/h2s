@@ -1,22 +1,36 @@
 classdef Hyperspheres < Hypersphere
    properties
-      categories = true;
+      categories = NaN;
       error      = NaN;
       dists      = NaN;
       margins    = NaN;
    end
    methods
       function obj = Hyperspheres(h,varargin)  % Contructor
-         if ~isa(h,'Hypersphere')
+         if isstruct(h) % Helper for older struct-based code
+            h = Hypersphere(h.centers,h.radii);
+         elseif isstr(h) && strcmpi(h,'estimate')
+            obj = Hyperspheres(estimateHypersphere(varargin{:}));
+            return
+         elseif isa(h,'Hypersphere') && numel(h)>1 % merge Hypersphere array
+            h(1).centers = vertcat(h.centers);
+            h(1).radii   = horzcat(h.radii  );
+            h = h(1);
+         elseif ~isa(h,'Hypersphere')
             h = Hypersphere(h,varargin{1});
             varargin = varargin(2:end);
          end
-         obj.centers = h.centers;
-         obj.radii   = h.radii;
-         obj.dists   = h.dists;
-         obj.margins = h.margins;
-         if nargin>3, obj.categories = varargin{1};
-         else         obj.categories = Categories(numel(obj.radii));
+         obj.centers    = h.centers;
+         obj.radii      = h.radii;
+         obj.dists      = h.dists;
+         obj.margins    = h.margins;
+         obj.categories = Categories(numel(obj.radii));
+         for v = 1:numel(varargin)
+            if isa(varargin{v},'Categories')
+               obj.categories = varargin{v};
+            elseif isa(varargin{v},'Hyperspheres')
+               obj.error = obj.stress(varargin{v});
+            end
          end
       end
       function obj = select(obj,i)
