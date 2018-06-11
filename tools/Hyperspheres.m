@@ -60,6 +60,12 @@ classdef Hyperspheres < Hypersphere
          model = Hyperspheres(fit(:,2:end),fit(:,1));
          model.error = err;
       end
+      function show(obj,varargin)
+         switch size(obj.centers,2)
+            case 2; showCirclesModel(obj,varargin{:});
+            case 3; showSpheresModel(obj,varargin{:});
+         end
+      end
    end
 end
 
