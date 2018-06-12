@@ -41,14 +41,15 @@ classdef Hypersphere
             end
          end
       end
-      function V = overlap(obj)        % Compute overlap volume of two hyperspheres
+      function V = overlap(obj,varargin)        % Compute overlap volume of two hyperspheres
+         % SECOND ARGUMENT: Normalize by volume? (default: false=no)
          n = numel(obj.radii);
          V = zeros(1,(n^2-n)/2);
          % Recurse if more than two objs passed
          if n > 2, i=0;
             for a = 1:n-1
                for b = a+1:n, i=i+1;
-                  V(i) = obj.select([a b]).overlap;
+                  V(i) = obj.select([a b]).overlap(varargin{:});
                end
             end
             return
@@ -68,9 +69,8 @@ classdef Hypersphere
          % Compute overlap (lens) volume by computing each sector cap volume
          % see http://mathworld.wolfram.com/Sphere-SphereIntersection.html
          % and https://en.wikipedia.org/wiki/Spherical_cap#Hyperspherical_cap
-         V = 0.5*obj.volume ...
-               .*betainc((2*r.*h-h.^2)./(r.^2),(n+1)/2,1/2) ...
-               ./beta((n+1)/2,1/2);
+         V = 0.5*betainc((2*r.*h-h.^2)./(r.^2),(n+1)/2,1/2)./beta((n+1)/2,1/2);
+         if nargin==1 || varargin{1}, V=V.*obj.volume; end 
          V = sum(V);
       end
    end
