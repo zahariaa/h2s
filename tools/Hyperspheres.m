@@ -51,7 +51,7 @@ classdef Hyperspheres < Hypersphere
          if isa(centers_and_radii,'Hyperspheres'), lo = centers_and_radii;
          else lo = Hyperspheres(centers_and_radii(:,2:end),centers_and_radii(:,1));
          end
-         err = sum( (hi.dists - lo.dists).^2 + (hi.overlap - lo.overlap).^2 );
+         err = sum( (hi.dists - lo.dists).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );% + (hi.margins - lo.margins).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );
       end
       function model = h2s(obj,dimLow)
          if ~exist('dimLow','var'), dimLow = 2; end
