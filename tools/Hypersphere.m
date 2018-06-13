@@ -42,7 +42,7 @@ classdef Hypersphere
          end
       end
       function V = overlap(obj,varargin)        % Compute overlap volume of two hyperspheres
-         % SECOND ARGUMENT: Normalize by volume? (default: false=no)
+         % SECOND ARGUMENT: "Overlap" output means overlap volume? (default: false=no)
          n = numel(obj.radii);
          V = zeros(1,(n^2-n)/2);
          % Recurse if more than two objs passed
@@ -60,7 +60,11 @@ classdef Hypersphere
          r = obj.radii;
          if     d >= sum(r), V = 0;   return
          elseif d < 1e-6 || d-abs(diff(r)) < 1e-6
-            V = obj.select(minix(r)).volume;  return
+            V = obj.select(minix(r)).volume;
+            if nargin==1 || varargin{1}  % do nothing 
+            else                         V = 1 + V/obj.select(maxix(r)).volume;
+            end
+            return
          else % continue
          end
          % Assume partial overlap of hyperspheres. Compute sector cap heights.
