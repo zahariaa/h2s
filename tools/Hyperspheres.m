@@ -47,17 +47,34 @@ classdef Hyperspheres < Hypersphere
          obj.dists   = obj.dists(sel);
          obj.margins = obj.margins(sel);
       end
-      function err = stress(centers_and_radii,hi)
-         if isa(centers_and_radii,'Hyperspheres'), lo = centers_and_radii;
-         else lo = Hyperspheres(centers_and_radii(:,2:end),centers_and_radii(:,1));
+      function err = stress(centers,radii,hi)
+         if isa(centers,'Hyperspheres')
+            lo = centers;
+            if exist('radii','var'), hi = radii; end
+         else lo = Hyperspheres(centers,radii);
          end
          err = sum( (hi.dists - lo.dists).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );% + (hi.margins - lo.margins).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );
       end
-      function model = h2s(obj,dimLow)
-         if ~exist('dimLow','var'), dimLow = 2; end
-         x0  = [obj.radii(:) obj.centers(:,1:dimLow)];
-         [fit,err] = fminunc(@(x) stress(x,obj),x0);
-         model = Hyperspheres(fit(:,2:end),fit(:,1));
+      function model = h2s(obj,varargin)
+      % Optimizes stress of self.centers relative to hi
+      % Takes as input: self.h2s(dimLow), self.h2s(hi), self.h2s(hi,dimLow)
+      % dimLow defaluts to 2, hi defaults to self
+         for v = 2:nargin
+            if isa(varargin{v-1},'Hyperspheres')
+               hi = varargin{v-1};
+            elseif isnumeric(varargin{v-1}) && numel(varargin{v-1})==1
+               dimLow = varargin{v-1};
+            end
+         end
+         if ~exist('dimLow','var'), dimLow = 2;   end
+         if ~exist('hi'    ,'var'), hi     = obj; end
+         % Setup optimization and run
+         x0  = mdscale(obj.dists,dimLow);
+         %x0  = obj.centers(:,1:dimLow);
+         opts = optimoptions('fminunc','Display','off');
+         [fit,err] = fminunc(@(x) stress(x,obj.radii,hi),x0,opts);
+         % Output reduced Hyperspheres model
+         model = Hyperspheres(fit,obj.radii);
          model.error = err;
       end
       function show(obj,varargin)
