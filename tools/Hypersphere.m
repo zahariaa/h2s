@@ -6,6 +6,14 @@ classdef Hypersphere
    methods
       function obj = Hypersphere(centers,radii)     % Constructor
          if nargin==0; return; end
+         % Recurse if multiple centers provided (e.g., bootstrapping)
+         if iscell(centers) 
+            obj = repmat(Hypersphere(),[numel(centers) 1]);
+            for i = 1:numel(centers)
+               obj(i) = Hypersphere(centers{i},radii(i));
+            end
+            return
+         end
          if size(centers,1) ~= numel(radii), obj.centers = centers';
          else                                obj.centers = centers;
          end
@@ -14,6 +22,30 @@ classdef Hypersphere
       function obj = select(obj,i)
          obj.centers    = obj.centers(i,:);
          obj.radii      = obj.radii(i);
+      end
+      function obj = merge(obj,ix)
+         if ~exist('ix','var'), ix = 1:numel(obj); end
+         if isa(ix,'Hypersphere')
+            nself = numel(obj);
+            n2mrg = numel(ix);
+            if nself==n2mrg && n2mrg > 1 % merge parallel arrays into one array
+               for i = 1:n2mrg
+                  obj(i) = obj(i).merge(ix(i));
+               end
+            elseif n2mrg > 1             % merge second array into first object
+               for i = 1:n2mrg
+                  obj = obj.merge(ix(i));
+               end
+            else                         % merge two objects
+               obj.centers = [obj.centers;ix.centers];
+               obj.radii   = [obj.radii   ix.radii  ];
+            end
+            return
+         else                            % merge (indexed) array of objects into one object
+            obj(1).centers = vertcat(obj(ix).centers);
+            obj(1).radii   = horzcat(obj(ix).radii  );
+            obj = obj(1);
+         end
       end
       function V = volume(obj)          % Compute volume of a single hypersphere
          r = obj.radii;
