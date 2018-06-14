@@ -4,8 +4,7 @@ classdef Hyperspheres < Hypersphere
       error      = NaN;
       dists      = NaN;
       margins    = NaN;
-      bootstraps = [];
-      ci         = repmat(Hypersphere,[2 1]);  % confidence intervals, with raw bootstrap data
+      ci         = [];  % confidence intervals, with raw bootstrap data
    end
    methods
       function obj = Hyperspheres(h,varargin)  % Contructor
@@ -16,13 +15,9 @@ classdef Hyperspheres < Hypersphere
             obj = Hyperspheres(h(1));
             if numel(h)>1 % assumes Hypersphere was bootstrapped
                % do something with the rest to deal with bootstraps
-               obj.bootstraps = h(2:end);
-               obj.ci(1)      = Hypersphere(prctile(cat(3,h(2:end).centers), 2.5,3),...
-                                            prctile(vertcat(h(2:end).radii), 2.5)      );
-               obj.ci(2)      = Hypersphere(prctile(cat(3,h(2:end).centers),97.5,3),...
-                                            prctile(vertcat(h(2:end).radii),97.5)      );
-               %obj.ci.centers = prctile(cat(3,h(2:end).centers),[2.5 97.5],3);
-               %obj.ci.radii   = prctile(vertcat(h(2:end).radii),[2.5 97.5])';
+               obj.ci.bootstraps = h(2:end);
+               obj.ci.centers = prctile(cat(3,h(2:end).centers),[2.5 97.5],3);
+               obj.ci.radii   = prctile(vertcat(h(2:end).radii),[2.5 97.5])';
                % do something with first element (non-boostrapped)
             end
             return
