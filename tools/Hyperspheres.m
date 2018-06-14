@@ -11,11 +11,12 @@ classdef Hyperspheres < Hypersphere
             h = Hypersphere(h.centers,h.radii);
          elseif isstr(h) && strcmpi(h,'estimate')
             obj = Hyperspheres(estimateHypersphere(varargin{:}));
+         elseif isa(h,'Hypersphere') && numel(h)>1 % convert all to Hyperspheres objects
+            for i = 1:numel(h)
+               obj(i) = Hyperspheres(h(i),varargin{:});
+            end
             return
-         elseif isa(h,'Hypersphere') && numel(h)>1 % merge Hypersphere array
-            h(1).centers = vertcat(h.centers);
-            h(1).radii   = horzcat(h.radii  );
-            h = h(1);
+            % note: use Hypersphere.merge to merge Hypersphere objects
          elseif ~isa(h,'Hypersphere')
             h = Hypersphere(h,varargin{1});
             varargin = varargin(2:end);
