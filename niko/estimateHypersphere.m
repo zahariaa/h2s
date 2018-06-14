@@ -21,7 +21,11 @@ if exist('categories','var')
    end
    hyp = cellfun(@(p) estimateHypersphere(p,nBootstrapSamples), ...
                       p,'UniformOutput',false);
-   varargout{1} = [hyp{:}];
+   % Merge across categories
+   for i=2:numel(hyp)
+      hyp{1} = hyp{1}.merge(hyp{i});
+   end
+   varargout{1} = hyp{1};
    return
 end
 
@@ -38,8 +42,14 @@ if exist('nBootstrapSamples','var') && nBootstrapSamples > 1
       bsIs = ceil(rand(n,1)*n); % boostrap sample indices
       [locs(bootstrapI,:),~,rads(bootstrapI)] = estimateHypersphere(points(bsIs,:));
    end
-   locCI = prctile(locs,[2.5 97.5]);
-   radCI = prctile(rads,[2.5 97.5]);
+   if nargout==1, varargout = {Hypersphere(mat2cell([loc;locs],...
+                                 ones(nBootstrapSamples+1,1),d), [rad;rads])};
+   else
+      locCI = prctile(locs,[2.5 97.5]);
+      radCI = prctile(rads,[2.5 97.5]);
+      varargout = {loc,locCI,rad,radCI};
+      varargout = varargout(1:nargout);
+   end
    return
 else  locCI = [];   radCI = [];
 end
