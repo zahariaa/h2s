@@ -67,7 +67,7 @@ classdef Hyperspheres < Hypersphere
          if ~exist('dimLow','var'), dimLow = 2;   end
          if ~exist('hi'    ,'var'), hi     = obj; end
          % Setup optimization and run
-         x0  = mdscale(obj.dists,dimLow);
+         x0  = mdscale(hi.dists,dimLow);
          %x0  = obj.centers(:,1:dimLow);
          opts = optimoptions('fminunc','Display','off');
          [model.centers,err] = fminunc(@(x) stress(x,hi),x0,opts);
