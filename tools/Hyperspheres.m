@@ -62,7 +62,8 @@ classdef Hyperspheres < Hypersphere
          if isa(centers,'Hyperspheres'), lo = centers;
          else lo = Hyperspheres(centers,hi.radii); % recalculates dists, margins
          end
-         err = sum( (hi.dists - lo.dists).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );% + (hi.margins - lo.margins).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );
+         err = sum( (hi.dists - lo.dists).^2 + (hi.overlap(false) - lo.overlap(false)).^2 );
+% + (hi.margins - lo.margins).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );
       end
       function model = h2s(obj,varargin)
       % Optimizes stress of self.centers relative to hi

@@ -14,14 +14,15 @@ classdef Hypersphere
             end
             return
          end
+         % Ensure consistent formatting
          if size(centers,1) ~= numel(radii), obj.centers = centers';
          else                                obj.centers = centers;
          end
          obj.radii = radii(:)';
       end
       function obj = select(obj,i)
-         obj.centers    = obj.centers(i,:);
-         obj.radii      = obj.radii(i);
+         obj.centers = obj.centers(i,:);
+         obj.radii   = obj.radii(i);
       end
       function obj = merge(obj,ix)
          if ~exist('ix','var'), ix = 1:numel(obj); end
