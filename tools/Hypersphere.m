@@ -74,41 +74,23 @@ classdef Hypersphere
             end
          end
       end
-      function V = overlap(obj,varargin)        % Compute overlap volume of two hyperspheres
-         % SECOND ARGUMENT: "Overlap" output means overlap volume? (default: false=no)
+      function V = overlap(obj)        % Compute overlap distance of two hyperspheres
          n = numel(obj.radii);
          V = zeros(1,(n^2-n)/2);
          % Recurse if more than two objs passed
          if n > 2, i=0;
             for a = 1:n-1
                for b = a+1:n, i=i+1;
-                  V(i) = obj.select([a b]).overlap(varargin{:});
+                  V(i) = obj.select([a b]).overlap;
                end
             end
             return
          end
          % Collect dimensionality and radii, compute V if hyperspheres are
          % separate or enclosed
-         d = obj.dists;
          r = obj.radii;
-         if     d >= sum(r), V = 0;   return
-         elseif d < 1e-6 || d-abs(diff(r)) < 1e-6
-            V = obj.select(minix(r)).volume;
-            if nargin==1 || varargin{1}  % do nothing 
-            else                         V = 1 + V/obj.select(maxix(r)).volume;
-            end
-            return
-         else % continue
-         end
-         % Assume partial overlap of hyperspheres. Compute sector cap heights.
-         h = [(r(2)-r(1)+d)*(r(2)+r(1)-d) (r(1)-r(2)+d)*(r(1)+r(2)-d)]/(2*d);
-         n = numel(r);
-         % Compute overlap (lens) volume by computing each sector cap volume
-         % see http://mathworld.wolfram.com/Sphere-SphereIntersection.html
-         % and https://en.wikipedia.org/wiki/Spherical_cap#Hyperspherical_cap
-         V = 0.5*betainc((2*r.*h-h.^2)./(r.^2),(n+1)/2,1/2)./beta((n+1)/2,1/2);
-         if nargin==1 || varargin{1}, V=V.*obj.volume; end 
-         V = sum(V);
+         V = sum(r)-obj.dists;
+         V = min(V,2*min(r));
       end
    end
 end
