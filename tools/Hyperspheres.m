@@ -63,9 +63,10 @@ classdef Hyperspheres < Hypersphere
          else lo = Hyperspheres(centers_and_radii(:,2:end),centers_and_radii(:,1));
          end
          fudge = 1e-4;
-         err = sum( ((hi.dists - lo.dists)./(sign(hi.dists).*max(fudge,abs(hi.dists)))).^2 ...
-                    + ((hi.overlap - lo.overlap)./(sign(hi.overlap).*max(fudge,abs(hi.overlap)))).^2 ) ...
-               + sum( ((hi.radii-lo.radii)./(sign(hi.radii).*max(fudge,abs(hi.radii)))).^2 );
+         cfactor = (numel(lo.radii)-1)/2;
+         err = [ abs((hi.dists   - lo.dists  )./hi.dists) ...
+                 abs((hi.overlap - lo.overlap)./hi.overlap) ...
+                 abs((hi.radii   - lo.radii  )./hi.radii)*cfactor ];
 % + (hi.margins - lo.margins).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );
       end
       function model = h2s(obj,varargin)
@@ -84,10 +85,10 @@ classdef Hyperspheres < Hypersphere
          % Setup optimization and run
          x0  = [hi.radii(:) mdscale(hi.dists,dimLow)];
          opts = optimoptions('fminunc','Display','off');
-         [fit,err] = fminunc(@(x) stress(x,hi),x0,opts);
+         fit = fminunc(@(x) max(stress(x,hi)),x0,opts);
          % Output reduced Hyperspheres model
          model = Hyperspheres(fit(:,2:end),fit(:,1));
-         model.error = err;
+         model.error = model.stress(hi);
       end
       function show(obj,varargin)
          switch size(obj.centers,2)
