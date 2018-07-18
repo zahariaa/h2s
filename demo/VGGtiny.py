@@ -3,6 +3,7 @@ Reduced VGG-16 for Tiny ImageNet Model
 modified VGG-16, code mostly copied from torchvision.model
 """
 import math
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -10,6 +11,9 @@ import torch.optim as optim
 import matplotlib
 import matplotlib.pyplot as plt
 from IPython.display import clear_output
+# Torch model zoo
+import torchvision as tv
+import torchvision.transforms as transforms
 
 class VGGtiny(nn.Module):
 
@@ -47,7 +51,10 @@ class VGGtiny(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
 
-    def train(self, trainloader, plotmode=False, nupdate=5):
+    def train(self, plotmode=False, nupdate=5, **kwargs):
+        if "trainloader" not in kwargs:
+            trainloader=loadtiny()
+
         # zero gradients
         optimizer = optim.SGD(self.parameters(), lr=0.01, momentum=0.9)
         optimizer.zero_grad()   # zero the gradient buffers
@@ -57,9 +64,8 @@ class VGGtiny(nn.Module):
 
         for epoch in range(2):  # loop over the dataset multiple times
 
-            running_loss = 0.0
             losses = np.array([])
-            epoch_correct = 0.0
+            accuracies = np.array([])
             for i, data in enumerate(trainloader, 0):
                 # get the inputs
                 inputs, labels = data
@@ -75,24 +81,21 @@ class VGGtiny(nn.Module):
                 optimizer.step()
                 
                 # calculate accuracy
-                epoch_correct += (outputs.max(1)[1] == labels).sum().data[0]
+                accuracy = (outputs.max(1)[1] == labels).sum().item() / trainloader.batch_size
+                accuracies = np.append(accuracies,accuracy)
 
                 # print statistics
-                running_loss += loss.item()
                 if plotmode and i % nupdate == nupdate-1:    # print every 100 mini-batches
-        #             print('[%d, %5d] loss: %.3f' %
-        #                   (epoch + 1, i + 1, running_loss / 5))
-        #             running_loss = 0.0
                     # PLOT!
                     clear_output(wait=True)
-                    plt.figure(figsize=(5,5))
+                    plt.figure(figsize=(1,5))
                     plt.subplot(1, 2, 1)
                     plt.plot(losses / trainloader.batch_size)
                     plt.xlabel('minibatches')
                     plt.title('loss')
                     
                     plt.subplot(1, 2, 2)
-                    plt.plot(epoch_correct / trainloader.batch_size)
+                    plt.plot(accuracies)
                     plt.xlabel('minibatches')
                     plt.title('accuracy')
                     
@@ -130,4 +133,41 @@ def vgg16():
     """
     model = VGGtiny(make_layers(cfg['D']))
     return model
+
+def loadtinylabels(datadir = '/Users/zaharia/Downloads/tiny-imagenet-200/'):
+    # LOAD CLASS LABELS
+    labelset = {}
+    with open(datadir + "words.txt") as f:
+        for line in f:
+           (key, val) = line.rstrip().split(None,1)
+           labelset[key] = val
+    return labelset
+
+def loadtiny(datadir = '/Users/zaharia/Downloads/tiny-imagenet-200/',suff='train/',**kwargs):
+    if "transform" not in kwargs:
+        # To transform PIL (jpeg) images into Python tensors, normalized with 0.5 mean & std
+        transform = transforms.Compose(
+            [transforms.RandomCrop(56),            # RANDOM 87.5% CROP, like VGG-16 256->224
+             transforms.ToTensor(),
+             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+    labelset = loadtinylabels(datadir)
+
+    def idx2label(s,i):
+        """Convert class codes to actual labels, e.g. labels[trainset.classes[2]] """
+        if not isinstance(i,int) and i.numel()>1: # Recurse
+            i = i.data
+            labs = [idx2label(s,ii) for ii in i]
+        else:
+            labs = labelset[s.classes[i]]
+        return labs
+
+    # Load training data
+    trainset = tv.datasets.ImageFolder(datadir + suff,transform=transform)
+    trainloader = torch.utils.data.DataLoader(trainset,
+                                              batch_size=64,
+                                              shuffle=True,
+                                              num_workers=2)
+    return trainloader
+
 
