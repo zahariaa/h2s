@@ -53,7 +53,13 @@ class VGGtiny(nn.Module):
 
     def train(self, plotmode=False, nupdate=5, **kwargs):
         if "trainloader" not in kwargs:
-            trainloader=loadtiny()
+            trainloader=loadtiny(**kwargs)
+
+        # Detect CUDA and send network to GPU if possible
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # Assume that we are on a CUDA machine, then this should print a CUDA device:
+        print(device)
+        self.to(device)
 
         # zero gradients
         optimizer = optim.SGD(self.parameters(), lr=0.01, momentum=0.9)
@@ -66,9 +72,9 @@ class VGGtiny(nn.Module):
 
             losses = np.array([])
             accuracies = np.array([])
-            for i, data in enumerate(trainloader, 0):
+            for i, (inputs,labels) in enumerate(trainloader, 0):
                 # get the inputs
-                inputs, labels = data
+                inputs, labels = inputs.to(device), labels.to(device)
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
@@ -88,7 +94,7 @@ class VGGtiny(nn.Module):
                 if plotmode and i % nupdate == nupdate-1:    # print every 100 mini-batches
                     # PLOT!
                     clear_output(wait=True)
-                    plt.figure(figsize=(1,5))
+                    plt.figure(figsize=(10,5))
                     plt.subplot(1, 2, 1)
                     plt.plot(losses / trainloader.batch_size)
                     plt.xlabel('minibatches')
@@ -141,6 +147,7 @@ def loadtinylabels(datadir = '/Users/zaharia/Downloads/tiny-imagenet-200/'):
         for line in f:
            (key, val) = line.rstrip().split(None,1)
            labelset[key] = val
+    print('Labels loaded.')
     return labelset
 
 def loadtiny(datadir = '/Users/zaharia/Downloads/tiny-imagenet-200/',suff='train/',**kwargs):
