@@ -28,7 +28,7 @@ set(gcf,'Renderer','OpenGL');
 
 %% set view and lighting
 % set view angle orthogonal to the PC12 plane of the locations
-eigenvecs = princomp(model.centers);
+eigenvecs = pca(model.centers);
 normal = null(eigenvecs(:,1:2)');
 
 if corr(model.centers*normal,model.radii')<0
