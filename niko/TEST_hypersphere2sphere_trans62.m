@@ -26,6 +26,25 @@ categories.colors = [0.8 0 0
                      0   0.5 0.8
                      0.5 0.5 0.5];
 
+%% roll all subsets and supersets into one
+allcategories.vectors = [humanFaces+animalFaces+humanBodies+animalBodies ... % animate
+                         artificialObjects+naturalObjects+artificialScenes+naturalScenes ... % inanimate
+                         humanFaces+animalFaces humanBodies+animalBodies ... % faces & bodies
+                         artificialObjects+naturalObjects artificialScenes+naturalScenes ... % objects & scenes
+                         humanFaces animalFaces humanBodies animalBodies artificialObjects naturalObjects artificialScenes naturalScenes]; % all
+allcategories.labels  = {'animate' 'inanimate' 'faces' 'bodies' 'objects' 'scenes' ...
+                         'humanFaces' 'animalFaces' 'humanBodies' 'animalBodies' 'artificialObjects' 'naturalObjects' 'artificialScenes' 'naturalScenes'};
+allcategories.colors = [1   0.5 0     % animate   = orange
+                        0   0   1     % inanimate = blue
+                        1   0   0     % faces     = red
+                        1   1   0     % bodies    = yellow
+                        0   1   0     % objects   = green
+                        0.5 0   0.5]; % scenes    = purple
+natart = allcategories.colors([1 1 2 2 3 3 4 4]+2,:);
+natart(1:2:end,:) = min(1,natart(1:2:end,:)+0.3); % human/artifical are lighter
+natart(2:2:end,:) = max(0,natart(2:2:end,:)-0.3); % animal/natural are darker
+allcategories.colors = [allcategories.colors;natart];
+
 %% define ROIs
 roi.name = {'V1','V2','V3','LOC','OFA','FFA','PPA','aIT'};
 roi.hemisphere = {'left','right'};
