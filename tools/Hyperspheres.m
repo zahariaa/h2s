@@ -14,19 +14,17 @@ classdef Hyperspheres < Hypersphere
             h = estimateHypersphere(varargin{:});
             obj = Hyperspheres(h(1));
             if numel(h)>1 % assumes Hypersphere was bootstrapped
-               % do something with the rest to deal with bootstraps
                obj.ci.bootstraps = h(2:end);
                obj.ci.centers = prctile(cat(3,h(2:end).centers),[2.5 97.5],3);
                obj.ci.radii   = prctile(vertcat(h(2:end).radii),[2.5 97.5])';
-               % do something with first element (non-boostrapped)
             end
             return
          elseif isa(h,'Hypersphere') && numel(h)>1 % convert all to Hyperspheres objects
+            % note: use Hypersphere.merge to merge Hypersphere objects
             for i = 1:numel(h)
                obj(i) = Hyperspheres(h(i),varargin{:});
             end
             return
-            % note: use Hypersphere.merge to merge Hypersphere objects
          elseif ~isa(h,'Hypersphere')
             h = Hypersphere(h,varargin{1});
             varargin = varargin(2:end);
