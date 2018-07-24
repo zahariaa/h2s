@@ -84,7 +84,7 @@ classdef Hyperspheres < Hypersphere
          if ~exist('hi'    ,'var'), hi     = obj; end
          % Setup optimization and run
          x0  = [hi.radii(:) mdscale(hi.dists,dimLow)];
-         opts = optimoptions('fminunc','Display','off');
+         opts = optimoptions(@fminunc,'Display','iter','OutputFcn',@obj.stressPlotFcn);
          fit = fminunc(@(x) max(stress(x,hi)),x0,opts);
          % Output reduced Hyperspheres model
          model = Hyperspheres(fit(:,2:end),fit(:,1));
@@ -95,6 +95,25 @@ classdef Hyperspheres < Hypersphere
             case 2; showCirclesModel(obj,varargin{:});
             case 3; showSpheresModel(obj,varargin{:});
          end
+      end
+      function stop = stressPlotFcn(obj,varargin)%x,optimValues,state)
+         % unpack inputs
+         x           = varargin{1};
+         optimValues = varargin{2};
+         state       = varargin{3};
+         % Plot
+         figure(99);
+         if strcmpi(state,'init'), clf; end
+         subplot(1,2,1); hold on
+         h = Hyperspheres(x,ones(size(x,1),1));
+         h.show
+
+         subplot(1,2,2); hold on % Plot error value
+         plot(optimValues.iteration,optimValues.fval,'ko')
+         ylabel('Error')
+         xlabel('Iteration')
+
+         stop = false;
       end
    end
 end
