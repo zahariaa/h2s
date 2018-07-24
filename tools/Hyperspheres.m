@@ -101,17 +101,34 @@ classdef Hyperspheres < Hypersphere
          x           = varargin{1};
          optimValues = varargin{2};
          state       = varargin{3};
+         % preliminaries
+         n           = size(x,1);
+         cols        = colormap('lines');
          % Plot
          figure(99);
          if strcmpi(state,'init'), clf; end
-         subplot(1,2,1); hold on
-         h = Hyperspheres(x,ones(size(x,1),1));
+         subplot(2,3,1); hold on
+         h = Hyperspheres(x,obj.radii);
          h.show
 
-         subplot(1,2,2); hold on % Plot error value
+         subplot(2,3,2:3); hold on % Plot error value
          plot(optimValues.iteration,optimValues.fval,'ko')
          ylabel('Error')
          xlabel('Iteration')
+
+         fudge = 1e-4;
+         hdists   = abs(obj.dists   - h.dists  ) ./ max(fudge,obj.dists  );
+         hoverlap = abs(obj.overlap - h.overlap) ./ max(fudge,obj.overlap);
+         hmargins = abs(obj.margins - h.margins) ./ max(fudge,obj.margins);
+         for i = 1:(n^2-n)/2
+            subplot(2,3,6); hold on;title('margins')
+            plot(optimValues.iteration,hmargins(i),'o','Color',cols(i,:));
+            subplot(2,3,5); hold on;title('overlaps')
+            plot(optimValues.iteration,hoverlap(i),'o','Color',cols(i,:));
+            subplot(2,3,4); hold on;title('dists')
+            plot(optimValues.iteration,hdists(i),'o','Color',cols(i,:));
+         end
+         xlabel('Relative error')
 
          stop = false;
       end
