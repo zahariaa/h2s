@@ -103,13 +103,14 @@ classdef Hyperspheres < Hypersphere
          % preliminaries
          n           = size(x,1);
          cols        = colormap('lines');
+         % copy hi radii to lo Hyperspheres
+         lo          = Hyperspheres(x,obj.radii);
+         % Recalculate error from high dimensional Hyperspheres obj
+         lo.error    = reshape(lo.stress(obj),[],2)';
+
          % Plot
-         figure(99);
-         if strcmpi(state,'init'), clf; end
-         subplot(3,3,1); hold on
-         h = Hyperspheres(x,obj.radii);
-         h.error  = reshape(h.stress(obj),[],3)';
-         h.show
+         figure(99);    if strcmpi(state,'init'), clf; end
+         subplot(3,3,1); hold on; lo.show
 
          subplot(3,3,2:3); hold on % Plot error value
          plot(optimValues.iteration,optimValues.fval,'ko')
@@ -117,18 +118,18 @@ classdef Hyperspheres < Hypersphere
          xlabel('Iteration')
 
          for i = 1:(n^2-n)/2
-            subplot(3,3,9); hold on;title('margins')
-            plot(optimValues.iteration,h.margins(i),'o','Color',cols(i,:));
-            subplot(3,3,8); hold on;title('overlaps')
-            plot(optimValues.iteration,h.overlap(i),'o','Color',cols(i,:));
-            subplot(3,3,7); hold on;title('dists')
-            plot(optimValues.iteration,h.dists(i)  ,'o','Color',cols(i,:));
-            subplot(3,3,6); hold on;title('margins')
-            plot(optimValues.iteration,h.error(3,i),'o','Color',cols(i,:));
-            subplot(3,3,5); hold on;title('overlaps')
-            plot(optimValues.iteration,h.error(2,i),'o','Color',cols(i,:));
-            subplot(3,3,4); hold on;title('dists')
-            plot(optimValues.iteration,h.error(1,i),'o','Color',cols(i,:));
+            subplot(3,3,9); hold on;title('dists'  )
+            plot(optimValues.iteration,lo.dists(i),'o','Color',cols(i,:));
+            subplot(3,3,8); hold on;title('margins')
+            plot(optimValues.iteration,lo.margins(i),'o','Color',cols(i,:));
+            subplot(3,3,7); hold on;title('overlaps')
+            plot(optimValues.iteration,lo.overlap(i)  ,'o','Color',cols(i,:));
+            subplot(3,3,9); hold on;title('dists'  )
+            plot(optimValues.iteration,lo.error(3,i),'o','Color',cols(i,:));
+            subplot(3,3,5); hold on;title('margins')
+            plot(optimValues.iteration,lo.error(2,i),'o','Color',cols(i,:));
+            subplot(3,3,4); hold on;title('overlaps')
+            plot(optimValues.iteration,lo.error(1,i),'o','Color',cols(i,:));
          end
          ylabel('Relative error')
 
