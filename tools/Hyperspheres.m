@@ -91,6 +91,7 @@ classdef Hyperspheres < Hypersphere
          model.error = model.stress(hi);
       end
       function show(obj,varargin)
+         obj.error = max(obj.error(:));
          switch size(obj.centers,2)
             case 2; showCirclesModel(obj,varargin{:});
             case 3; showSpheresModel(obj,varargin{:});
