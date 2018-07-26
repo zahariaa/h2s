@@ -35,7 +35,7 @@ classdef Categories
                     135   184    98
                     182   173    74
                     223   157    79]/255;
-            else c = colorcube(n);
+            else c = colormap('lines');
             end
             obj.colors = c(1:n,:);
          end
