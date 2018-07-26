@@ -48,12 +48,13 @@ classdef Hypersphere
             obj = obj(1);
          end
       end
-      function V = volume(obj)          % Compute volume of a single hypersphere
+      function V = volume(obj,i)          % Compute volume of a single hypersphere
          r = obj.radii;
          d = size(obj.centers,1);
          V = (r.^d).*(pi.^(d/2))./gamma((d/2)+1);
+         if exist('i','var'), V = V(i); end
       end
-      function D = dists(obj)           % Compute distance between two hyperspheres
+      function D = dists(obj,j)           % Compute distance between two hyperspheres
          n = numel(obj.radii);
          D = zeros(1,(n^2-n)/2);
          i=0;
@@ -62,8 +63,9 @@ classdef Hypersphere
                D(i) = sqrt(sum(diff(obj.centers([a b],:)).^2));
             end
          end
+         if exist('j','var'), D = D(j); end
       end
-      function M = margins(obj)
+      function M = margins(obj,j)
          n = numel(obj.radii);
          d = obj.dists;
          M = zeros(1,(n^2-n)/2);
@@ -73,8 +75,9 @@ classdef Hypersphere
                M(i) = d(i) - obj.radii(a) - obj.radii(b);
             end
          end
+         if exist('j','var'), M = M(j); end
       end
-      function V = overlap(obj)        % Compute overlap distance of two hyperspheres
+      function V = overlap(obj,j)      % Compute overlap distance of two hyperspheres
          n = numel(obj.radii);
          V = zeros(1,(n^2-n)/2);
          % Recurse if more than two objs passed
@@ -84,6 +87,7 @@ classdef Hypersphere
                   V(i) = obj.select([a b]).overlap;
                end
             end
+            if exist('j','var'), V = V(j); end
             return
          end
          % Collect dimensionality and radii, compute V if hyperspheres are
