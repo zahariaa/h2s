@@ -60,12 +60,12 @@ classdef Hyperspheres < Hypersphere
          if isa(centers,'Hyperspheres'), lo = centers;
          else lo = Hyperspheres(centers,hi.radii(:));
          end
-         fudge = 1e-8;
          cfactor = 1;%(numel(lo.radii)-1)/2;
-         err_denom = [hi.overlap hi.margins hi.dists];
-         err       = abs(err_denom - [lo.overlap lo.margins lo.dists]);
-         err_denom(abs(err_denom)<fudge) = 1;
-         err       = err./err_denom;
+         fudge     = 1e-4;
+         err_denom = [max(fudge,hi.overlap) hi.margins hi.dists];
+         err       = abs(err_denom - [max(fudge,lo.overlap) lo.margins lo.dists]);
+         err_denom(abs(err_denom)<fudge) = fudge;
+         err       = err./abs(err_denom);
 % + (hi.margins - lo.margins).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );
       end
       function model = h2s(obj,varargin)
