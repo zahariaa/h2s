@@ -60,11 +60,12 @@ classdef Hyperspheres < Hypersphere
          if isa(centers,'Hyperspheres'), lo = centers;
          else lo = Hyperspheres(centers,hi.radii(:));
          end
-         fudge = 1e-4;
-         cfactor = (numel(lo.radii)-1)/2;
-         err = [ abs((hi.dists   - lo.dists  )./hi.dists) ...
-                 abs((hi.overlap - lo.overlap)./hi.overlap) ...
-                 abs((hi.radii   - lo.radii  )./hi.radii)*cfactor ];
+         fudge = 1e-8;
+         cfactor = 1;%(numel(lo.radii)-1)/2;
+         err_denom = [hi.overlap hi.margins hi.dists];
+         err       = abs(err_denom - [lo.overlap lo.margins lo.dists]);
+         err_denom(abs(err_denom)<fudge) = 1;
+         err       = err./err_denom;
 % + (hi.margins - lo.margins).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );
       end
       function model = h2s(obj,varargin)
@@ -81,15 +82,15 @@ classdef Hyperspheres < Hypersphere
          if ~exist('dimLow','var'), dimLow = 2;   end
          if ~exist('hi'    ,'var'), hi     = obj; end
          % Setup optimization and run
-         opts = optimoptions(@fminunc,'Display','iter','OutputFcn',@obj.stressPlotFcn);
-         fit = fminunc(@(x) max(stress(x,hi)),x0,opts);
          x0  = mdscale(hi.dists,dimLow);
+         opts = optimoptions(@fmincon,'Display','iter','OutputFcn',@obj.stressPlotFcn);
+         fit = fmincon(@(x) mean(stress(x,hi)),x0,[],[],[],[],[],[],[],opts);
          % Output reduced Hyperspheres model
          model = Hyperspheres(fit,hi.radii(:));
          model.error = model.stress(hi);
       end
       function show(obj,varargin)
-         obj.error = max(obj.error(:));
+         obj.error = mean(obj.error(:));
          switch size(obj.centers,2)
             case 2; showCirclesModel(obj,varargin{:});
             case 3; showSpheresModel(obj,varargin{:});
@@ -106,7 +107,7 @@ classdef Hyperspheres < Hypersphere
          % copy hi radii to lo Hyperspheres
          lo          = Hyperspheres(x,obj.radii);
          % Recalculate error from high dimensional Hyperspheres obj
-         lo.error    = reshape(lo.stress(obj),[],2)';
+         lo.error    = reshape(lo.stress(obj),[],3)';
 
          % Plot
          figure(99);    if strcmpi(state,'init'), clf; end
