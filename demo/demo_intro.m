@@ -62,3 +62,14 @@ set(fh.f,'Renderer','painters','PaperUnits','inches','PaperSize',papsz,...
     'PaperPosition',[0.01*papsz papsz],'PaperPositionMode','manual');
 printFig;
 
+
+%% TEST NEW STRESS FUNCTION
+orig = Hyperspheres(v',ones(1,4));
+low  = Hyperspheres(model);
+low.error = low.stress(orig);
+new  = orig.h2s
+% Plot
+fh = newfigure([1 2],'compare'); low.show(fh.a.h(1));
+                                 new.show(fh.a.h(2));
+set(fh.f,'Renderer','openGL')
+
