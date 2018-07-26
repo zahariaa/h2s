@@ -83,7 +83,7 @@ classdef Hyperspheres < Hypersphere
          if ~exist('hi'    ,'var'), hi     = obj; end
          % Setup optimization and run
          x0   = mdscale(hi.dists,dimLow);
-         opts = optimoptions(@fmincon,'Display','iter','OutputFcn',@obj.stressPlotFcn,'TolFun',1e-6,'TolX',1e-6);
+         opts = optimoptions(@fmincon,'Display','iter','OutputFcn',@obj.stressPlotFcn,'TolFun',1e-4,'TolX',1e-4);
          fit = fmincon(@(x) mean(stress(x,hi)),x0,[],[],[],[],[],[],[],opts);
          % Output reduced Hyperspheres model
          model = Hyperspheres(fit,hi.radii(:));
