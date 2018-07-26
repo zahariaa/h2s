@@ -107,7 +107,7 @@ classdef Hyperspheres < Hypersphere
          % copy hi radii to lo Hyperspheres
          lo          = Hyperspheres(x,obj.radii);
          % Recalculate error from high dimensional Hyperspheres obj
-         lo.error    = reshape(lo.stress(obj),[],3)';
+         lo.error    = reshape(lo.stress(obj),(n^2-n)/2,[])';
 
          % Plot
          figure(99);
@@ -128,10 +128,14 @@ classdef Hyperspheres < Hypersphere
             plot(optimValues.iteration,lo.margins(i),'o','Color',cols(i,:));
             subplot(3,3,7); hold on;title('overlaps')
             plot(optimValues.iteration,lo.overlap(i),'o','Color',cols(i,:));
+            if size(lo.error,1)>2
             subplot(3,3,6); hold on;title('dists'  )
             plot(optimValues.iteration,lo.error(3,i),'o','Color',cols(i,:));
+            end
+            if size(lo.error,1)>1
             subplot(3,3,5); hold on;title('margins')
             plot(optimValues.iteration,lo.error(2,i),'o','Color',cols(i,:));
+            end
             subplot(3,3,4); hold on;title('overlaps')
             plot(optimValues.iteration,lo.error(1,i),'o','Color',cols(i,:));
          end
