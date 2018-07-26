@@ -56,9 +56,9 @@ classdef Hyperspheres < Hypersphere
          obj.dists   = obj.dists(sel);
          obj.margins = obj.margins(sel);
       end
-      function err = stress(centers_and_radii,hi)
-         if isa(centers_and_radii,'Hyperspheres'), lo = centers_and_radii;
-         else lo = Hyperspheres(centers_and_radii(:,2:end),centers_and_radii(:,1));
+      function err = stress(centers,hi)
+         if isa(centers,'Hyperspheres'), lo = centers;
+         else lo = Hyperspheres(centers,hi.radii(:));
          end
          fudge = 1e-4;
          cfactor = (numel(lo.radii)-1)/2;
@@ -81,11 +81,11 @@ classdef Hyperspheres < Hypersphere
          if ~exist('dimLow','var'), dimLow = 2;   end
          if ~exist('hi'    ,'var'), hi     = obj; end
          % Setup optimization and run
-         x0  = [hi.radii(:) mdscale(hi.dists,dimLow)];
          opts = optimoptions(@fminunc,'Display','iter','OutputFcn',@obj.stressPlotFcn);
          fit = fminunc(@(x) max(stress(x,hi)),x0,opts);
+         x0  = mdscale(hi.dists,dimLow);
          % Output reduced Hyperspheres model
-         model = Hyperspheres(fit(:,2:end),fit(:,1));
+         model = Hyperspheres(fit,hi.radii(:));
          model.error = model.stress(hi);
       end
       function show(obj,varargin)
