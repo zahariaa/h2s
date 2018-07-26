@@ -62,8 +62,8 @@ classdef Hyperspheres < Hypersphere
          end
          fudge     = 1e-4;
          cfactor   = 1;%(numel(lo.radii)-1)/2;
-         err_denom = [max(fudge,hi.overlap) hi.margins hi.dists];
-         err       = abs(err_denom - [max(fudge,lo.overlap) lo.margins lo.dists]);
+         err_denom = [max(fudge,hi.overlap) hi.dists];
+         err       = abs(err_denom - [lo.overlap lo.dists]).^8;
          err_denom(abs(err_denom)<fudge) = fudge;
          err       = err./abs(err_denom);
 % + (hi.margins - lo.margins).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );
