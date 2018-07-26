@@ -110,10 +110,13 @@ classdef Hyperspheres < Hypersphere
          lo.error    = reshape(lo.stress(obj),[],3)';
 
          % Plot
-         figure(99);    if strcmpi(state,'init'), clf; end
-         subplot(3,3,1); hold on; lo.show
+         figure(99);
+         if strcmpi(state,'init')
+            clf; subplot(3,3,1); hold on; lo.show; title('initial');
+         end
+         subplot(3,3,2); hold on; lo.show; title('fit')
 
-         subplot(3,3,2:3); hold on % Plot error value
+         subplot(3,3,3); hold on % Plot error value
          plot(optimValues.iteration,optimValues.fval,'ko')
          ylabel('Error')
          xlabel('Iteration')
