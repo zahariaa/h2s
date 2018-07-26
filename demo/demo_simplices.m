@@ -11,12 +11,13 @@ for d = ds
    [points,categories] = randnsimplex_of_nballs(d,50);
    [model,high] = hypersphere2sphere(points,categories,[],dimLow);
    model = Hyperspheres(model,groundtruth);
-   testhi = Hyperspheres('estimate',points,categories);
+   testhi = Hyperspheres('estimate',points,categories);%,100);
    testhi.error = testhi.stress(groundtruth);
    testlo = testhi.h2s(dimLow);
+   testlo.error = testlo.stress(groundtruth);
 
-   axtivate((find(ds==d)-1)*2+1); model.show(dimLow);
-   axtivate((find(ds==d)-1)*2+2); testlo.show(dimLow);
+   axtivate(fh.a.h((find(ds==d)-1)*2+1)); model.show(dimLow);
+   axtivate(fh.a.h((find(ds==d)-1)*2+2)); testlo.show(dimLow);
    drawnow;
 end
 
