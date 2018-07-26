@@ -60,8 +60,8 @@ classdef Hyperspheres < Hypersphere
          if isa(centers,'Hyperspheres'), lo = centers;
          else lo = Hyperspheres(centers,hi.radii(:));
          end
-         cfactor = 1;%(numel(lo.radii)-1)/2;
          fudge     = 1e-4;
+         cfactor   = 1;%(numel(lo.radii)-1)/2;
          err_denom = [max(fudge,hi.overlap) hi.margins hi.dists];
          err       = abs(err_denom - [max(fudge,lo.overlap) lo.margins lo.dists]);
          err_denom(abs(err_denom)<fudge) = fudge;
@@ -82,7 +82,7 @@ classdef Hyperspheres < Hypersphere
          if ~exist('dimLow','var'), dimLow = 2;   end
          if ~exist('hi'    ,'var'), hi     = obj; end
          % Setup optimization and run
-         x0  = mdscale(hi.dists,dimLow);
+         x0   = mdscale(hi.dists,dimLow);
          opts = optimoptions(@fmincon,'Display','iter','OutputFcn',@obj.stressPlotFcn,'TolFun',1e-6,'TolX',1e-6);
          fit = fmincon(@(x) mean(stress(x,hi)),x0,[],[],[],[],[],[],[],opts);
          % Output reduced Hyperspheres model
