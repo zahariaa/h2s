@@ -123,12 +123,12 @@ classdef Hyperspheres < Hypersphere
 
          for i = 1:(n^2-n)/2
             subplot(3,3,9); hold on;title('dists'  )
-            plot(optimValues.iteration,lo.dists(i),'o','Color',cols(i,:));
+            plot(optimValues.iteration,lo.dists(i)  ,'o','Color',cols(i,:));
             subplot(3,3,8); hold on;title('margins')
             plot(optimValues.iteration,lo.margins(i),'o','Color',cols(i,:));
             subplot(3,3,7); hold on;title('overlaps')
-            plot(optimValues.iteration,lo.overlap(i)  ,'o','Color',cols(i,:));
-            subplot(3,3,9); hold on;title('dists'  )
+            plot(optimValues.iteration,lo.overlap(i),'o','Color',cols(i,:));
+            subplot(3,3,6); hold on;title('dists'  )
             plot(optimValues.iteration,lo.error(3,i),'o','Color',cols(i,:));
             subplot(3,3,5); hold on;title('margins')
             plot(optimValues.iteration,lo.error(2,i),'o','Color',cols(i,:));
