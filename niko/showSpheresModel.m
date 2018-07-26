@@ -40,6 +40,8 @@ camDist = 50*sqrt(sum(std(model.centers).^2));
 camPos = objectsCentroid'-normal*camDist;
 
 set(gca,'CameraPosition',camPos,'CameraTarget',objectsCentroid);
+% Force lighting to camlight headlight
+delete(findall(gca,'type','light')); camlight
 set(objHs,'AmbientStrength',  0,...
           'SpecularStrength', 1,...
           'DiffuseStrength',  1);

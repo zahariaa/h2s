@@ -29,7 +29,7 @@ if mn > 1
    if numel(opacity) < mn;   opacity = repmat({opacity},[mn 1]);   end
    % Recursive call, with RECURSED flag set to true ...
    h = cellfun( @draw3dEllipsoid, location,covariance,col,n,opacity,repmat({true},[mn 1]));
-   lighting phong; camlight; view(180,90); % ... so that lighting is only applied 1x
+   lighting phong; camlight('headlight'); view(180,90); % ... so that lighting is only applied 1x
    return
 elseif ~exist('RECURSED','var'), RECURSED = false;
 end
@@ -51,5 +51,5 @@ h = surf(X2,Y2,Z2,'FaceColor',col,'EdgeColor','none','FaceAlpha',opacity);
 axis vis3d off
 
 % Make sure lighting is only created after last call
-if ~RECURSED,   lighting phong;   camlight('left');   end
+if ~RECURSED,   lighting phong;   camlight('headlight');   end
 
