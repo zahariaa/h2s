@@ -62,12 +62,31 @@ classdef Hyperspheres < Hypersphere
          end
          fudge     = 1e-4;
          cfactor   = 1;%(numel(lo.radii)-1)/2;
-         err_denom = [max(fudge,hi.overlap) hi.dists];
+         hoverlap  = max(fudge,hi.overlap);
+         err_denom = [hoverlap hi.dists];
          err       = abs(err_denom - [lo.overlap lo.dists]).^8;
          err_denom(abs(err_denom)<fudge) = fudge;
          err       = err./abs(err_denom);
-% + (hi.margins - lo.margins).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );
          errtotal  = sum(err);
+
+         % Gradient: partial centers derivative of distances
+         [n,d]= size(lo.centers);
+         dddc = zeros([n d (n^2-n)/2]);
+         i = 0;
+         for a = 1:n-1
+            for b = a+1:n, i = i+1;
+               dddc(a,:,i) = (lo.centers(a,:) - lo.centers(b,:) ) / lo.dists(i);
+               dddc(b,:,i) = -dddc(a,:,i);
+            end
+         end
+
+         % Gradient: partial derivatives of error, relative to distances and overlaps
+         dEdd = -8*((hi.dists - lo.dists  ).^7)./hi.dists;
+         dEdo = -8*((hoverlap - lo.overlap).^7)./hoverlap;
+         % Gradient: put it all together
+         grad = sum(dddc.*permute(repmat(dEdd' - dEdo',[1 n d]),[2 3 1]),3);
+         %grad = sum(dddc.*permute(repmat(1./hoverlap' - 1./hi.dists',[1 n d]),[2 3 1]),3);
+
       end
       function model = h2s(obj,varargin)
       % Optimizes stress of self.centers relative to hi
@@ -84,7 +103,7 @@ classdef Hyperspheres < Hypersphere
          if ~exist('hi'    ,'var'), hi     = obj; end
          % Setup optimization and run
          x0   = mdscale(hi.dists,dimLow);
-         opts = optimoptions(@fmincon,'Display','iter','OutputFcn',@obj.stressPlotFcn,'TolFun',1e-4,'TolX',1e-4);
+         opts = optimoptions(@fmincon,'Display','iter','OutputFcn',@obj.stressPlotFcn,'TolFun',1e-4,'TolX',1e-4,'SpecifyObjectiveGradient',true);%,'DerivativeCheck','on');
          fit = fmincon(@(x) stress(x,hi),x0,[],[],[],[],[],[],[],opts);
          % Output reduced Hyperspheres model
          model = Hyperspheres(fit,hi.radii(:));
