@@ -56,7 +56,7 @@ classdef Hyperspheres < Hypersphere
          obj.dists   = obj.dists(sel);
          obj.margins = obj.margins(sel);
       end
-      function err = stress(centers,hi)
+      function [errtotal,grad,err] = stress(centers,hi)
          if isa(centers,'Hyperspheres'), lo = centers;
          else lo = Hyperspheres(centers,hi.radii(:));
          end
@@ -67,6 +67,7 @@ classdef Hyperspheres < Hypersphere
          err_denom(abs(err_denom)<fudge) = fudge;
          err       = err./abs(err_denom);
 % + (hi.margins - lo.margins).^2 + (hi.overlap(true) - lo.overlap(true)).^2 );
+         errtotal  = sum(err);
       end
       function model = h2s(obj,varargin)
       % Optimizes stress of self.centers relative to hi
@@ -84,7 +85,7 @@ classdef Hyperspheres < Hypersphere
          % Setup optimization and run
          x0   = mdscale(hi.dists,dimLow);
          opts = optimoptions(@fmincon,'Display','iter','OutputFcn',@obj.stressPlotFcn,'TolFun',1e-4,'TolX',1e-4);
-         fit = fmincon(@(x) mean(stress(x,hi)),x0,[],[],[],[],[],[],[],opts);
+         fit = fmincon(@(x) stress(x,hi),x0,[],[],[],[],[],[],[],opts);
          % Output reduced Hyperspheres model
          model = Hyperspheres(fit,hi.radii(:));
          model.error = model.stress(hi);
@@ -107,7 +108,7 @@ classdef Hyperspheres < Hypersphere
          % copy hi radii to lo Hyperspheres
          lo          = Hyperspheres(x,obj.radii);
          % Recalculate error from high dimensional Hyperspheres obj
-         lo.error    = reshape(lo.stress(obj),(n^2-n)/2,[])';
+         lo.error    = reshape(undeal(3,@() lo.stress(obj)),(n^2-n)/2,[])';
 
          % Plot
          figure(99);
