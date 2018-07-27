@@ -60,13 +60,11 @@ classdef Hyperspheres < Hypersphere
          if isa(centers,'Hyperspheres'), lo = centers;
          else lo = Hyperspheres(centers,hi.radii(:));
          end
-         fudge     = 1e-4;
-         cfactor   = 1;%(numel(lo.radii)-1)/2;
+         fudge     = 1e-8;
          hoverlap  = max(fudge,hi.overlap);
          err_denom = [hoverlap hi.dists];
          err       = abs(err_denom - [lo.overlap lo.dists]).^8;
-         err_denom(abs(err_denom)<fudge) = fudge;
-         err       = err./abs(err_denom);
+         err       = err./err_denom;
          errtotal  = sum(err);
 
          % Gradient: partial centers derivative of distances
@@ -79,7 +77,6 @@ classdef Hyperspheres < Hypersphere
                dddc(b,:,i) = -dddc(a,:,i);
             end
          end
-
          % Gradient: partial derivatives of error, relative to distances and overlaps
          dEdd = -8*((hi.dists - lo.dists  ).^7)./hi.dists;
          dEdo = -8*((hoverlap - lo.overlap).^7)./hoverlap;
