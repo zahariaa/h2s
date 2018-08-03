@@ -61,15 +61,18 @@ classdef Hyperspheres < Hypersphere
          else lo = Hyperspheres(centers,hi.radii(:));
          end
          fudge     = 1e-8;
-         hoverlap  = max(fudge,hi.overlap);
-         err_denom = [hoverlap hi.dists];
-         err       = abs(err_denom - [lo.overlap lo.dists]).^8;
-         err       = err./err_denom;
+         erro      = ( (hi.overlap - lo.overlap)./hi.overlap ).^2;
+         erro(erro<=0) = 1e12;
+         ix        = abs(hi.overlap)<fudge;
+         erro(ix)  = 0.01*abs(hi.overlap(ix) - lo.overlap(ix));
+         errd      = (hi.dists/mean(hi.dists) - lo.dists/mean(lo.dists)).^2;
+         err       = [errd erro];
          errtotal  = sum(err);
 
          % Gradient: partial centers derivative of distances
          [n,d]= size(lo.centers);
-         dddc = zeros([n d (n^2-n)/2]);
+         nn2  = (n^2-n)/2;
+         dddc = zeros([n d nn2]);
          i = 0;
          for a = 1:n-1
             for b = a+1:n, i = i+1;
@@ -78,11 +81,13 @@ classdef Hyperspheres < Hypersphere
             end
          end
          % Gradient: partial derivatives of error, relative to distances and overlaps
-         dEdd = -8*((hi.dists - lo.dists  ).^7)./hi.dists;
-         dEdo = -8*((hoverlap - lo.overlap).^7)./hoverlap;
+         otherlo = sum(lo.dists) - lo.dists;
+         dEdd = 2*(nn2^2)*(lo.dists.*otherlo - sum(lo.dists.^2)+lo.dists.^2) / (sum(lo.dists)^3);
+         dEdo = -2*(hi.overlap - lo.overlap) ./ (hi.overlap.^2);
+         dEdo(erro==1e12) = 1;
+         dEdo(ix) = 0.01*(lo.overlap(ix)-hi.overlap(ix))./abs(lo.overlap(ix)-hi.overlap(ix));
          % Gradient: put it all together
          grad = sum(dddc.*permute(repmat(dEdd' - dEdo',[1 n d]),[2 3 1]),3);
-         %grad = sum(dddc.*permute(repmat(1./hoverlap' - 1./hi.dists',[1 n d]),[2 3 1]),3);
 
       end
       function model = h2s(obj,varargin)
