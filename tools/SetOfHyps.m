@@ -1,4 +1,4 @@
-classdef Hyperspheres < Hypersphere
+classdef SetOfHyps < Hypersphere
    properties
       categories = NaN;
       error      = NaN;
@@ -7,22 +7,22 @@ classdef Hyperspheres < Hypersphere
       ci         = [];  % confidence intervals, with raw bootstrap data
    end
    methods
-      function obj = Hyperspheres(h,varargin)  % Contructor
+      function obj = SetOfHyps(h,varargin)  % Contructor
          if isstruct(h) % Helper for older struct-based code
             h = Hypersphere(h.centers,h.radii);
          elseif isstr(h) && strcmpi(h,'estimate')
             h = estimateHypersphere(varargin{:});
-            obj = Hyperspheres(h(1));
+            obj = SetOfHyps(h(1));
             if numel(h)>1 % assumes Hypersphere was bootstrapped
                obj.ci.bootstraps = h(2:end);
                obj.ci.centers = prctile(cat(3,h(2:end).centers),[2.5 97.5],3);
                obj.ci.radii   = prctile(vertcat(h(2:end).radii),[2.5 97.5])';
             end
             return
-         elseif isa(h,'Hypersphere') && numel(h)>1 % convert all to Hyperspheres objects
+         elseif isa(h,'Hypersphere') && numel(h)>1 % convert all to SetOfHyps objects
             % note: use Hypersphere.merge to merge Hypersphere objects
             for i = 1:numel(h)
-               obj(i) = Hyperspheres(h(i),varargin{:});
+               obj(i) = SetOfHyps(h(i),varargin{:});
             end
             return
          elseif ~isa(h,'Hypersphere')
@@ -37,7 +37,7 @@ classdef Hyperspheres < Hypersphere
          for v = 1:numel(varargin)
             if isa(varargin{v},'Categories')
                obj.categories = varargin{v};
-            elseif isa(varargin{v},'Hyperspheres')
+            elseif isa(varargin{v},'SetOfHyps')
                obj.error = obj.stress(varargin{v});
             end
          end
@@ -57,12 +57,12 @@ classdef Hyperspheres < Hypersphere
          obj.margins = obj.margins(sel);
       end
       function [errtotal,grad,err] = stress(centers,hi)
-         if isa(centers,'Hyperspheres'), lo = centers;
-         else lo = Hyperspheres(centers,hi.radii(:));
+         if isa(centers,'SetOfHyps'), lo = centers;
+         else lo = SetOfHyps(centers,hi.radii(:));
          end
          fudge     = 1e-8;
          erro      = ( (hi.overlap - lo.overlap)./hi.overlap ).^2;
-         erro(erro<=0) = 1e12;
+         erro(erro<=0) = 1/fudge;
          ix        = abs(hi.overlap)<fudge;
          erro(ix)  = 10*abs(hi.overlap(ix) - lo.overlap(ix));
          errd      = (hi.dists/mean(hi.dists) - lo.dists/mean(lo.dists)).^2;
@@ -84,7 +84,7 @@ classdef Hyperspheres < Hypersphere
          otherlo = sum(lo.dists) - lo.dists;
          dEdd = 2*(nn2^2)*(lo.dists.*otherlo - sum(lo.dists.^2)+lo.dists.^2) / (sum(lo.dists)^3);
          dEdo = -2*(hi.overlap - lo.overlap) ./ (hi.overlap.^2);
-         dEdo(erro==1e12) = 0.1;
+         dEdo(erro==1/fudge) = 0.1;
          dEdo(ix) = 10*(lo.overlap(ix)-hi.overlap(ix))./abs(lo.overlap(ix)-hi.overlap(ix));
          % Gradient: put it all together
          grad = sum(dddc.*permute(repmat(dEdd' - dEdo',[1 n d]),[2 3 1]),3);
@@ -95,7 +95,7 @@ classdef Hyperspheres < Hypersphere
       % Takes as input: self.h2s(dimLow), self.h2s(hi), self.h2s(hi,dimLow)
       % dimLow defaluts to 2, hi defaults to self
          for v = 2:nargin
-            if isa(varargin{v-1},'Hyperspheres')
+            if isa(varargin{v-1},'SetOfHyps')
                hi = varargin{v-1};
             elseif isnumeric(varargin{v-1}) && numel(varargin{v-1})==1
                dimLow = varargin{v-1};
@@ -107,8 +107,8 @@ classdef Hyperspheres < Hypersphere
          x0   = mdscale(hi.dists,dimLow);
          opts = optimoptions(@fmincon,'Display','iter','OutputFcn',@obj.stressPlotFcn,'TolFun',1e-4,'TolX',1e-4,'SpecifyObjectiveGradient',true);%,'DerivativeCheck','on');
          fit = fmincon(@(x) stress(x,hi),x0,[],[],[],[],[],[],[],opts);
-         % Output reduced Hyperspheres model
-         model = Hyperspheres(fit,hi.radii(:));
+         % Output reduced SetOfHyps model
+         model = SetOfHyps(fit,hi.radii(:));
          model.error = model.stress(hi);
       end
       function show(obj,varargin)
@@ -126,9 +126,9 @@ classdef Hyperspheres < Hypersphere
          % preliminaries
          n           = size(x,1);
          cols        = colormap('lines');
-         % copy hi radii to lo Hyperspheres
-         lo          = Hyperspheres(x,obj.radii);
-         % Recalculate error from high dimensional Hyperspheres obj
+         % copy hi radii to lo SetOfHyps
+         lo          = SetOfHyps(x,obj.radii);
+         % Recalculate error from high dimensional SetOfHyps obj
          lo.error    = reshape(undeal(3,@() lo.stress(obj)),(n^2-n)/2,[])';
 
          % Plot
