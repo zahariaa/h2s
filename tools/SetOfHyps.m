@@ -62,7 +62,6 @@ classdef SetOfHyps < Hypersphere
          end
          fudge     = 1e-8;
          erro      = ( (hi.overlap - lo.overlap)./hi.overlap ).^2;
-         erro(erro<=0) = 1/fudge;
          ix        = abs(hi.overlap)<fudge;
          erro(ix)  = 10*abs(hi.overlap(ix) - lo.overlap(ix));
          errd      = (hi.dists/mean(hi.dists) - lo.dists/mean(lo.dists)).^2;
@@ -84,7 +83,6 @@ classdef SetOfHyps < Hypersphere
          otherlo = sum(lo.dists) - lo.dists;
          dEdd = 2*(nn2^2)*(lo.dists.*otherlo - sum(lo.dists.^2)+lo.dists.^2) / (sum(lo.dists)^3);
          dEdo = -2*(hi.overlap - lo.overlap) ./ (hi.overlap.^2);
-         dEdo(erro==1/fudge) = 0.1;
          dEdo(ix) = 10*(lo.overlap(ix)-hi.overlap(ix))./abs(lo.overlap(ix)-hi.overlap(ix));
          % Gradient: put it all together
          grad = sum(dddc.*permute(repmat(dEdd' - dEdo',[1 n d]),[2 3 1]),3);
