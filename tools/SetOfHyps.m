@@ -12,12 +12,7 @@ classdef SetOfHyps < Hypersphere
             h = Hypersphere(h.centers,h.radii);
          elseif isstr(h) && strcmpi(h,'estimate')
             h = estimateHypersphere(varargin{:});
-            obj = SetOfHyps(h(1));
-            if numel(h)>1 % assumes Hypersphere was bootstrapped
-               obj.ci.bootstraps = h(2:end);
-               obj.ci.centers = prctile(cat(3,h(2:end).centers),[2.5 97.5],3);
-               obj.ci.radii   = prctile(vertcat(h(2:end).radii),[2.5 97.5])';
-            end
+            obj = SetOfHyps(h,varargin{:}).merge;
             return
          elseif isa(h,'Hypersphere') && numel(h)>1 % convert all to SetOfHyps objects
             % note: use Hypersphere.merge to merge Hypersphere objects
@@ -40,6 +35,14 @@ classdef SetOfHyps < Hypersphere
             elseif isa(varargin{v},'SetOfHyps')
                obj.error = obj.stress(varargin{v});
             end
+         end
+      end
+      function obj = merge(self)
+         obj = SetOfHyps(self(1));
+         if numel(self)>1 % assumes Hypersphere was bootstrapped
+            obj.ci.bootstraps = self(2:end);
+            obj.ci.centers = prctile(cat(3,self(2:end).centers),[2.5 97.5],3);
+            obj.ci.radii   = prctile(vertcat(self(2:end).radii),[2.5 97.5])';
          end
       end
       function obj = select(obj,i)
