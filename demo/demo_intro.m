@@ -19,7 +19,9 @@ end
 categories = Categories(n*ones(1,4));
 
 %% PLOT
-fh = newfigure('intro',[1 3]);
+for itype = 1:-1:0
+nCats = size(points,1)/n - itype;
+fh = newfigure(sprintf('intro%u',itype),[1 3]);
 axtivate(1)
 for i = 1:nCats
    plot3(points((i-1)*n+1:i*n,1),points((i-1)*n+1:i*n,2),...
@@ -29,7 +31,7 @@ end
 draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*2); axis vis3d off; view(40,22); rotate3d;
 
 axtivate(2) 
-sh = draw3dEllipsoid(v,[],categories.colors,[],1/3);
+sh = draw3dEllipsoid(v(1:nCats,:),[],categories.colors(1:nCats,:),[],1/3);
 draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*2); view(40,22);
 match3D(fh.a.h(1),fh.a.h(2));
 set(fh.f,'Renderer','openGL');
@@ -48,7 +50,7 @@ for i=1:nCats % Plot centers and radii
 end
 
 axtivate(3)
-model = hypersphere2sphere(points,categories,[],2);
+model = hypersphere2sphere(points(1:(n*nCats),:),categories.select(1:nCats),[],2);
 showCirclesModel(model,[],[]);
 for i = 1:nCats
    plot(model.centers(i,1),model.centers(i,2),'wo','MarkerSize',dotsz,...
@@ -61,7 +63,7 @@ papsz = [5.75 5.75/3];
 set(fh.f,'Renderer','painters','PaperUnits','inches','PaperSize',papsz,...
     'PaperPosition',[0.01*papsz papsz],'PaperPositionMode','manual');
 printFig;
-
+end
 
 %% TEST NEW STRESS FUNCTION
 orig = SetOfHyps(v',ones(1,4));
