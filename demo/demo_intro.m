@@ -64,8 +64,8 @@ printFig;
 
 
 %% TEST NEW STRESS FUNCTION
-orig = Hyperspheres(v',ones(1,4));
-low  = Hyperspheres(model);
+orig = SetOfHyps(v',ones(1,4));
+low  = SetOfHyps(model);
 low.error = low.stress(orig);
 new  = orig.h2s
 % Plot
