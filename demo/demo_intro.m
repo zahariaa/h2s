@@ -19,6 +19,7 @@ end
 categories = Categories(n*ones(1,4));
 
 %% PLOT
+planelim = 2;
 for itype = 1:-1:0
    nCats = size(points,1)/n - itype;
    fh = newfigure(sprintf('intro%u',itype),[1 3]);
@@ -28,11 +29,11 @@ for itype = 1:-1:0
             points((i-1)*n+1:i*n,3),'wo','MarkerSize',dotsz,...
             'MarkerFaceColor',categories.colors(i,:));
    end
-   draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*2); axis vis3d off; view(40,22); rotate3d;
+   draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*planelim); axis vis3d off; view(40,22); rotate3d;
    
    axtivate(2) 
    sh = draw3dEllipsoid(v(1:nCats,:),[],categories.colors(1:nCats,:),[],1/3);
-   draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*2); view(40,22);
+   draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*planelim); view(40,22);
    match3D(fh.a.h(1),fh.a.h(2));
    set(fh.f,'Renderer','openGL');
    axis(fh.a.h(3),'off');
