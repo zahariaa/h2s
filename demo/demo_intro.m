@@ -39,10 +39,41 @@ for itype = 1:-1:0
    axis(fh.a.h(3),'off');
    set(sh,'AmbientStrength',0,'SpecularStrength',1,'DiffuseStrength',1);
    camlight('left'); lighting phong
+
+%% PLOT PLANE
+   if itype==1
+      % Compute intersection plane coefficients
+      m = rref([v(1:3,:) ones(3,1)]);
+      m = m(:,end);
+      m = -m(1:2)/m(3);
+      b = mean(v(1:3,:));
+      % Draw plane
+      [X,Y] = meshgrid([-planelim planelim],[-planelim planelim]);
+      X = X([1 2 4 3 1]);
+      Y = Y([1 2 4 3 1]);
+      % limit plane extent to within axis limits (so plane outline is visible)
+      X(X>0) = min(planelim,(planelim-b(3))/m(1)); X(X<0) = max(-planelim,(-planelim-b(3))/m(1));
+      Y(Y>0) = min(planelim,(planelim-b(3))/m(2)); Y(Y<0) = max(-planelim,(-planelim-b(3))/m(2));
+      plane = patch(X+b(1),Y+b(2),m(1)*X+m(2)*Y+b(3),zeros(size(X)),...
+                    'EdgeColor','k','LineWidth',1,'FaceColor',[0.5 0.5 0.5],'FaceAlpha',0.5)
+      % scaling for intersection circles
+      mx = sqrt(1/(1+m(1)^2));
+      my = sqrt(1/(1+m(2)^2));
+      % Plot intersection circles
+      t = linspace(0,2*pi,100);
+      for i = 1:nCats
+         circ(i) = plot3(mx*cos(t)+v(i,1),my*sin(t)+v(i,2),v(i,3)+mx*m(1)*cos(t)+my*m(2)*sin(t),...
+                         'Color',categories.colors(i,:),'LineWidth',2);
+      end
+   else circ = []; plane = [];
+   end
+   % %DEBUG
+   % axis([-4 4 -4 4 -4 4])
+   % keyboard
    % export spheres in png
    subplotResize(fh.a.h,[],0.01); printFig([],[],'png',200);
-   delete(sh); % delete spheres for pdf
-   
+   delete([sh(:);circ(:);plane]);   % delete spheres, intersection circles, and plane for pdf
+
    for i=1:nCats % Plot centers and radii
       plot3(v(i,1),v(i,2),v(i,3),'wo','MarkerSize',dotsz,...
             'MarkerFaceColor',categories.colors(i,:));
