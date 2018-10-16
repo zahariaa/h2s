@@ -35,15 +35,16 @@ allcategories.vectors = [humanFaces+animalFaces+humanBodies+animalBodies ... % a
 allcategories.labels  = {'animate' 'inanimate' 'faces' 'bodies' 'objects' 'scenes' ...
                          'humanFaces' 'animalFaces' 'humanBodies' 'animalBodies' 'artificialObjects' 'naturalObjects' 'artificialScenes' 'naturalScenes'};
 allcategories.colors = [1   0.5 0     % animate   = orange
-                        0   0   1     % inanimate = blue
+                        0.5 0   0.5   % inanimate = purple
                         1   0   0     % faces     = red
-                        1   1   0     % bodies    = yellow
-                        0   1   0     % objects   = green
-                        0.5 0   0.5]; % scenes    = purple
+                        0   1   0     % bodies    = green
+                        0   0   1     % objects   = blue
+                        0.5 0.5 0.5]; % scenes    = grey
 natart = allcategories.colors([1 1 2 2 3 3 4 4]+2,:);
-natart(1:2:end,:) = min(1,natart(1:2:end,:)+0.3); % human/artifical are lighter
-natart(2:2:end,:) = max(0,natart(2:2:end,:)-0.3); % animal/natural are darker
+natart(1:2:end,:) = min(1,natart(1:2:end,:)+0.5); % human/artifical are lighter
+natart(2:2:end,:) = max(0,natart(2:2:end,:)-0.5); % animal/natural are darker
 allcategories.colors = [allcategories.colors;natart];
+ac = Categories(allcategories);
 
 %% define ROIs
 roi.name = {'V1','V2','V3','LOC','OFA','FFA','PPA','aIT'};
