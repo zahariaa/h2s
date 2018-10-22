@@ -164,6 +164,42 @@ classdef SetOfHyps < Hypersphere
             case 3; showSpheresModel(obj,varargin{:});
          end
       end
+      function camSettings = cameraCalc(obj)
+         if numel(obj)>1 % concatenate center & radii
+            obj(1).centers = vertcat(obj.centers);
+            obj(1).radii   = [obj.radii];
+            obj = obj(1);
+         end
+         
+         % set view angle orthogonal to the PC12 plane of the locations
+         eigenvecs = pca(obj.centers);
+         if size(eigenvecs,2)<2, normal = [0 0 0]';
+         else                    normal = null(eigenvecs(:,1:2)');
+         end
+         
+         if corr(obj.centers*normal,obj.radii')<0
+            normal = -normal;
+         end
+         
+         objectsCentroid = mean(obj.centers,1);
+         camDist = 50*sqrt(sum(std(obj.centers).^2));
+         camSettings.CameraPosition = objectsCentroid'-normal*camDist;
+         camSettings.CameraTarget   = objectsCentroid;
+      end
+      function camera(obj,camSettings)
+         if ~exist('camSettings','var') || isempty(camSettings)
+            camSettings = obj.cameraCalc;
+         end
+         for f = fields(camSettings)'
+            set(gca,f{1},camSettings.(f{1}));
+         end
+         % Force lighting to camlight headlight
+         delete(findall(gca,'type','light'));
+         camlight
+         set(findobj(gca,'Type','Surface'),'AmbientStrength',  0,...
+                                           'SpecularStrength', 1,...
+                                           'DiffuseStrength',  1);
+      end
       function stop = stressPlotFcn(obj,varargin)%x,optimValues,state)
          % unpack inputs
          x           = varargin{1};
