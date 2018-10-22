@@ -11,7 +11,8 @@ for d = ds
    dimLow = 2;%min(d-1,3);
    if     d==3 &&  another3
       groundtruth = SetOfHyps([nsimplex(d)';nsimplex(d)'+3],ones(2*d+2,1));
-   else            another3 = true;
+   else
+      another3    = true;
       groundtruth = SetOfHyps(nsimplex(d)',ones(d+1,1));
    end
    [points,categories] = randnsimplex_of_nballs(groundtruth.centers,50);

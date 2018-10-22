@@ -30,7 +30,6 @@ title(titleStr);
 
 
 %% draw spheres
-[~,nCats] = size(model.categories.vectors);
 covs = arrayfun(@(r) eye(3)*r^2,model.radii,'UniformOutput',false);
 objHs = draw3dEllipsoid(model.centers,covs,model.categories.colors,patchDetail,opacity);
 

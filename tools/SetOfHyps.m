@@ -15,7 +15,8 @@ classdef SetOfHyps < Hypersphere
             h = estimateHypersphere(varargin{:});
             obj = SetOfHyps(h,varargin{:}).merge;
             return
-         elseif isa(h,'Hypersphere') && numel(h)>1 % convert all to SetOfHyps objects
+         elseif isa(h,'Hypersphere') && numel(h)>1
+            % convert all to SetOfHyps objects
             % note: use Hypersphere.merge to merge Hypersphere objects
             for i = 1:numel(h)
                obj(i) = SetOfHyps(h(i),varargin{:});
