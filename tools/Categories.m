@@ -7,7 +7,13 @@ classdef Categories
    methods
       function obj = Categories(vectors,labels,colors)
          if numel(vectors)==1
-            obj.vectors = logical(eye(vectors));
+            if isstruct(vectors)
+               obj.labels  = vectors.labels;
+               obj.colors  = vectors.colors;
+               obj.vectors = vectors.vectors;
+               return
+            else obj.vectors = logical(eye(vectors));
+            end
          elseif islogical(vectors)
             obj.vectors = vectors;
          elseif isnumeric(vectors)
@@ -20,6 +26,8 @@ classdef Categories
          n = size(obj.vectors,2);
          if ~exist('labels','var') || isempty(labels)
             obj.labels  = arrayfun(@(n) sprintf('category %u',n),1:n,'UniformOutput',false);
+         else
+            obj.labels  = labels;
          end
          if ~exist('colors','var')
             if n <= 4
@@ -38,6 +46,7 @@ classdef Categories
             else c = colormap('lines');
             end
             obj.colors = c(1:n,:);
+         else obj.colors = colors;
          end
       end
       function obj = select(obj,i)
