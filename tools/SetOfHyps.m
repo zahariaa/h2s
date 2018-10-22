@@ -209,6 +209,37 @@ classdef SetOfHyps < Hypersphere
 
          stop = false;
       end
+      function showSig(~,self,ax)
+         % Parse inputs
+         if isa(self,'SetOfHyps'), sig = self.sig;
+         else                      sig = self;
+         end
+         if ~exist('ax','var') || isempty(ax), ax = gca; end
+
+         % Reshape into matrix
+         sig.ov = sig.ov <= 0.95;
+         mat = statsmat(1-sig.ma,sig.ov,1-sig.ra);
+
+         % Time to get a-plottin'
+         set(0,'CurrentFigure',get(ax,'Parent'))
+         set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
+         %imagesc(mat)
+
+         n = size(mat,1); ix = nchoosek_ix(n,2); N = size(ix,2);
+         % Box parameters
+         boxSize = 0.3;
+         boxPos  = [0.65 0.65];
+         sqSz    = boxSize/n;
+
+         col = [1 0.5 0.5];
+         for i = 1:N
+            rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1) sqSz sqSz],'Curvature',1,'FaceColor',[1 0 0]*(1-sig.ma(i)),'EdgeColor','k')
+            rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1) sqSz sqSz],'Curvature',1,'FaceColor',[0 0 1]*sig.ov(i),'EdgeColor','k')
+         end
+         for i = 1:n
+            rectangle('Position',[boxPos+[sqSz sqSz]*(i-1) sqSz sqSz],'Curvature',1,'FaceColor',[1 1 1]*(1-sig.ra(i)),'EdgeColor','k')
+         end
+      end
    end
 end
 
