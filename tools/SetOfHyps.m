@@ -8,7 +8,8 @@ classdef SetOfHyps < Hypersphere
    end
    methods
       function obj = SetOfHyps(h,varargin)  % Contructor
-         if isstruct(h) % Helper for older struct-based code
+         if isa(h,'SetOfHyps'), obj=h; return;
+         elseif isstruct(h) % Helper for older struct-based code
             h = Hypersphere(h.centers,h.radii);
          elseif isstr(h) && strcmpi(h,'estimate')
             h = estimateHypersphere(varargin{:});
