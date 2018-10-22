@@ -25,17 +25,9 @@ for itype = 1:-1:0
    fh = newfigure(sprintf('intro%u',itype),[1 3]);
    axtivate(1)
    for i = 1:nCats
-      meanPoint = mean(points((i-1)*n+1:i*n,:));
       plot3(points((i-1)*n+1:i*n,1),points((i-1)*n+1:i*n,2),...
             points((i-1)*n+1:i*n,3),'wo','MarkerSize',dotsz,...
             'MarkerFaceColor',categories.colors(i,:));
-      for j = 1:n
-         plot3([meanPoint(1) points((i-1)*n+j,1)],...
-               [meanPoint(2) points((i-1)*n+j,2)],...
-               [meanPoint(3) points((i-1)*n+j,3)],'-','Color',categories.colors(i,:))
-      end
-      plot3(meanPoint(1),meanPoint(2),meanPoint(3),...
-            'wo','MarkerSize',dotsz*1.5,'MarkerFaceColor',categories.colors(i,:))
    end
    draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*planelim); axis vis3d off; view(40,22); rotate3d;
 
