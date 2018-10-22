@@ -38,7 +38,7 @@ for itype = 1:-1:0
             'wo','MarkerSize',dotsz*1.5,'MarkerFaceColor',categories.colors(i,:))
    end
    draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*planelim); axis vis3d off; view(40,22); rotate3d;
-   
+
    axtivate(2) 
    sh = draw3dEllipsoid(v(1:nCats,:),[],categories.colors(1:nCats,:),[],1/3);
    draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*planelim); view(40,22);
@@ -63,7 +63,7 @@ for itype = 1:-1:0
       X(X>0) = min(planelim,(planelim-b(3))/m(1)); X(X<0) = max(-planelim,(-planelim-b(3))/m(1));
       Y(Y>0) = min(planelim,(planelim-b(3))/m(2)); Y(Y<0) = max(-planelim,(-planelim-b(3))/m(2));
       plane = patch(X+b(1),Y+b(2),m(1)*X+m(2)*Y+b(3),zeros(size(X)),...
-                    'EdgeColor','k','LineWidth',1,'FaceColor',[0.5 0.5 0.5],'FaceAlpha',0.5)
+                    'EdgeColor','k','LineWidth',1,'FaceColor',[0.5 0.5 0],'FaceAlpha',0.5)
       % scaling for intersection circles
       mx = sqrt(1/(1+m(1)^2));
       my = sqrt(1/(1+m(2)^2));
