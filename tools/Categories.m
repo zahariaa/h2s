@@ -54,6 +54,24 @@ classdef Categories
          obj.colors  = obj.colors(i,:);
          obj.vectors = obj.vectors(:,i);
       end
+      function objs = permute(obj,N)
+         if ~exist('N','var') || isempty(N), N=100;
+         elseif N < 2,                       objs=obj; return; end
+
+         [p,n] = size(obj.vectors); %p=# points, n=# hyps
+         vecs = obj.vectors*(1:n)';
+         obj.vectors = false(p,n);
+         p    = nnz(vecs);
+         % Build categories objs with permuted vector identities
+         objs = repmat(obj,[N 1]);
+         for i = 1:N
+            includedvecs = find(vecs);
+            ivec = vecs(includedvecs(randperm(p)));
+            for j = 1:p
+               objs(i).vectors(includedvecs(j),ivec(j)) = true;
+            end
+         end
+      end
    end
 end
 
