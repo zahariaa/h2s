@@ -1,12 +1,24 @@
 function varargout = estimateHypersphere(points,varargin)
 % hyp = estimateHypersphere(points,nBootstrapSamples) % output is a Hypersphere obj
 % hyps = estimateHypersphere(points,categories) % output is an array of Hypersphere objs
+%
+% IF POINTS IS 3D:
+% hyp = estimateHypersphere(points,categories) % assumes 3rd dim are bootstraps
+% ASSUMES YOU WANT TO COMBINE the 2D points across frames in 3rd dim,
+%    using the same categories in categories, but to keep all frames in same space
+%    e.g. for a movie:
+% hyp = estimateHypersphere(points,categories,1)
+%
+% OTHER OUTPUT OPTIONS
 % [loc,locCI,rad,radCI] = estimateHypersphere(points,nBootstrapSamples)
 % uses expected distance between pairs of points to estimate the radius of
 % the hypersphere.
 % uses the mean (or median) to estimate the location of the center.
 % uses bootstrap resampling of the points to estimate 95% confidence
 % intervals for both.
+
+%% preparation
+[n,d,f] = size(points);
 
 for v = 2:nargin
    if isa(varargin{v-1},'Categories'), categories = varargin{v-1};
@@ -16,6 +28,28 @@ end
 if ~exist('nBootstrapSamples','var'),  nBootstrapSamples = 1; end
 %% recurse cell array of points
 if exist('categories','var')
+
+%% EVALUATE ALL FRAMES IN SAME SPACE
+   if f > 1
+      points       = reshape(points,size(points,1),[])';
+      nCats        = numel(categories.labels);
+
+      % EVALUATE ALL TOGETHER!
+      hyp          = estimateHypersphere(points,categories.repmat(f));
+      % SEPARATE COMBINED HYP
+      centers      = mat2cell(hyp.centers,nCats*ones(f,1));
+      radii        = num2cell(reshape(hyp.radii,[nCats f]),1)';
+      varargout{1} = cellfun(@(c,r) Hypersphere(c,r),centers,radii);
+      return
+   end
+%% permutation test
+   if nBootstrapSamples > 1
+      catperm = categories.permute(nBootstrapSamples);
+      for i = 1:nBootstrapSamples
+         hypperm(i) = estimateHypersphere(points,catperm(i));
+      end
+   end
+   
    for i = 1:numel(categories.labels)
       p{i} = points(~~categories.vectors(:,i),:);
    end
@@ -28,9 +62,6 @@ if exist('categories','var')
    varargout{1} = hyp{1};
    return
 end
-
-%% preparation
-[n,d] = size(points);
 
 %% Bootstrap via recursion
 if exist('nBootstrapSamples','var') && nBootstrapSamples > 1
@@ -56,6 +87,9 @@ end
 
 %% estimate location
 loc = mean(points,1); % optimises L2 cost, corresponds to L1 force equilibrium
+% dists = pdist(points,'Euclidean');
+% cv = cvindex(n,10);
+% loc = mean(cell2mat_concat(cv.crossvalidate(@mean,points)));
 
 %% estimate radius via skew-based MVUEs
 points = points - repmat(loc,[n 1]);
@@ -90,5 +124,4 @@ expectedStds = [1.2733    1.0115    0.8796    0.8107    0.8384    0.8638    0.95
 v = interp1(2.^(1:12),expectedStds,d);
 return
 end
-
 
