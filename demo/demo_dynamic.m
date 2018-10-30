@@ -2,6 +2,7 @@
 % 
 % 2018-10-16 AZ Created
 
+dimLow = 3;
 
 %% LOAD DATA
 X = load('data/RDMs_srd_weighted_S1.mat');
@@ -16,13 +17,11 @@ end
 cats = Categories(vectors,labels);
 
 
-%% Do stuff
-figure;
-for i = 1:10:size(X,3)
-   h = SetOfHyps('estimate',X(:,:,i),cats).h2s;
-   cla;h.show;
-   title(num2str(i))
-   drawnow
-end
+%% Compute!
+h = SetOfHyps('estimate',X(:,:,1:end),cats,1);
+h = h.h2s(dimLow);
+times = -100:700;
 
+%% Run movie
+figure; h.movie(times)
 
