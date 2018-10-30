@@ -214,6 +214,67 @@ classdef SetOfHyps < Hypersphere
                                            'SpecularStrength', 1,...
                                            'DiffuseStrength',  1);
       end
+      function movie(self,times,timeLabel,SAVE)
+         nh     = numel(self);
+         if ~exist('SAVE','var') || isempty(SAVE), SAVE = false; end
+         if ~exist('timeLabel','var'), timeLabel = []; end
+         % Calculate frame times
+         if exist('times','var') && ~isempty(times)
+            if isempty(timeLabel), timeLabel = 'ms'; end
+         else
+            times = 1:nh;
+         end
+         dimLow = size(self(1).centers,2);
+         %% Generate title string
+         ts = '\fontsize{16}{';
+         for i = 1:numel(self(1).categories.labels)
+            ts = [ts sprintf('\\color[rgb]{%1.2f %1.2f %1.2f}%s ',...
+                             self(1).categories.colors(i,:),...
+                             self(1).categories.labels{i})           ];
+         end
+         % Calculate axis bounds
+         axbounds = NaN(1,dimLow*2);
+         for i = 1:nh
+            for j = 1:dimLow
+               axbounds(1+(j-1)*2) = min([axbounds(1+(j-1)*2);
+                                    self(i).centers(:,j)-self(i).radii']);
+               axbounds(   j   *2) = max([axbounds(   j   *2);
+                                    self(i).centers(:,j)+self(i).radii']);
+            end
+         end
+         % Calculate camera view
+         if dimLow == 3, camSettings = self.cameraCalc; end
+         % Legend text position
+         txtY = [NaN;1.075;0.98];
+
+         if SAVE
+            fps = 20;
+            vidObj = VideoWriter([SAVE '.avi']);
+            vidObj.FrameRate = fps;
+            vidObj.Quality   = 100;
+            open(vidObj);
+         end
+         %% Do stuff
+         for i = 1:nh
+            cla; self(i).show(false);
+            if dimLow == 3,   self.camera(camSettings);   end
+            axis(axbounds)
+         
+            text(0.5,txtY(dimLow),sprintf('%s} %g %s',ts,times(i),timeLabel),...
+                 'interpreter','tex',...
+                 'HorizontalAlignment','center','Units','normalized')
+            if ~SAVE
+               drawnow
+               pause(0.1)
+            else
+               writeVideo(vidObj,getframe(gcf));
+            end
+         end
+         if SAVE
+            close(vidObj)
+            fprintf('\nVideo written to %s\n',SAVE)
+         end
+      end
       function stop = stressPlotFcn(obj,varargin)%x,optimValues,state)
          % unpack inputs
          x           = varargin{1};
