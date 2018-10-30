@@ -151,7 +151,7 @@ classdef SetOfHyps < Hypersphere
          if ~exist('hi'    ,'var'), hi     = obj; end
          % Setup optimization and run
          x0   = mdscale(hi.dists,dimLow);
-         opts = optimoptions(@fmincon,'Display','iter','OutputFcn',@obj.stressPlotFcn,'TolFun',1e-4,'TolX',1e-4,'SpecifyObjectiveGradient',true);%,'DerivativeCheck','on');
+         opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
          fit = fmincon(@(x) stress(x,hi),x0,[],[],[],[],[],[],[],opts);
          % Output reduced SetOfHyps model
          model = SetOfHyps(fit,hi.radii(:));
