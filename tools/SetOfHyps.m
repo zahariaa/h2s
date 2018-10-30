@@ -154,7 +154,7 @@ classdef SetOfHyps < Hypersphere
          opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
          fit = fmincon(@(x) stress(x,hi),x0,[],[],[],[],[],[],[],opts);
          % Output reduced SetOfHyps model
-         model = SetOfHyps(fit,hi.radii(:));
+         model = SetOfHyps(fit,hi.radii(:),hi.categories);
          model.error = model.stress(hi);
       end
       function show(obj,varargin)
