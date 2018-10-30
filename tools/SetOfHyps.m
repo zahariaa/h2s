@@ -144,10 +144,13 @@ classdef SetOfHyps < Hypersphere
             if isa(varargin{v-1},'SetOfHyps')
                hi = varargin{v-1};
             elseif isnumeric(varargin{v-1}) && numel(varargin{v-1})==1
-               dimLow = varargin{v-1};
+               if     varargin{v-1} > 3, nboots = varargin{v-1};
+               elseif varargin{v-1} > 0, dimLow = varargin{v-1};
+               end
             end
          end
          if ~exist('dimLow','var'), dimLow = 2;   end
+         if ~exist('nboots','var'), nboots = 0;   end
          if ~exist('hi'    ,'var'), hi     = obj; end
          % Setup optimization and run
          x0   = mdscale(hi.dists,dimLow);
