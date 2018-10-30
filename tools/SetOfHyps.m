@@ -152,6 +152,17 @@ classdef SetOfHyps < Hypersphere
          if ~exist('dimLow','var'), dimLow = 2;   end
          if ~exist('nboots','var'), nboots = 0;   end
          if ~exist('hi'    ,'var'), hi     = obj; end
+
+         % Recurse
+         n = numel(hi);
+         if n > 1
+            for i = 1:n
+               stationarycounter(i,n);
+               model(i) = hi(i).h2s(dimLow,nboots);
+            end
+            return
+         end
+         
          % Setup optimization and run
          x0   = mdscale(hi.dists,dimLow);
          opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
