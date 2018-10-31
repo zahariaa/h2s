@@ -19,10 +19,10 @@ cats = Categories(vectors,labels);
 
 
 %% Compute!
-h = SetOfHyps('estimate',X(:,:,1:end),cats,1);
-h = h.h2s(dimLow);
+hi = SetOfHyps('estimate',X(:,:,1:end),cats,1);
+lo = hi.h2s(dimLow);
 times = -100:700;
 
 %% Run movie
-figure; h.movie(times)
+figure; lo.movie(times,'ms',datafile)
 
