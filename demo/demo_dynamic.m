@@ -5,7 +5,8 @@
 dimLow = 3;
 
 %% LOAD DATA
-X = load('data/RDMs_srd_weighted_S1.mat');
+datafile = 'RDMs_srd_weighted_S2';
+X = load(['data/' datafile '.mat']);
 X = X.(cellify(fields(X)));
 
 %% Define categories
