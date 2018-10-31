@@ -225,13 +225,6 @@ classdef SetOfHyps < Hypersphere
             times = 1:nh;
          end
          dimLow = size(self(1).centers,2);
-         %% Generate title string
-         ts = '\fontsize{16}{';
-         for i = 1:numel(self(1).categories.labels)
-            ts = [ts sprintf('\\color[rgb]{%1.2f %1.2f %1.2f}%s ',...
-                             self(1).categories.colors(i,:),...
-                             self(1).categories.labels{i})           ];
-         end
          % Calculate axis bounds
          axbounds = NaN(1,dimLow*2);
          for i = 1:nh
@@ -245,7 +238,7 @@ classdef SetOfHyps < Hypersphere
          % Calculate camera view
          if dimLow == 3, camSettings = self.cameraCalc; end
          % Legend text position
-         txtY = [NaN;1.075;0.98];
+         txtY = [NaN;1.075;0.9];
 
          if SAVE
             fps = 20;
@@ -256,13 +249,15 @@ classdef SetOfHyps < Hypersphere
          end
          %% Do stuff
          for i = 1:nh
-            cla; self(i).show(false);
+            cla; delete(ann);
+            % DRAW PLOT
+            self(i).show(false,[]);
             if dimLow == 3,   self.camera(camSettings);   end
             axis(axbounds)
          
-            text(0.5,txtY(dimLow),sprintf('%s} %g %s',ts,times(i),timeLabel),...
-                 'interpreter','tex',...
-                 'HorizontalAlignment','center','Units','normalized')
+            %% Generate title string
+            extratxt = sprintf('%s} %g %s',ts,times(i),timeLabel);
+            ann = h(1).categories.legend([0.01 txtY(dimLow) 1 0.1],extratxt);
             if ~SAVE
                drawnow
                pause(0.1)

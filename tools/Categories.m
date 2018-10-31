@@ -81,6 +81,29 @@ classdef Categories
          % Put it all together
          obj = Categories(obj);
       end
+      function txt = legendText(self,closingText)
+         if ~exist('closingText','var') || isempty(closingText)
+            closingText = '}';
+         end
+         txt = '\fontsize{16}{';
+         for i = 1:numel(self(1).labels)
+            txt = [txt sprintf('\\color[rgb]{%1.2f %1.2f %1.2f}%s ',...
+                             self(1).colors(i,:),...
+                             self(1).labels{i})           ];
+         end
+         txt = [txt closingText];
+      end
+      function [ann,anntxt] = legend(self,pos,extratxt)
+         if ~exist('extratxt','var'), extratxt = []; end
+         anntxt = self(1).legendText(extratxt);
+         
+         if ~exist('pos','var') || isempty(pos)
+            pos = [0.01 0.9 1 0.1];
+         end
+         ann = annotation('TextBox',pos,'String',...
+               anntxt,'EdgeColor','none','interpreter','tex',...
+               'HorizontalAlignment','left','Units','normalized');
+      end
    end
 end
 
