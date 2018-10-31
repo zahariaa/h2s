@@ -9,8 +9,9 @@ SETCAMERA = true;
 model = varargin{1};
 vv = 1;
 for v = 2:nargin
-   if     islogical(varargin{v}),                   SETCAMERA = varargin{v};
-   elseif ishandle( varargin{v}) && numel(varargin{v})==1, ax = varargin{v};
+   if     islogical(varargin{v}),    SETCAMERA = varargin{v};
+   elseif  ~isempty(varargin{v}) && ishandle(varargin{v}) && numel(varargin{v})==1
+      ax = varargin{v};
    elseif isnumeric(varargin{v}) && numel(varargin{v})==4
       ax = figurePanel(varargin{v});
    else
