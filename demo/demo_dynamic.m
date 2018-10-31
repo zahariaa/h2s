@@ -26,3 +26,20 @@ times = -100:700;
 %% Run movie
 figure; lo.movie(times,'ms',datafile)
 
+%% Generate plots
+figure;
+subplot(3,1,2); hi.plotComparisons('margins',times);
+ylabel('separations')
+subplot(3,1,3); hi.plotComparisons('dists',times);
+ylabel('distances')
+xlabel('time (ms)');
+subplot(3,1,1); plot(times,reshape([hi.radii],5,[])','LineWidth',1);
+ylabel('spreads')
+box off; xlim([min(times) max(times)]);
+title(datafile,'Interpreter','none')
+
+cats.legend([0.01 0.9 1 0.1])
+%% Print
+set(gcf,'Name','comparisons','Renderer','painters');
+printFig([],[],'eps')
+

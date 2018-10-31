@@ -270,6 +270,19 @@ classdef SetOfHyps < Hypersphere
             fprintf('\nVideo written to %s\n',SAVE)
          end
       end
+      function plotComparisons(self,type,times,ax)
+         if ~exist('ax','var') || isempty(ax), ax = gca; end 
+         n  = numel(self(1).radii);
+         nk = nchoosek(n,2);
+         ix = nchoosek_ix(n)';
+
+         axtivate(ax);
+         set(ax,'ColorOrder',self(1).categories.colors(ix(:),:))
+         plot(times,reshape([self.(type)],nk,[])','LineWidth',1)
+         plot(times,reshape([self.(type)],nk,[])','--','LineWidth',1)
+         ylabel(type)
+         xlim([min(times) max(times)]);
+      end
       function stop = stressPlotFcn(obj,varargin)%x,optimValues,state)
          % unpack inputs
          x           = varargin{1};
