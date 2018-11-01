@@ -43,7 +43,7 @@ classdef Categories
                     135   184    98
                     182   173    74
                     223   157    79]/255;
-            else c = colormap('lines');
+            else c = lines;
             end
             obj.colors = c(1:n,:);
          else obj.colors = colors;
@@ -101,7 +101,7 @@ classdef Categories
             pos = [0.01 0.9 1 0.1];
          end
          ann = annotation('TextBox',pos,'String',...
-               anntxt,'EdgeColor','none','interpreter','tex',...
+               anntxt,'EdgeColor','none','Interpreter','tex',...
                'HorizontalAlignment','left','Units','normalized');
       end
    end
