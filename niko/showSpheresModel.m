@@ -2,7 +2,7 @@ function showSpheresModel(varargin)
 
 %% control variables
 patchDetail = 100;
-opacity = 0.5;
+opacity = 0.4;
 
 %% preparations
 SETCAMERA = true;
@@ -39,7 +39,7 @@ set(get(ax,'Parent'),'Renderer','OpenGL');
 
 
 %% set view and lighting
-if SETCAMERA,  setOfHyps(model.centers,model.radii).camera;   end
+if SETCAMERA,  SetOfHyps(model.centers,model.radii).camera;   end
 
 return
 end
