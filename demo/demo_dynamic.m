@@ -6,7 +6,7 @@ dimLow = 3;
 
 %% LOAD DATA
 datafile = 'RDMs_srd_weighted_S2';
-X = load(['data/' datafile '.mat']);
+X = load(['data' filesep datafile '.mat']);
 X = X.(cellify(fields(X)));
 
 %% Define categories
@@ -17,11 +17,17 @@ for i = 1:numel(labels)
 end
 cats = Categories(vectors,labels);
 
+times = -100:700;
 
 %% Compute!
-hi = SetOfHyps('estimate',X(:,:,1:end),cats,1);
-lo = hi.h2s(dimLow);
-times = -100:700;
+h2ssavefile = ['data' filesep datafile '-h2s.mat'];
+if exist(h2ssavefile,'file'), load(h2ssavefile);
+else
+   hi = SetOfHyps('estimate',X(:,:,1:end),cats,1);
+   lo = hi.h2s(dimLow);
+%% SAVE
+   save(h2ssavefile,'hi','lo');
+end
 
 %% Run movie
 figure; lo.movie(times,'ms',datafile)
