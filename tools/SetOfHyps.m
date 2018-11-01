@@ -238,16 +238,17 @@ classdef SetOfHyps < Hypersphere
          % Calculate camera view
          if dimLow == 3, camSettings = self.cameraCalc; end
          % Legend text position
-         txtY = [NaN;1.075;0.9];
+         txtY = [NaN;1.075;0.89];
 
          if SAVE
             fps = 20;
-            vidObj = VideoWriter([SAVE '.avi']);
+            vidObj           = VideoWriter([SAVE '.avi']);
             vidObj.FrameRate = fps;
             vidObj.Quality   = 100;
             open(vidObj);
          end
          %% Do stuff
+         ann = [];
          for i = 1:nh
             cla; delete(ann);
             % DRAW PLOT
@@ -256,8 +257,8 @@ classdef SetOfHyps < Hypersphere
             axis(axbounds)
          
             %% Generate title string
-            extratxt = sprintf('%s} %g %s',ts,times(i),timeLabel);
-            ann = h(1).categories.legend([0.01 txtY(dimLow) 1 0.1],extratxt);
+            extratxt = sprintf('} %g %s',times(i),timeLabel);
+            ann = self(1).categories.legend([0.01 txtY(dimLow) 1 0.1],extratxt);
             if ~SAVE
                drawnow
                pause(0.1)
