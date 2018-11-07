@@ -38,7 +38,7 @@ for i = 1:N;   meanDists(i) = mean(pdist(X(:,:,i),'Euclidean'));   end
 % Center X
 Xc = X - repmat(mean(X,1),[n 1 1]);
 radii = sqrt(sum(Xc.^2,2));
-maxradii = max(radii,[],1);%/maxRadPer(d);
+maxradii = max(radii,[],1);
 % Target to measure estimates against
 if     strcmpi(type,'gaussian'),   target = sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2));%median(radii(:));
 elseif strcmpi(type,'uniform' ),   target = 1;
@@ -99,12 +99,6 @@ v = interp1(2.^(1:12),expectedStds,d);
 return
 end
 
-%% maxRadPer function
-function m = maxRadPer(d)
-expectedMaxRads = [1.0301    1.0322    1.0327    1.0269    1.0203    1.0157    1.0110    1.0071    1.0051   1.0028    1.0015    1.0003];
-m = interp1(2.^(1:12),expectedMaxRads,d);
-return
-end
 
 %% expDistPerRad function
 function r = expDistPerRad(d)
