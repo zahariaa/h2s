@@ -114,10 +114,9 @@ end
 
 %% DEMOS/DEBUG
 h2s_radii(200,log2space(1,12,12),'Uniform',true);
-set(gca,'XLim',[1 12],'XTick',1:3:12,'XTickLabel',num2str(2.^(1:3:12)'))
+tickscale([5 8]);logAxis(2);axesSeparate;
 set(99,'Name','RadiusUniform','renderer','painters');
-delete(findobj(get(legend,'Children'),'type','patch'))
-axesSeparate;printFig(99,'~/Desktop/','eps');
+printFig(99,'~/Desktop/','eps');
 
 h2s_radii(200,log2space(1,12,12),'Gaussian',true);
 set(gca,'XLim',[1 12],'XTick',1:3:12,'XTickLabel',num2str(2.^(1:3:12)'))
