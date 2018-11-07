@@ -24,8 +24,10 @@ for f = fieldnames(data.spikecounts)'; f=f{1};
       for i = 1:nStims
          ix = data.stims==bins(i);
          binix = tun.(f)(j).bins==bins(i);
-         tun.(f)(j).respmean(binix) = mean(data.spikecounts.(f)(j,ix),2);
-         tun.(f)(j).respstd( binix) =  std(data.spikecounts.(f)(j,ix),[],2);
+         tun.(f)(j).respmean(binix) = mean(data.spikecounts.(f)(j,ix ...
+                                                        & data.valid),2);
+         tun.(f)(j).respstd( binix) =  std(data.spikecounts.(f)(j,ix ...
+                                                        & data.valid),[],2);
       end
       %% TODO: populate this
       tun.(f)(j).spontmean   = NaN;
