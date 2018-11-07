@@ -54,26 +54,15 @@ if     strcmpi(type,'uniform' ),   s(:,4) = maxradii + maxradii*(n^-d);
 elseif strcmpi(type,'gaussian'),   s(:,4) = std(reshape(Xc,[n*d N]))*target;
 end
 
-%% Testing ML joint center & radius estimator
-tol = 10^(-7-log2(d));
-opts = optimoptions('fminunc','TolX',tol,'TolFun',tol,'Algorithm','quasi-newton','Display','off','GradObj','on');%,'DerivativeCheck','on');
 ev=NaN(N,1);
-mest = arrayfun(@(i) fminunc(@(m) maxRadiusGivenCenter(m,Xc(:,:,i)),mean(Xc(:,:,i)),opts),1:N,'UniformOutput',false);
-maxradii = arrayfun(@(i) maxRadiusGivenCenter(mest{i},Xc(:,:,i)),1:N)';
-s(:,3) = maxradii;
-
-ev = maxradii/target;
 s(:,6) = arrayfun(@(i) undeal(3,@() estimateHypersphere(X(:,:,i))),1:N);
-s(:,5) = arrayfun(@(i) mean(undeal(2,@() inferHyperspherePosterior(X(:,:,i),1000,false))),1:N);
 
-% parfor i = 1:N
-%    stationarycounter(i,N)
-%    [~,~,tmp6(i)] = estimateHypersphere(X(:,:,i));
-%    tmp5(i)   = mean(undeal(2,@() inferHyperspherePosterior(X(:,:,i),100000,false)));
-%    maxradii(i) = fminunc(@(m) maxRadiusGivenCenter(m,Xc(:,:,i)),mean(Xc(:,:,i)),opts);
-% end
-% s(:,6) = tmp6; s(:,5) = tmp5;
-% s(:,3) = maxradii + maxradii*(n^-d);
+%% Testing ML joint center & radius estimator
+fcn = @(m,X) sqrt(sum((X - repmat(m(:)',[n 1])).^2,2));
+opts = optimoptions('fminunc','TolX',1e-8,'TolFun',1e-8,'Algorithm','trust-region');
+mest = arrayfun(@(i) fminunc(@(m) max(fcn(m,Xc(:,:,i))),mean(Xc(:,:,i)),opts),1:N,'UniformOutput',false);
+maxradii = arrayfun(@(i) max(fcn(mest{i},Xc(:,:,i))),1:N)';
+s(:,3) = maxradii + maxradii*(n^-d);
 
 if PLOT,   figure(98);clf;plotEstimators(Xc,radii/target,s/target,colors);   end
 
@@ -91,35 +80,23 @@ end
 ylabel('log_{10}(error^2)')
 title([type ' distribution, radius estimation'])
 legend('','expDistPerRad','','median2^{1/d}',...
-       '','Joint ML','','MVUE','','MCMC','','Normalized Std',...
+       '','Joint ML','','MVUE','','MCMC','','EH',...
        'Location','EastOutside')
 set(legend,'Box','off')
 return
 end
 
 
-%% Objective function to optimize, with gradient
-function [fval,grad] = maxRadiusGivenCenter(m,X)
-
-grad = X - repmat(m(:)',[size(X,1) 1]);
-fval = sqrt(sum(grad.^2,2));
-
-% Apply max function
-[fval,ix] = max(fval);
-grad = -grad(ix,:)/fval;
-return
-end
-
-
 %% stdPer
 function v = stdPer(d)
+
+% expectedStds = [1.2376    0.9772    0.8577    0.7869    0.7336    0.6689    0.5802    0.4274    0.2904   0.1846    0.1071    0.0430];
 expectedStds = [1.2733    1.0115    0.8796    0.8107    0.8384    0.8638    0.9579    1.0403    1.1938  1.4268    1.8384    2.4485];
 v = interp1(2.^(1:12),expectedStds,d);
 % d = log2(d);
 % v = -0.1*d+1.2;
-% v = 0.031*d^2 - 0.32*d + 1.6;
 % v = 0.00049*d^4 - 0.013*d^3 + 0.12*d^2 - 0.51*d + 1.6;
-% v = 0.00063*d^4 - 0.015*d^3 + 0.14*d^2 - 0.61*d + 1.8;
+
 return
 end
 
@@ -138,9 +115,10 @@ end
 
 %% DEMOS/DEBUG
 h2s_radii(200,log2space(1,12,12),'Uniform',true);
-tickscale([5 8]);logAxis(2);axesSeparate;
+set(gca,'XLim',[1 12],'XTick',1:3:12,'XTickLabel',num2str(2.^(1:3:12)'))
 set(99,'Name','RadiusUniform','renderer','painters');
-printFig(99,'~/Desktop/','eps');
+delete(findobj(get(legend,'Children'),'type','patch'))
+axesSeparate;printFig(99,'~/Desktop/','eps');
 
 h2s_radii(200,log2space(1,12,12),'Gaussian',true);
 set(gca,'XLim',[1 12],'XTick',1:3:12,'XTickLabel',num2str(2.^(1:3:12)'))

@@ -16,10 +16,16 @@ function TEST_hypersphere2sphere
 scenarios = [1 3:6]; %[1 2 3];
 dimLow    = 2; % 2=showCircles, 3=showSpheres
 nScen     = numel(scenarios);
-PLOTALL   = false;
+
+
+PLOTALL = false;
+psFilespec = '';
+pdfFilespec = '';
+
 
 %% initialize combo figure (scenarios 1, 3-6, for 3D and 200D); h2s in 2D & 3D
 fh = newfigure([nScen 9],'whatsthescenario');
+iCombo = 0;
 
 nsDim = [1 2 3 5 10 20 40 200];
 
@@ -70,11 +76,7 @@ for s = scenarios
    end
 end
 
-% distMatdemo(points)
-% set(gcf,'Name','distmat','Renderer','painters')
-% printFig([],[],'eps');
-
-%% Finish up combo figures
+%% Finish up combo figure
 %set(fh.a.h(1:9:end),'CameraPosition',[0 0 -33]); % make 3D views consistent
 papsz = [6.5 4];
 set(fh.f,'PaperUnits','inches','PaperSize',papsz,'PaperPosition',[0.01*papsz papsz],'PaperPositionMode','manual');

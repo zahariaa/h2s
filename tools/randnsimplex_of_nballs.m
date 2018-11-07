@@ -1,21 +1,15 @@
 function [points,categories] = randnsimplex_of_nballs(n,N)
-% points = randnsimplex_of_nballs(numDimsOrCenterCoords,Num_points)
+% points = randnsimplex_of_nballs(num_of_dimensions,Num_points)
 %
 % 2018-06-11 AZ Created
 
-%% Process inputs
-if numel(n)==1, centers = nsimplex(n)';
-else            centers = n;
-end
-[nballs,n] = size(centers);
-
-if numel(N)==1, N = repmat(N,[nballs 1]); end
+if numel(N)==1, N = repmat(N,[n+1 1]); end
 N = [0 N(:)'];
 
-%% Generate random points
 points  = randnball(sum(N),n);
+centers = nsimplex(n)';
 
-for iball = 1:nballs
+for iball = 1:n+1
    ix = sum(N(1:iball))+1:sum(N(1:iball+1));
    points(ix,:) = points(ix,:) + repmat(centers(iball,:),[N(iball+1) 1]);
 end

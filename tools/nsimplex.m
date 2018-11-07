@@ -23,6 +23,6 @@ return
 
 %% DEBUG/DEMO
 n=4;
-hyp = SetOfHyps(nsimplex(n)',ones(n+1,1));
+hyp = Hyperspheres(nsimplex(n)',ones(n+1,1));
 figure;hyp.h2s.show
 
