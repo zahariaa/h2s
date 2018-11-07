@@ -7,5 +7,5 @@ sessions = {'20180420','20180425','20180426','20180430','20180606','20180607','2
             '20180704','20180705','20180710'};
 
 %% LOAD ALL DATA, skipping intermediate data structures
-tun = cellfun(@(subj,sess) utahTuning(mattloader(subj,sess)),subjects,sessions);
+tun = cellfun(@(su,se) utahTuning(mattloader(su,se)),subjects,sessions);
 
