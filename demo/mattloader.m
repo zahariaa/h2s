@@ -5,12 +5,13 @@ function data = mattloader(subject,session)
 datadir = '/Volumes/kriegeskorte-labshare/OxfordMonkeyData/RSVP_700_Exp2/';
 
 %% Load stimuli
-load(sprintf('%sRSVP_700-%s-%s-%s-%s.mat',datadir,subject,...
-             session(5:6),session(7:8),session(1:4)),'a');
+stimfile = dir(sprintf('%sRSVP_700-%s-%s-%s-%s*.mat',datadir,subject,...
+             session(5:6),session(7:8),session(1:4)));
+load([stimfile.folder filesep stimfile.name],'a');
+
 % Image file key
 imkey = cellfun(@(x) str2double(x(5:8)),a.TaskObject(:,2));
 stims = imkey(a.ConditionNumber)';
-nt    = numel(stims);
 
 %% Load spikes
 spikefile = dir(sprintf('%s%s%s%s_%s_*trialised.mat',...
@@ -30,11 +31,12 @@ stimstarts = [stimstarts{:}];
 stimends   = [stimends{:}];
 
 %% Valid trials
-valid = ~arrayfun(@(x) ~any(  x.behavMatrix(:,2)==15 ...
-                            | x.behavMatrix(:,2)==17) ...
-                       && any(x.behavMatrix(:,2)==34), SpikeData);
+valid = arrayfun(@(x) ~any(  x.behavMatrix(:,2)==15 ...
+                           | x.behavMatrix(:,2)==17) ...
+                      && any(x.behavMatrix(:,2)==34), SpikeData);
 valid(any([stimstarts;stimends]==0)) = false;
 
+nt    = numel(SpikeData);
 %% Spike times
 % Take cells of NaN-padded matrices and convert them to
 % NaN-stripped cells, while also subtracting the stimulus start time
