@@ -106,7 +106,7 @@ while true
     else
         % freeze step size         
         if sampleI > nSamples, break; end
-        if mod(sampleI,10000)==0 && VERBOSE,
+        if mod(sampleI,10000)==0 && VERBOSE
             disp([num2str(round(sampleI/nSamples*100)),'% done']);
         end
     end
