@@ -60,6 +60,7 @@ opts = optimoptions('fminunc','TolX',tol,'TolFun',tol,'Algorithm','quasi-newton'
 ev=NaN(N,1);
 mest = arrayfun(@(i) fminunc(@(m) maxRadiusGivenCenter(m,Xc(:,:,i)),mean(Xc(:,:,i)),opts),1:N,'UniformOutput',false);
 maxradii = arrayfun(@(i) maxRadiusGivenCenter(mest{i},Xc(:,:,i)),1:N)';
+s(:,3) = maxradii;
 
 ev = maxradii/target;
 s(:,6) = arrayfun(@(i) undeal(3,@() estimateHypersphere(X(:,:,i))),1:N);
@@ -90,7 +91,7 @@ end
 ylabel('log_{10}(error^2)')
 title([type ' distribution, radius estimation'])
 legend('','expDistPerRad','','median2^{1/d}',...
-       '','Joint ML','','MVUE','','MCMC','','EH',...
+       '','Joint ML','','MVUE','','MCMC','','Normalized Std',...
        'Location','EastOutside')
 set(legend,'Box','off')
 return
