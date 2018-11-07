@@ -54,15 +54,25 @@ if     strcmpi(type,'uniform' ),   s(:,4) = maxradii + maxradii*(n^-d);
 elseif strcmpi(type,'gaussian'),   s(:,4) = std(reshape(Xc,[n*d N]))*target;
 end
 
-ev=NaN(N,1);
-s(:,6) = arrayfun(@(i) undeal(3,@() estimateHypersphere(X(:,:,i))),1:N);
-
 %% Testing ML joint center & radius estimator
-fcn = @(m,X) sqrt(sum((X - repmat(m(:)',[n 1])).^2,2));
-opts = optimoptions('fminunc','TolX',1e-8,'TolFun',1e-8,'Algorithm','trust-region');
-mest = arrayfun(@(i) fminunc(@(m) max(fcn(m,Xc(:,:,i))),mean(Xc(:,:,i)),opts),1:N,'UniformOutput',false);
-maxradii = arrayfun(@(i) max(fcn(mest{i},Xc(:,:,i))),1:N)';
-s(:,3) = maxradii + maxradii*(n^-d);
+tol = 10^(-7-log2(d));
+opts = optimoptions('fminunc','TolX',tol,'TolFun',tol,'Algorithm','quasi-newton','Display','off','GradObj','on');%,'DerivativeCheck','on');
+ev=NaN(N,1);
+mest = arrayfun(@(i) fminunc(@(m) maxRadiusGivenCenter(m,Xc(:,:,i)),mean(Xc(:,:,i)),opts),1:N,'UniformOutput',false);
+maxradii = arrayfun(@(i) maxRadiusGivenCenter(mest{i},Xc(:,:,i)),1:N)';
+
+ev = maxradii/target;
+s(:,6) = arrayfun(@(i) undeal(3,@() estimateHypersphere(X(:,:,i))),1:N);
+s(:,5) = arrayfun(@(i) mean(undeal(2,@() inferHyperspherePosterior(X(:,:,i),1000,false))),1:N);
+
+% parfor i = 1:N
+%    stationarycounter(i,N)
+%    [~,~,tmp6(i)] = estimateHypersphere(X(:,:,i));
+%    tmp5(i)   = mean(undeal(2,@() inferHyperspherePosterior(X(:,:,i),100000,false)));
+%    maxradii(i) = fminunc(@(m) maxRadiusGivenCenter(m,Xc(:,:,i)),mean(Xc(:,:,i)),opts);
+% end
+% s(:,6) = tmp6; s(:,5) = tmp5;
+% s(:,3) = maxradii + maxradii*(n^-d);
 
 if PLOT,   figure(98);clf;plotEstimators(Xc,radii/target,s/target,colors);   end
 
@@ -83,6 +93,19 @@ legend('','expDistPerRad','','median2^{1/d}',...
        '','Joint ML','','MVUE','','MCMC','','EH',...
        'Location','EastOutside')
 set(legend,'Box','off')
+return
+end
+
+
+%% Objective function to optimize, with gradient
+function [fval,grad] = maxRadiusGivenCenter(m,X)
+
+grad = X - repmat(m(:)',[size(X,1) 1]);
+fval = sqrt(sum(grad.^2,2));
+
+% Apply max function
+[fval,ix] = max(fval);
+grad = -grad(ix,:)/fval;
 return
 end
 
