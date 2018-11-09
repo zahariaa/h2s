@@ -49,7 +49,6 @@ end
 s(:,1) = meanDists/expDistPerRad(d);
 s(:,3) = median(radii,1);
 s(:,2) = s(:,3).*2^(1/d);   % median*2^(1/d)
-% s(:,3) = s(:,3) + stdPer(d)*vectify(std(radii));
 % MVUEs
 if     strcmpi(type,'uniform' ),   s(:,4) = maxradii + maxradii*(n^-d);
 elseif strcmpi(type,'gaussian'),   s(:,4) = std(reshape(Xc,[n*d N]))*target;
@@ -62,18 +61,20 @@ mest = arrayfun(@(i) fminunc(@(m) maxRadiusGivenCenter(m,Xc(:,:,i)),mean(Xc(:,:,
 maxradii = arrayfun(@(i) maxRadiusGivenCenter(mest{i},Xc(:,:,i)),1:N)';
 s(:,3) = maxradii;
 
-ev = maxradii/target;
-s(:,6) = arrayfun(@(i) undeal(3,@() estimateHypersphere(X(:,:,i))),1:N);
-s(:,5) = arrayfun(@(i) mean(undeal(2,@() inferHyperspherePosterior(X(:,:,i),1000,false))),1:N);
+% s(:,2) = arrayfun(@(i) mean(undeal(2,@() inferHyperspherePosterior(X(:,:,i),1000,false))),1:N);
+% s(:,5) = arrayfun(@(i) mean(undeal(2,@() inferHyperspherePosterior(X(:,:,i),100000,false))),1:N);
+% s(:,6) = arrayfun(@(i) undeal(3,@() estimateHypersphere(X(:,:,i))),1:N);
 
-% parfor i = 1:N
-%    stationarycounter(i,N)
-%    [~,~,tmp6(i)] = estimateHypersphere(X(:,:,i));
-%    tmp5(i)   = mean(undeal(2,@() inferHyperspherePosterior(X(:,:,i),100000,false)));
-%    maxradii(i) = fminunc(@(m) maxRadiusGivenCenter(m,Xc(:,:,i)),mean(Xc(:,:,i)),opts);
-% end
-% s(:,6) = tmp6; s(:,5) = tmp5;
-% s(:,3) = maxradii + maxradii*(n^-d);
+parfor i = 1:N
+   stationarycounter(i,N)
+   [~,~,tmp2(i)] = estimateHypersphere(X(:,:,i));
+   tmp5(i)   = mean(undeal(2,@() inferHyperspherePosterior(X(:,:,i),1000,false)));
+   tmp6(i)   = mean(undeal(2,@() inferHyperspherePosterior(X(:,:,i),100000,false)));
+%   maxradii(i) = fminunc(@(m) maxRadiusGivenCenter(m,Xc(:,:,i)),mean(Xc(:,:,i)),opts);
+end
+s(:,2) = tmp2; s(:,5) = tmp5; s(:,6) = tmp6;
+%s(:,6) = maxradii + maxradii*(n^-d);
+ev = maxradii/target;
 
 if PLOT,   figure(98);clf;plotEstimators(Xc,radii/target,s/target,colors);   end
 
@@ -90,8 +91,8 @@ for e = 1:ne
 end
 ylabel('log_{10}(error^2)')
 title([type ' distribution, radius estimation'])
-legend('','expDistPerRad','','median2^{1/d}',...
-       '','Joint ML','','MVUE','','MCMC','','Normalized Std',...
+legend('','expDistPerRad','','Normalized Std',...
+       '','Joint ML','','MVUE','','MCMC 1k','','MCMC 100k',...
        'Location','EastOutside')
 set(legend,'Box','off')
 return
