@@ -5,13 +5,12 @@ if ~exist('PLOT','var') || isempty(PLOT),   PLOT = false;   end
 colors = {[1 0 0],[0 1 0],[0 0 1],[1 1 0],[1 0 1],[0 1 1]};
 ne = numel(colors);
 N = 100; % bootstraps
-s = NaN(N,ne); % container for sampled estimators
 
 %% Recurse if more than one dimension or number of samples input argument given
 nd = numel(d);
 nn = numel(n);
 if nd > 1
-   s = repmat(s,[1 1 nd]);
+   s = NaN(N,ne,nd); % container for sampled estimators
    target = NaN(1,nd);
    for ix = 1:nd
       [s(:,:,ix),target(ix),ev(:,ix)] = h2s_radii(n,d(ix),type,PLOT);
@@ -21,7 +20,7 @@ if nd > 1
    return
 end
 if nn > 1
-   s = repmat(s,[1 1 nn]);
+   s = NaN(N,ne,nn); % container for sampled estimators
    target = NaN(1,nn);
    for ix = 1:nn
       [s(:,:,ix),target(ix)] = h2s_radii(n(ix),d,type,PLOT);
@@ -30,9 +29,11 @@ if nn > 1
    end
    return
 end
+s = NaN(N,ne); % container for sampled estimators
 
 %% Sample & measure radii
 X  = sampleSpheres(n,d,N,type);
+%X = X + 1*randn(size(X))/(sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2)));
 for i = 1:N;   meanDists(i) = mean(pdist(X(:,:,i),'Euclidean'));   end
 
 % Center X
@@ -57,7 +58,6 @@ end
 %% Testing ML joint center & radius estimator
 tol = 10^(-7-log2(d));
 opts = optimoptions('fminunc','TolX',tol,'TolFun',tol,'Algorithm','quasi-newton','Display','off','GradObj','on');%,'DerivativeCheck','on');
-ev=NaN(N,1);
 mest = arrayfun(@(i) fminunc(@(m) maxRadiusGivenCenter(m,Xc(:,:,i)),mean(Xc(:,:,i)),opts),1:N,'UniformOutput',false);
 maxradii = arrayfun(@(i) maxRadiusGivenCenter(mest{i},Xc(:,:,i)),1:N)';
 s(:,3) = maxradii;
