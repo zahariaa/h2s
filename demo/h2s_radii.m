@@ -1,7 +1,8 @@
-function [s,target,ev] = h2s_radii(n,d,type,PLOT)
+function [s,target,ev] = h2s_radii(n,d,type,PLOT,SAVE)
 
 %% Preliminaries
 if ~exist('PLOT','var') || isempty(PLOT),   PLOT = false;   end
+if ~exist('SAVE','var') || isempty(SAVE),   SAVE = false;   end
 colors = {[1 0 0],[0 1 0],[0 0 1],[1 1 0],[1 0 1],[0 1 1]};
 ne = numel(colors);
 N = 100; % bootstraps
@@ -10,22 +11,26 @@ N = 100; % bootstraps
 nd = numel(d);
 nn = numel(n);
 if nd > 1
+   exptType = 'dimensions';
    s = NaN(N,ne,nd); % container for sampled estimators
    target = NaN(1,nd);
    for ix = 1:nd
       [s(:,:,ix),target(ix),ev(:,ix)] = h2s_radii(n,d(ix),type,PLOT);
       if PLOT,   plotRadiusEsts(d,s,target,colors,type);   end
-      xlabel('dimensions')
+      if SAVE,   saveRadiusEsts(type,exptType);   end
+      xlabel(exptType)
    end
    return
 end
 if nn > 1
+   exptType = 'samples';
    s = NaN(N,ne,nn); % container for sampled estimators
    target = NaN(1,nn);
    for ix = 1:nn
       [s(:,:,ix),target(ix)] = h2s_radii(n(ix),d,type,PLOT);
       if PLOT,   plotRadiusEsts(n,s,target,colors,type);   end
-      xlabel('samples')
+      if SAVE,   saveRadiusEsts(type,exptType);   end
+      xlabel(exptType)
    end
    return
 end
@@ -77,6 +82,7 @@ s(:,2) = tmp2; s(:,5) = tmp5; s(:,6) = tmp6;
 ev = maxradii/target;
 
 if PLOT,   figure(98);clf;plotEstimators(Xc,radii/target,s/target,colors);   end
+if SAVE,   saveRadiusEsts(type);   end
 
 return
 
@@ -98,6 +104,13 @@ set(legend,'Box','off')
 return
 end
 
+%% SAVE function
+function saveRadiusEsts(distType,exptType)
+   if ~exist('exptType','var'), exptType = []; end
+   tickscale;logAxis(2);axesSeparate;
+   set(99,'Name',['Radius_' distType exptType],'renderer','painters');
+   printFig(99,[],'eps');
+end
 
 %% Objective function to optimize, with gradient
 function [fval,grad] = maxRadiusGivenCenter(m,X)
@@ -139,15 +152,7 @@ end
 
 %% DEMOS/DEBUG
 h2s_radii(200,log2space(1,12,12),'Uniform',true);
-tickscale([5 8]);logAxis(2);axesSeparate;
-set(99,'Name','RadiusUniform','renderer','painters');
-printFig(99,'~/Desktop/','eps');
-
 h2s_radii(200,log2space(1,12,12),'Gaussian',true);
-set(gca,'XLim',[1 12],'XTick',1:3:12,'XTickLabel',num2str(2.^(1:3:12)'))
-set(99,'Name','RadiusGaussian','renderer','painters');
-delete(findobj(get(legend,'Children'),'type','patch'))
-axesSeparate;printFig(99,'~/Desktop/','eps');
 
 end
 
