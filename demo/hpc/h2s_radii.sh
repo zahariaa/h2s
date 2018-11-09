@@ -39,7 +39,7 @@ if $parfor;       then
          # PARFOR VERSION
          mfile="$mfile\n\nparpool('local',$numnodes)"
 fi
-if [ "${2,,}"="samples" ]; then
+if [[ "${2,,}" == "samples" ]]; then
 #if [ (string lower $2)="samples"]; then
    mfile="$mfile\n\n$function(log2space(1,10,10),200,'$1',true,true);\n"
 #if [ "${2,,}"="dimensions" ]; then
