@@ -10,59 +10,61 @@
 #for (( v = 1448325; v<=1448366; v++)) do qrls $v; done
 
 # parameters
-matlabver="2018b"
+matlabver="2017b" #2018b doesn't have parpool for whatever reason
 walltime="02:59:00"
-memory="31GB" 
+memory="2GB" # PER CPU
 numnodes=12
-parfor=false #true #false
+parfor=true #false
 
 # set up directories
-basedir="~/results/"
-function="h2s_radii"
-scriptdir=$basedir$function/
+basedir=~/results/
+function=h2s_radii
+scriptdir=$basedir$function
 
 if [ ! -d "$scriptdir" ]
 then
-         mkdir $scriptdir
-#          mkdir $scriptdir/e
-         mkdir $scriptdir/m
-#          mkdir $scriptdir/o
-         mkdir $scriptdir/r
+   mkdir $scriptdir
+   mkdir $scriptdir/m
+   mkdir $scriptdir/r
+   mkdir $scriptdir/e
+   mkdir $scriptdir/o
 fi
 
 ### BUILD MATLAB JOB
-jobname="fit$jextra"
+jobname="$1$2"
 
 ##### write matlab runfile
-mfile="addpath(genpath('~/msubs'));addpath(genpath('~/h2s'));"
+mcode="addpath(genpath('~/msubs'));addpath(genpath('~/h2s'));"
 if $parfor;       then
          # PARFOR VERSION
-         mfile="$mfile\n\nparpool('local',$numnodes)"
+         mcode="$mcode\n\nparpool('local',$numnodes)"
 fi
 if [[ "${2,,}" == "samples" ]]; then
 #if [ (string lower $2)="samples"]; then
-   mfile="$mfile\n\n$function(log2space(1,10,10),200,'$1',true,true);\n"
+   mcode="$mcode\n\n$function(log2space(1,10,10),200,'$1',true,true);\n"
 #if [ "${2,,}"="dimensions" ]; then
 else
-   mfile="$mfile\n\n$function(200,log2space(1,12,12),'$1',true,true);\n"
+   mcode="$mcode\n\n$function(200,log2space(1,12,12),'$1',true,true);\n"
 fi
+mfile="${scriptdir}/m/$jobname.m"
+echo -e "$mcode" > $mfile
 ##### END write matlab code
 
 ######### construct SLURM (job array) script
-jfile="${scriptdir}$jobname.s"
+jfile="${scriptdir}/$jobname.s"
 
 pbtxt1="#!/bin/bash\n#"
-pbtxt2="#SBATCH --job-name=$jobname"
+pbtxt2="#SBATCH --account=nklab\n#SBATCH --job-name=$jobname"
 pbtxt3="#SBATCH --nodes=1\n#SBATCH --cpus-per-task=$numnodes"
 pbtxt4="#SBATCH --time=$walltime"
-pbtxt5="#SBATCH --mem=$memory"
-pbtxt8="" #SBATCH --output=${scriptdir}o/${jobname}%a.txt"
-pbtxt9="" #SBATCH --error=${scriptdir}e/${jobname}%a.txt"
-pbtxt9a="\nmodule purge\nmodule load matlab/$matlabver\nif [ "'"$SLURM_JOBTMP" == ""'" ]; then\n    export SLURM_JOBTMP=/state/partition1/\$USER/\$\$\n    mkdir -p \$SLURM_JOBTMP\nfi\n\nexport MATLAB_PREFDIR=\$(mktemp -d \$SLURM_JOBTMP/matlab-XXXX)"
+pbtxt5="#SBATCH --mem-per-cpu=$memory"
+pbtxt8="#SBATCH --output=${scriptdir}/o/${jobname}%a.txt"
+pbtxt9="#SBATCH --error=${scriptdir}/e/${jobname}%a.txt"
+pbtxt9a="\nmodule load matlab/$matlabver\n"
 
 # MAIN MATLAB EXECUTION PBS line
 #Command to execute Matlab code
-pbtxt11='matlab -nosplash -nodisplay -nodesktop -r "$mfile" # > matoutfile'
+pbtxt11="matlab -nodisplay < $mfile > ${scriptdir}/r/$jobname.txt"
 pbtxt10=""
 pbtxt12=""
 
@@ -71,5 +73,5 @@ echo -e "${pbtxt1}\n${pbtxt2}\n${pbtxt3}\n${pbtxt4}\n${pbtxt5}\n${pbtxt8}\n${pbt
 
 # submit array job
 jid=`sbatch $jfile`
-#echo $jid
+echo $jid
 
