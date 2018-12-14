@@ -56,8 +56,9 @@ s(:,1) = meanDists/expDistPerRad(d);
 s(:,3) = median(radii,1);
 s(:,2) = s(:,3).*2^(1/d);   % median*2^(1/d)
 % MVUEs
-if     strcmpi(type,'uniform' ),   s(:,4) = maxradii + maxradii*(n^-d);
-elseif strcmpi(type,'gaussian'),   s(:,4) = std(reshape(Xc,[n*d N]))*target;
+if     strcmpi(type,'gaussian'), s(:,4) = std(reshape(Xc,[n*d N]))*target;
+elseif strcmpi(type,'uniform' ), s(:,4) = maxradii + maxradii*(n^-d);
+else                             s(:,4) = s(:,3);
 end
 
 %% Testing ML joint center & radius estimator
@@ -154,6 +155,7 @@ end
 %% DEMOS/DEBUG
 h2s_radii(200,log2space(1,12,12),'Uniform',true);
 h2s_radii(200,log2space(1,12,12),'Gaussian',true);
+h2s_radii(200,log2space(1,12,12),'Hypercubic',true);
 
 end
 
