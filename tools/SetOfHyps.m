@@ -373,6 +373,18 @@ classdef SetOfHyps < Hypersphere
          for i = 1:n
             rectangle('Position',[boxPos+[sqSz sqSz]*(i-1) sqSz sqSz],'Curvature',1,'FaceColor',[1 1 1]*(1-sigThresh.ra(i)),'EdgeColor','k')
          end
+
+%% Legend
+         for i = 1:nSigLevs
+            rectangle('Position',[boxPos+[sqSz*(n)     sqSz*(i-1)/3] sqSz/3 sqSz/3],'FaceColor',1-[0 1 1]*i/nSigLevs)
+            rectangle('Position',[boxPos+[sqSz*(n+2/3) sqSz*(i-1)/3] sqSz/3 sqSz/3],'FaceColor',1-[1 1 0]*i/nSigLevs)
+            rectangle('Position',[boxPos+[sqSz*(n+1/3) sqSz*(i-1)/3] sqSz/3 sqSz/3],'FaceColor',[1 1 1]*(1-i/nSigLevs))
+         end
+         text('Position',[boxPos+[sqSz*(n+1.1) sqSz/6]],'String','p<0.05')
+         for i = 2:nSigLevs
+         text('Position',[boxPos+[sqSz*(n+1.1) sqSz*(2*i-1)/6]],'String',...
+              ['p<' num2str(10^-i)])
+         end
       end
    end
 end
