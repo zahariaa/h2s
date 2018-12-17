@@ -127,7 +127,12 @@ low  = SetOfHyps(model);
 low.error = low.stress(orig);
 new  = orig.h2s
 % Plot
-fh = newfigure([1 2],'compare'); low.show(fh.a.h(1));
+fh = newfigure([1 3],'compare'); low.show(fh.a.h(1));
                                  new.show(fh.a.h(2));
 set(fh.f,'Renderer','openGL')
+% Calculate significance
+new.categories = model.categories;
+sig = new.significance(points{itype+1},10000);
+new.showSig(sig,fh.a.h(3));
+axis square ij off
 
