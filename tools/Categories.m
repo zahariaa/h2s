@@ -72,15 +72,15 @@ classdef Categories
             end
          end
       end
-      function obj = repmat(self,N)
-         obj.labels  = repmat(self.labels,[1 N]);
-         obj.colors  = repmat(self.colors,[N 1]);
-         % Replicate vectors on block diagonal
-         cmd = ['obj.vectors = blkdiag(' repmat('self.vectors,',1,N)];
-         eval([cmd(1:end-1) ');']);
-         % Put it all together
-         obj = Categories(obj);
-      end
+%       function obj = internalrepmat(self,N)
+%          obj.labels  = repmat(self.labels,[1 N]);
+%          obj.colors  = repmat(self.colors,[N 1]);
+%          % Replicate vectors on block diagonal
+%          cmd = ['obj.vectors = blkdiag(' repmat('self.vectors,',1,N)];
+%          eval([cmd(1:end-1) ');']);
+%          % Put it all together
+%          obj = Categories(obj);
+%       end
       function txt = legendText(self,closingText)
          if ~exist('closingText','var') || isempty(closingText)
             closingText = '}';

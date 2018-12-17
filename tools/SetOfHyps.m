@@ -84,7 +84,7 @@ classdef SetOfHyps < Hypersphere
          overlap_perm = obj.permuteoverlaps(points,N);
          % Compute confidence intervals on bootstrapped overlaps & radii for significance
          % TODO: do we need to do this PAIRWISE???
-         boots        = SetOfHyps('estimate',points,obj.categories,N);
+         boots        = SetOfHyps('estimate',points,obj.categories,N).merge;
          radii_boot   = reshape([boots.ci.bootstraps.radii],[],N)';
          overlap_boot = cell2mat_concat(arrayfun(@overlap,boots.ci.bootstraps,'UniformOutput',false));
          % compute indices of radii corresponding to overlaps
@@ -101,6 +101,8 @@ classdef SetOfHyps < Hypersphere
             % Is the measured radius significantly greater than zero?
             [~,sig.ra(i)] = ttest(  radii_boot(:,i),0,               'Tail','right','Alpha',0.95);
          end
+         % Convert to probability null hypothesis is WRONG
+         sig.ra = 1-sig.ra;
          % What percentile confidence interval of bootstrapped overlaps contains 0?
          sig.ov = abs(2*(mean(overlap_boot<0)-0.5));
       end
@@ -336,11 +338,21 @@ classdef SetOfHyps < Hypersphere
          if isa(self,'SetOfHyps'), sig = self.sig;
          else                      sig = self;
          end
-         if ~exist('ax','var') || isempty(ax), ax = gca; end
+         if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
 
+         nSigLevs = 3; % This means [0.95 0.99 0.999] levels
+
+         % Convert to sigmas significance, maxed to nSig(=3) and floored
+         %sig = structfun(@(x) erfinv(x)*sqrt(2),sig,'UniformOutput',false);
+         sigThresh = structfun(@(x) x>0.95,sig,'UniformOutput',false);
+         for i = 2:nSigLevs
+            for f = fieldnames(sig)'; f=f{1};
+               sigThresh.(f) = sigThresh.(f) + double(sig.(f)>(1-10^-i));
+            end
+         end
+         sigThresh = structfun(@(x) x/nSigLevs,sigThresh,'UniformOutput',false);
          % Reshape into matrix
-         sig.ov = sig.ov <= 0.95;
-         mat = statsmat(1-sig.ma,sig.ov,1-sig.ra);
+         mat = statsmat(sigThresh.ma,sigThresh.ov,sigThresh.ra);
 
          % Time to get a-plottin'
          set(0,'CurrentFigure',get(ax,'Parent'))
@@ -355,11 +367,11 @@ classdef SetOfHyps < Hypersphere
 
          col = [1 0.5 0.5];
          for i = 1:N
-            rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1) sqSz sqSz],'Curvature',1,'FaceColor',[1 0 0]*(1-sig.ma(i)),'EdgeColor','k')
-            rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1) sqSz sqSz],'Curvature',1,'FaceColor',[0 0 1]*sig.ov(i),'EdgeColor','k')
+            rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1) sqSz sqSz],'Curvature',1,'FaceColor',1-[0 1 1]*sigThresh.ma(i),'EdgeColor','k')
+            rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1) sqSz sqSz],'Curvature',1,'FaceColor',1-[1 1 0]*sigThresh.ov(i),'EdgeColor','k')
          end
          for i = 1:n
-            rectangle('Position',[boxPos+[sqSz sqSz]*(i-1) sqSz sqSz],'Curvature',1,'FaceColor',[1 1 1]*(1-sig.ra(i)),'EdgeColor','k')
+            rectangle('Position',[boxPos+[sqSz sqSz]*(i-1) sqSz sqSz],'Curvature',1,'FaceColor',[1 1 1]*(1-sigThresh.ra(i)),'EdgeColor','k')
          end
       end
    end
