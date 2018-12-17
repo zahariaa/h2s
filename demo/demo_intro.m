@@ -122,7 +122,7 @@ for itype = 0:1%:-1:0
 end
 
 %% TEST NEW STRESS FUNCTION
-orig = SetOfHyps(v{2}',ones(1,4));
+orig = SetOfHyps(v{itype+1}',r{itype+1});
 low  = SetOfHyps(model);
 low.error = low.stress(orig);
 new  = orig.h2s
