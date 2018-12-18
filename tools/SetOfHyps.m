@@ -6,6 +6,11 @@ classdef SetOfHyps < Hypersphere
       margins    = NaN;
       ci         = [];  % confidence intervals, with raw bootstrap data
    end
+   properties(GetAccess = 'private', SetAccess = 'private')
+      boxPos     = [0.65 0.65];
+      boxSize    = 0.3;
+      nSigLevs   = 3; % 3 means [0.95 0.99 0.999] levels
+   end
    methods
       function obj = SetOfHyps(h,varargin)  % Contructor
          if isa(h,'SetOfHyps'), obj=h; return;
@@ -333,14 +338,14 @@ classdef SetOfHyps < Hypersphere
 
          stop = false;
       end
-      function showSig(~,self,ax)
+      function showSig(obj,self,ax)
          % Parse inputs
          if isa(self,'SetOfHyps'), sig = self.sig;
          else                      sig = self;
          end
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
 
-         nSigLevs = 3; % This means [0.95 0.99 0.999] levels
+         nSigLevs = obj.nSigLevs; % 3 means [0.95 0.99 0.999] levels
 
          % Convert to sigmas significance, maxed to nSig(=3) and floored
          %sig = structfun(@(x) erfinv(x)*sqrt(2),sig,'UniformOutput',false);
@@ -361,30 +366,55 @@ classdef SetOfHyps < Hypersphere
 
          n = size(mat,1); ix = nchoosek_ix(n,2); N = size(ix,2);
          % Box parameters
-         boxSize = 0.3;
-         boxPos  = [0.65 0.65];
-         sqSz    = boxSize/n;
+         boxPos = obj.boxPos;
+         sqSz   = obj.boxSize/n;
 
-         col = [1 0.5 0.5];
          for i = 1:N
             rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1) sqSz sqSz],'Curvature',1,'FaceColor',1-[0 1 1]*sigThresh.ma(i),'EdgeColor','k')
             rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1) sqSz sqSz],'Curvature',1,'FaceColor',1-[1 1 0]*sigThresh.ov(i),'EdgeColor','k')
          end
          for i = 1:n
             rectangle('Position',[boxPos+[sqSz sqSz]*(i-1) sqSz sqSz],'Curvature',1,'FaceColor',[1 1 1]*(1-sigThresh.ra(i)),'EdgeColor','k')
+            % COLOR KEY
+            plot(boxPos([1 1])-0.01,boxPos([2 2])+[i-1 i]*sqSz,'-',...
+                 'Color',obj.categories.colors(i,:),'LineWidth',3)
+            plot(boxPos([1 1])+[i-1 i]*sqSz,boxPos([2 2])-0.01,'-',...
+                 'Color',obj.categories.colors(i,:),'LineWidth',3)
          end
-
-%% Legend
+         axis equal ij off
+      end
+      function showSigLegend(self,ax)
+         n        = numel(self.radii);
+         boxPos   = self.boxPos;
+         sqSz     = self.boxSize/n;
+         nSigLevs = self.nSigLevs; % 3 means [0.95 0.99 0.999] levels
+         if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
+         % Time to get a-plottin'
+         set(0,'CurrentFigure',get(ax,'Parent'))
+         set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
+%% Draw Legend
          for i = 1:nSigLevs
-            rectangle('Position',[boxPos+[sqSz*(n)     sqSz*(i-1)/3] sqSz/3 sqSz/3],'FaceColor',1-[0 1 1]*i/nSigLevs)
-            rectangle('Position',[boxPos+[sqSz*(n+2/3) sqSz*(i-1)/3] sqSz/3 sqSz/3],'FaceColor',1-[1 1 0]*i/nSigLevs)
-            rectangle('Position',[boxPos+[sqSz*(n+1/3) sqSz*(i-1)/3] sqSz/3 sqSz/3],'FaceColor',[1 1 1]*(1-i/nSigLevs))
+            rectangle('Position',[boxPos+[0.01+sqSz*(n)     sqSz*(i-1)/3] sqSz/3 sqSz/3],...
+                      'FaceColor',1-[0 1 1]*i/nSigLevs,'EdgeColor','none')
+            rectangle('Position',[boxPos+[0.01+sqSz*(n+2/3) sqSz*(i-1)/3] sqSz/3 sqSz/3],...
+                      'FaceColor',1-[1 1 0]*i/nSigLevs,'EdgeColor','none')
+            rectangle('Position',[boxPos+[0.01+sqSz*(n+1/3) sqSz*(i-1)/3] sqSz/3 sqSz/3],...
+                      'FaceColor',[1 1 1]*(1-i/nSigLevs),'EdgeColor','none')
          end
-         text('Position',[boxPos+[sqSz*(n+1.1) sqSz/6]],'String','p<0.05')
+         % Stat labels
+         text('Position',[boxPos+[0.01+sqSz*n       sqSz+0.02]],'String','margins',...
+              'Rotation',-45,'HorizontalAlignment','left','VerticalAlignment','bottom')
+         text('Position',[boxPos+[0.01+sqSz*(n+1/3) sqSz+0.02]],'String','radii',...
+              'Rotation',-45,'HorizontalAlignment','left','VerticalAlignment','bottom')
+         text('Position',[boxPos+[0.01+sqSz*(n+2/3) sqSz+0.02]],'String','overlaps',...
+              'Rotation',-45,'HorizontalAlignment','left','VerticalAlignment','bottom')
+         % Proability labels
+            text('Position',[boxPos+[0.01+sqSz*(n+1.1) sqSz/6]],'String','p<0.05')
          for i = 2:nSigLevs
-         text('Position',[boxPos+[sqSz*(n+1.1) sqSz*(2*i-1)/6]],'String',...
-              ['p<' num2str(10^-i)])
+            text('Position',[boxPos+[0.01+sqSz*(n+1.1) sqSz*(2*i-1)/6]],'String',...
+                 ['p<' num2str(10^-i)])
          end
+         axis equal ij off
       end
    end
 end

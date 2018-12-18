@@ -131,8 +131,8 @@ fh = newfigure([1 3],'compare'); low.show(fh.a.h(1));
                                  new.show(fh.a.h(2));
 set(fh.f,'Renderer','openGL')
 % Calculate significance
-new.categories = model.categories;
-sig = new.significance(points{itype+1},10000);
-new.showSig(sig,fh.a.h(3));
-axis square ij off
+orig.categories = model.categories;
+sig = orig.significance(points{itype+1},10000);
+orig.showSig(sig,fh.a.h(3));
+orig.showSigLegend(fh.a.h(3));
 
