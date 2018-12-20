@@ -103,6 +103,7 @@ legend('','expDistPerRad','','Normalized Std',...
        '','Joint ML','','MVUE','','MCMC 1k','','MCMC 100k',...
        'Location','EastOutside')
 set(legend,'Box','off')
+ylim([-10 0])
 return
 end
 
