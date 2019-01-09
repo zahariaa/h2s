@@ -1,5 +1,5 @@
 function mat = statsmat(uppert,lowert,diagonal)
-% mat = statsmat(uppert,lowert,diagonal)
+% mat = statsmat(uppert,lowert,<diagonal=zeros>)
 % Create matrix of stats of interest that do pairwise comparisons (upper and
 % lower triangles), and of the values themselves (diagonal)
 %
@@ -7,7 +7,7 @@ function mat = statsmat(uppert,lowert,diagonal)
 
 if ~exist('lowert'  ,'var'), lowert = zeros(size(uppert)); end
 if ~exist('uppert'  ,'var'), uppert = zeros(size(lowert)); end
-if ~exist('diagonal','var')
+if ~exist('diagonal','var') || isempty(diagonal)
    n = ceil(sqrt(2*numel(uppert)));
    diagonal = zeros(n,1);
 else
