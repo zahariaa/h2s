@@ -83,7 +83,7 @@ classdef SetOfHyps < Hypersphere
             end
          end
       end
-      function sig = significance(obj,points,N)
+      function [sig,sec] = significance(obj,points,N)
          if ~exist('N','var') || isempty(N), N=100; end
          % Compute confidence intervals on bootstrapped overlaps & radii for significance
          boots        = SetOfHyps('estimate',points,obj.categories,N).merge;
@@ -92,13 +92,29 @@ classdef SetOfHyps < Hypersphere
          overlap_boot = cell2mat_concat(arrayfun(@overlap,boots.ci.bootstraps,'UniformOutput',false));
 %% compute significance
          ciprctileLtail = @(x)        mean(x>0);
+         ciprctile2tail = @(x) abs(2*(mean(x<0)-0.5));
          % What percentile confidence interval of bootstrapped margins contains 0?
          sig.ma = ciprctileLtail(margin_boot);
          % What percentile confidence interval of bootstrapped overlaps contains 0?
          sig.ov = ciprctileLtail(overlap_boot);
          sig.ra = [];
 
+%% SECOND-ORDER COMPARISONS
+         % compute indices of radii corresponding to overlaps
+         n     = numel(obj.radii);
+         nc2   = nchoosek(n,2);
+         nc2c2 = nchoosek(nc2,2);
+         ix    = nchoosek_ix(n);
+         ixc2  = nchoosek_ix(nc2);
+         %dists_boot = cell2mat_concat(arrayfun(@dists,boots.ci.bootstraps,'UniformOutput',false));
+
+         sec = struct('ra',NaN(1,nc2),'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2));
+         for i = 1:nc2
+            sec.ra(i) = ciprctile2tail(diff(  radii_boot(:,  ix(:,i)),[],2));
          end
+         for i = 1:nc2c2
+            sec.ma(i) = ciprctile2tail(diff( margin_boot(:,ixc2(:,i)),[],2));
+            sec.ov(i) = ciprctile2tail(diff(overlap_boot(:,ixc2(:,i)),[],2));
          end
       end
       function [errtotal,grad,err] = stress(centers,hi)
@@ -363,13 +379,34 @@ classdef SetOfHyps < Hypersphere
             rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1) sqSz sqSz],'Curvature',1,'FaceColor',1-[0 1 1]*sigThresh.ma(i),'EdgeColor','k')
             rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1) sqSz sqSz],'Curvature',1,'FaceColor',1-[1 1 0]*sigThresh.ov(i),'EdgeColor','k')
          end
-         for i = 1:n
+         if ~isempty(sig.ra)
+            for i = 1:n
             rectangle('Position',[boxPos+[sqSz sqSz]*(i-1) sqSz sqSz],'Curvature',1,'FaceColor',[1 1 1]*(1-sigThresh.ra(i)),'EdgeColor','k')
-            % COLOR KEY
-            plot(boxPos([1 1])-0.01,boxPos([2 2])+[i-1 i]*sqSz,'-',...
-                 'Color',obj.categories.colors(i,:),'LineWidth',3)
-            plot(boxPos([1 1])+[i-1 i]*sqSz,boxPos([2 2])-0.01,'-',...
-                 'Color',obj.categories.colors(i,:),'LineWidth',3)
+         end
+         end
+
+         % COLOR KEY
+         nCats   = size(obj.categories.colors,1);
+         nCatsc2 = nchoosek(nCats,2);
+         if isempty(sig.ra)
+            for i = 1:n
+               plot(boxPos([1 1])-0.01,boxPos([2 2])+[i-1 i]*sqSz,'-',...
+                    'LineWidth',3,'Color',obj.categories.colors(i,:))
+               plot(boxPos([1 1])+[i-1 i]*sqSz,boxPos([2 2])-0.01,'-',...
+                    'LineWidth',3,'Color',obj.categories.colors(i,:))
+            end
+         else
+            ix = nchoosek_ix(nCats,2);
+            for i = 1:nCatsc2
+               plot(boxPos([1 1])-0.01,boxPos([2 2])+[i-1 i]*sqSz,'-',...
+                    'LineWidth',3,'Color',obj.categories.colors(ix(1,i),:))
+               plot(boxPos([1 1])-0.01,boxPos([2 2])+[i-1 i]*sqSz,'--',...
+                    'LineWidth',3,'Color',obj.categories.colors(ix(2,i),:))
+               plot(boxPos([1 1])+[i-1 i]*sqSz,boxPos([2 2])-0.01,'-',...
+                    'LineWidth',3,'Color',obj.categories.colors(ix(1,i),:))
+               plot(boxPos([1 1])+[i-1 i]*sqSz,boxPos([2 2])-0.01,'--',...
+                    'LineWidth',3,'Color',obj.categories.colors(ix(2,i),:))
+            end
          end
          axis equal ij off
       end
