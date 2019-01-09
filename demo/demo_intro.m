@@ -26,8 +26,8 @@ categories = Categories(n*ones(1,4));
 
 %% PLOT
 planelim = 2;
-for itype = 0:1%:-1:0
-   nCats = size(points{itype+1},1)/n - itype;
+for itype = 1:-1:0
+   nCats = size(points{itype+1},1)/n;
    fh = newfigure(sprintf('intro%u',itype),[1 3]);
    axtivate(1)
    for i = 1:nCats
@@ -123,16 +123,18 @@ end
 
 %% TEST NEW STRESS FUNCTION
 orig = SetOfHyps(v{itype+1}',r{itype+1});
+orig.categories = model.categories;
 low  = SetOfHyps(model);
 low.error = low.stress(orig);
 new  = orig.h2s
+% Calculate significance
+[sig,sec] = orig.significance(points{itype+1},10000);
 % Plot
-fh = newfigure([1 3],'compare'); low.show(fh.a.h(1));
+fh = newfigure([2 2],'compare'); low.show(fh.a.h(1));
                                  new.show(fh.a.h(2));
 set(fh.f,'Renderer','openGL')
-% Calculate significance
-orig.categories = model.categories;
-sig = orig.significance(points{itype+1},10000);
 orig.showSig(sig,fh.a.h(3));
+orig.showSig(sec,fh.a.h(4));
 orig.showSigLegend(fh.a.h(3));
+matchy(fh.a.h(3:4))
 
