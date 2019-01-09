@@ -74,7 +74,6 @@ classdef SetOfHyps < Hypersphere
          n2  = nchoosek(n,2);
          ix  = nchoosek_ix(n);
          ovp = NaN(N,n2);
-         map = NaN(N,n2);
          for i = 1:n2
             catperm = obj.select(ix(:,i)).categories.permute(N);
             for j = 1:N
@@ -86,30 +85,21 @@ classdef SetOfHyps < Hypersphere
       end
       function sig = significance(obj,points,N)
          if ~exist('N','var') || isempty(N), N=100; end
-         overlap_perm = obj.permuteoverlaps(points,N);
          % Compute confidence intervals on bootstrapped overlaps & radii for significance
-         % TODO: do we need to do this PAIRWISE???
          boots        = SetOfHyps('estimate',points,obj.categories,N).merge;
          radii_boot   = reshape([boots.ci.bootstraps.radii],[],N)';
+         margin_boot  =  vertcat(boots.ci.bootstraps.margins);
          overlap_boot = cell2mat_concat(arrayfun(@overlap,boots.ci.bootstraps,'UniformOutput',false));
-         % compute indices of radii corresponding to overlaps
-         n  = numel(obj.radii);
-         ix = nchoosek_ix(n);
-         % normalize overlaps by smaller of two radii
-         overlap_meas = obj.overlap./min(obj.radii(ix));
-         % compute significance
-         for i = 1:nchoosek(n,2)
-            % Is negative overlap significantly less than permuted overlaps?
-            [~,sig.ma(i)] = ttest(overlap_perm(:,i),-overlap_meas(i),'Tail','left' ,'Alpha',0.95);
-         end
-         for i = 1:n
-            % Is the measured radius significantly greater than zero?
-            [~,sig.ra(i)] = ttest(  radii_boot(:,i),0,               'Tail','right','Alpha',0.95);
-         end
-         % Convert to probability null hypothesis is WRONG
-         sig.ra = 1-sig.ra;
+%% compute significance
+         ciprctileLtail = @(x)        mean(x>0);
+         % What percentile confidence interval of bootstrapped margins contains 0?
+         sig.ma = ciprctileLtail(margin_boot);
          % What percentile confidence interval of bootstrapped overlaps contains 0?
-         sig.ov = abs(2*(mean(overlap_boot<0)-0.5));
+         sig.ov = ciprctileLtail(overlap_boot);
+         sig.ra = [];
+
+         end
+         end
       end
       function [errtotal,grad,err] = stress(centers,hi)
          if isa(centers,'SetOfHyps'), lo = centers;
