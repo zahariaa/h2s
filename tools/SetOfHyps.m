@@ -384,13 +384,16 @@ classdef SetOfHyps < Hypersphere
 
          %% DRAW ACTUAL BOXES
          for i = 1:N
-            rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1) sqSz sqSz],'Curvature',1,'FaceColor',1-[0 1 1]*sigThresh.ma(i),'EdgeColor','k')
-            rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1) sqSz sqSz],'Curvature',1,'FaceColor',1-[1 1 0]*sigThresh.ov(i),'EdgeColor','k')
+            rectangle('Position',[boxPos+sqSz*(ix(:,i)'-0.95) 0.9*[sqSz sqSz]],...
+                      'Curvature',0.2,'FaceColor',[1 1 1]*(1-sigThresh.ma(i)),'EdgeColor','k')
+            rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-0.95) 0.9*[sqSz sqSz]],...
+                      'Curvature',0.2,'FaceColor',[1 1 1]*(1-sigThresh.ov(i)),'EdgeColor','k')
          end
          if ~isempty(sig.ra)
             for i = 1:n
-            rectangle('Position',[boxPos+[sqSz sqSz]*(i-1) sqSz sqSz],'Curvature',1,'FaceColor',[1 1 1]*(1-sigThresh.ra(i)),'EdgeColor','k')
-         end
+            rectangle('Position',[boxPos+[sqSz sqSz]*(i-0.95) 0.9*[sqSz sqSz]],...
+                      'Curvature',0.2,'FaceColor',[1 1 1]*(1-sigThresh.ra(i)),'EdgeColor','k')
+            end
          end
 
          %% COLOR KEY: circles
