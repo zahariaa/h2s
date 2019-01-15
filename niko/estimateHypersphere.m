@@ -19,10 +19,13 @@ function varargout = estimateHypersphere(points,varargin)
 
 %% preparation
 [n,d,f] = size(points);
+STRATIFIED = false;     % stratified bootstrap
 
 for v = 2:nargin
    if isa(varargin{v-1},'Categories'), categories = varargin{v-1};
    elseif  isnumeric(varargin{v-1}),   nBootstrapSamples = varargin{v-1};
+   elseif  ischar(   varargin{v-1}) && strcmpi(varargin{v-1},'stratified')
+      STRATIFIED = true;
    end
 end
 if ~exist('nBootstrapSamples','var'),  nBootstrapSamples = 1; end
@@ -42,29 +45,30 @@ if exist('categories','var')
       varargout{1} = cellfun(@(c,r) Hypersphere(c,r),centers,radii);
       return
    end
-%% permutation test
+%% permutation or stratified bootstrap test
    if nBootstrapSamples > 1
-      catperm = categories.permute(nBootstrapSamples);
+      catperm = categories.permute(nBootstrapSamples,STRATIFIED);
       for i = 1:nBootstrapSamples
-         hypperm(i) = estimateHypersphere(points,catperm(i));
+         hyp(i) = estimateHypersphere(points,catperm(i));
       end
+   else 
+      for i = 1:numel(categories.labels)
+         if islogical(categories.vectors)
+            p{i} = points(~~categories.vectors(:,i),:);
+         else
+            valid = find(categories.vectors(:,i));
+            p{i} = points(categories.vectors(valid,i),:);
+         end
+      end
+      hyp = cell2mat_concat(cellfun(@estimateHypersphere,p,'UniformOutput',false));
+      hyp = hyp.merge;
    end
-   
-   for i = 1:numel(categories.labels)
-      p{i} = points(~~categories.vectors(:,i),:);
-   end
-   hyp = cellfun(@(p) estimateHypersphere(p,nBootstrapSamples), ...
-                      p,'UniformOutput',false);
-   % Merge across categories
-   for i=2:numel(hyp)
-      hyp{1} = hyp{1}.merge(hyp{i});
-   end
-   varargout{1} = hyp{1};
+   varargout{1} = hyp;
    return
 end
 
 %% Bootstrap via recursion
-if exist('nBootstrapSamples','var') && nBootstrapSamples > 1
+if nBootstrapSamples > 1
    [loc,~,rad] = estimateHypersphere(points); % All-data estimate
    % Bootstrap
    locs = NaN(nBootstrapSamples,d);

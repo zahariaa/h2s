@@ -47,9 +47,9 @@ classdef SetOfHyps < Hypersphere
       function obj = merge(self)
          obj = SetOfHyps(self(1));
          if numel(self)>1 % assumes Hypersphere was bootstrapped
-            obj.ci.bootstraps = self(2:end);
-            obj.ci.centers = prctile(cat(3,self(2:end).centers),[2.5 97.5],3);
-            obj.ci.radii   = prctile(vertcat(self(2:end).radii),[2.5 97.5])';
+            obj.ci.bootstraps = self;
+            obj.ci.centers = prctile(cat(3,self.centers),[2.5 97.5],3);
+            obj.ci.radii   = prctile(vertcat(self.radii),[2.5 97.5])';
          end
       end
       function obj = select(obj,i)
@@ -86,7 +86,7 @@ classdef SetOfHyps < Hypersphere
       function [sig,sec] = significance(obj,points,N)
          if ~exist('N','var') || isempty(N), N=100; end
          % Compute confidence intervals on bootstrapped overlaps & radii for significance
-         boots        = SetOfHyps('estimate',points,obj.categories,N).merge;
+         boots        = SetOfHyps('estimate',points,obj.categories,N,'stratified').merge;
          radii_boot   = reshape([boots.ci.bootstraps.radii],[],N)';
          margin_boot  =  vertcat(boots.ci.bootstraps.margins);
          overlap_boot = cell2mat_concat(arrayfun(@overlap,boots.ci.bootstraps,'UniformOutput',false));

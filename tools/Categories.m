@@ -54,21 +54,36 @@ classdef Categories
          obj.colors  = obj.colors(i,:);
          obj.vectors = obj.vectors(:,i);
       end
-      function objs = permute(obj,N)
+      function objs = permute(obj,N,STRAT_BOOTSTRAP)
          if ~exist('N','var') || isempty(N), N=100;
          elseif N < 2,                       objs=obj; return; end
+         if ~exist('STRAT_BOOTSTRAP','var') || isempty(STRAT_BOOTSTRAP)
+            STRAT_BOOTSTRAP = false;
+         end
 
          [p,n] = size(obj.vectors); %p=# points, n=# hyps
          vecs = obj.vectors*(1:n)';
-         obj.vectors = false(p,n);
          p    = nnz(vecs);
          % Build categories objs with permuted vector identities
-         objs = repmat(obj,[N 1]);
-         for i = 1:N
-            includedvecs = find(vecs);
-            ivec = vecs(includedvecs(randperm(p)));
-            for j = 1:p
-               objs(i).vectors(includedvecs(j),ivec(j)) = true;
+         if STRAT_BOOTSTRAP % resample with replacement
+            obj.vectors = zeros(p,n);
+            objs = repmat(obj,[N 1]);
+            for i = 1:n
+               includedvecs = find(vecs==i);
+               ni = numel(includedvecs);
+               for j = 1:N
+                  objs(j).vectors(includedvecs,i) = includedvecs(sort(randi(ni,ni,1)));
+               end
+            end
+         else
+            obj.vectors = false(p,n);
+            objs = repmat(obj,[N 1]);
+            for i = 1:N
+               includedvecs = find(vecs);
+               ivec = vecs(includedvecs(randperm(p)));
+               for j = 1:p
+                  objs(i).vectors(includedvecs(j),ivec(j)) = true;
+               end
             end
          end
       end
