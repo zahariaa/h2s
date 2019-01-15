@@ -375,7 +375,7 @@ classdef SetOfHyps < Hypersphere
          boxPos = obj.boxPos;     % starting coordinates for box containing matrix
          sqSz   = obj.boxSize/n;  % size of individual squares in matrix box
          sqScl  = 0.8;            % scale factor for squares
-         csep   = -0.06;          % separation between matrix box and circle key
+         csep   = -2*sqSz/3;      % separation between matrix box and circle key
 
          %% DRAW UNDER-BOX OVERLAP/MARGIN SIGNIFIER AREAS
          upperX = [vectify(repmat(1:n,2,[]));1]*sqSz;
