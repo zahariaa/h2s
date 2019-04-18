@@ -380,20 +380,27 @@ classdef SetOfHyps < Hypersphere
          %% DRAW UNDER-BOX OVERLAP/MARGIN SIGNIFIER AREAS
          upperX = [vectify(repmat(1:n,2,[]));1]*sqSz;
          plot(boxPos(1)+upperX,boxPos(2)+shift(upperX-sqSz,-1),'k-' )
-         plot(boxPos(1)+shift(upperX-sqSz,-1),boxPos(2)+upperX,'k--')
 
          %% DRAW ACTUAL BOXES
          for i = 1:N
             rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
                       'Curvature',0.2,'FaceColor',[1 1 1]*(1-sigThresh.ma(i)),'EdgeColor','k')
+         end
+         if isempty(sig.ra)
+            plot(boxPos(1)+shift(upperX-sqSz,-1),boxPos(2)+upperX,'k--')
+            for i = 1:N
             rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
                       'Curvature',0.2,'FaceColor',[1 1 1]*(1-sigThresh.ov(i)),'EdgeColor','k')
-         end
-         if ~isempty(sig.ra)
+            end
+            text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.1)]],'HorizontalAlignment','center','String','Overlap')
+            text('Position',[boxPos+[sqSz*(n+0.1) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Margin','Rotation',90)
+         else
             for i = 1:n
             rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
                       'Curvature',0.2,'FaceColor',[1 1 1]*(1-sigThresh.ra(i)),'EdgeColor','k')
             end
+            text('Position',[boxPos+[sqSz*(n+0.1) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Margin/overlap difference','Rotation',90)
+            text('Position',[boxPos+sqSz*n],'String','Radius difference','Rotation',-45)
          end
 
          %% COLOR KEY: circles
