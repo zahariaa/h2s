@@ -117,16 +117,17 @@ classdef SetOfHyps < Hypersphere
             sec.ov(i) = ciprctile2tail(diff(overlap_boot(:,ixc2(:,i)),[],2));
          end
       end
-      function [errtotal,grad,err] = stress(centers,hi)
-         if isa(centers,'SetOfHyps'), lo = centers;
-         else lo = SetOfHyps(centers,hi.radii(:));
+      function [errtotal,grad,err] = stress(centers_and_radii,hi)
+         if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
+         else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
          end
          fudge     = 1e-8;
          erro      = ( (hi.overlap - lo.overlap)./hi.overlap ).^2;
          ix        = abs(hi.overlap)<fudge;
          erro(ix)  = 10*abs(hi.overlap(ix) - lo.overlap(ix));
          errd      = (hi.dists/mean(hi.dists) - lo.dists/mean(lo.dists)).^2;
-         err       = [errd erro];
+         erra      = ( (hi.radii - lo.radii)./hi.radii ).^2;
+         err       = [errd erro erra];
          errtotal  = sum(err);
 
          % Gradient: partial centers derivative of distances
@@ -145,8 +146,9 @@ classdef SetOfHyps < Hypersphere
          dEdd = 2*(nn2^2)*(lo.dists.*otherlo - sum(lo.dists.^2)+lo.dists.^2) / (sum(lo.dists)^3);
          dEdo = -2*(hi.overlap - lo.overlap) ./ (hi.overlap.^2);
          dEdo(ix) = 10*(lo.overlap(ix)-hi.overlap(ix))./abs(lo.overlap(ix)-hi.overlap(ix));
+         dEdr = -2*(hi.radii   - lo.radii  ) ./ (hi.radii  .^2);
          % Gradient: put it all together
-         grad = sum(dddc.*permute(repmat(dEdd' - dEdo',[1 n d]),[2 3 1]),3);
+         grad = [dEdr' sum(dddc.*permute(repmat(dEdd' - dEdo',[1 n d]),[2 3 1]),3)];
 
       end
       function model = h2s(obj,varargin)
@@ -177,11 +179,11 @@ classdef SetOfHyps < Hypersphere
          end
          
          % Setup optimization and run
-         x0   = mdscale(hi.dists,dimLow);
+         x0  = [hi.radii(:) mdscale(hi.dists,dimLow)];
          opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
          fit = fmincon(@(x) stress(x,hi),x0,[],[],[],[],[],[],[],opts);
          % Output reduced SetOfHyps model
-         model = SetOfHyps(fit,hi.radii(:),hi.categories);
+         model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
          model.error = model.stress(hi);
       end
       function show(obj,varargin)
