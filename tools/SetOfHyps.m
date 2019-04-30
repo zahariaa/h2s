@@ -158,6 +158,7 @@ classdef SetOfHyps < Hypersphere
          for v = 2:nargin
             if isa(varargin{v-1},'SetOfHyps')
                hi = varargin{v-1};
+               lo = obj;
             elseif isnumeric(varargin{v-1}) && numel(varargin{v-1})==1
                if     varargin{v-1} > 3, nboots = varargin{v-1};
                elseif varargin{v-1} > 0, dimLow = varargin{v-1};
@@ -166,14 +167,14 @@ classdef SetOfHyps < Hypersphere
          end
          if ~exist('dimLow','var'), dimLow = 2;   end
          if ~exist('nboots','var'), nboots = 0;   end
-         if ~exist('hi'    ,'var'), hi     = obj; end
+         if ~exist('hi'    ,'var'), hi = obj; lo = obj; end
 
          % Recurse
          n = numel(hi);
          if n > 1
             for i = 1:n
                stationarycounter(i,n);
-               model(i) = hi(i).h2s(dimLow,nboots);
+               model(i) = lo(i).h2s(dimLow,nboots);
             end
             return
          end
