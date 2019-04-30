@@ -182,10 +182,17 @@ classdef SetOfHyps < Hypersphere
          % Setup optimization and run
          x0  = [hi.radii(:) mdscale(hi.dists,dimLow)];
          opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
-         fit = fmincon(@(x) stress(x,hi),x0,[],[],[],[],[],[],[],opts);
+         nonlcon = @(x) hi.constrain_pos_overlaps(x);
+         fit = fmincon(@(x) stress(x,hi),x0,[],[],[],[],[],[],nonlcon,opts);
          % Output reduced SetOfHyps model
          model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
          model.error = model.stress(hi);
+      end
+      function [c,ceq] = constrain_pos_overlaps(self,x)
+         new = SetOfHyps(struct('centers',x,'radii',self.radii));
+         % Any negative margin (positive overlap) must stay a non-positive margin (non-negative overlap).
+         c   = new.margins(self.margins<0);
+         ceq = [];
       end
       function show(obj,varargin)
          obj.error = mean(obj.error(:));
