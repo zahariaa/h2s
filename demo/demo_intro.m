@@ -14,6 +14,7 @@ points = {points(1:n*(nCats-1),:), points};
 % tetrahedron of spheres
 v{2} = [1 0 -1/sqrt(2); -1 0 -1/sqrt(2); 0 1 1/sqrt(2); 0 -1 1/sqrt(2)];
 v{1} = v{2}(1:3,:);% + [0.5 0 0;zeros(2,3)]';
+v{1}(2,3)=-0.5;
 r = {[0.75 1 1.25],[1 1 1 1]};
 for j = 1:2
    for i = 1:nCats+j-2
