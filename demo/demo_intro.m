@@ -139,3 +139,7 @@ orig.showSig(sec,fh.a.h(4));
 orig.showSigLegend(fh.a.h(3));
 matchy(fh.a.h(3:4))
 
+% Print
+set(fh.f,'Renderer','painters')
+printFig(fh.f,[],'eps')
+
