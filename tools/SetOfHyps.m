@@ -117,18 +117,15 @@ classdef SetOfHyps < Hypersphere
             sec.ov(i) = ciprctile2tail(diff(overlap_boot(:,ixc2(:,i)),[],2));
          end
       end
-      function [errtotal,grad,err] = stress(centers_and_radii,hi)
-         if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
-         else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
+      function [errtotal,err] = stress(centers,hi)
+         if isa(centers,'SetOfHyps'), lo = centers;
+         else lo = SetOfHyps(centers,hi.radii(:));
          end
          fudge     = 1e-8;
-         erro      = ( (hi.overlap - lo.overlap)./hi.overlap ).^2;
-         ix        = abs(hi.overlap)<fudge;
-         erro(ix)  = 10*abs(hi.overlap(ix) - lo.overlap(ix));
-         errd      = (hi.dists/mean(hi.dists) - lo.dists/mean(lo.dists)).^2;
-         erra      = ( (hi.radii - lo.radii)./hi.radii ).^2;
-         err       = [errd erro erra];
-         errtotal  = sum(err);
+         erro      = (hi.overlap - lo.overlap).^2;
+         errd      = (hi.dists - lo.dists).^2;
+         err       = [errd erro];
+         errtotal  = mean(err);
 
          % Gradient: partial centers derivative of distances
          [n,d]= size(lo.centers);
@@ -180,18 +177,18 @@ classdef SetOfHyps < Hypersphere
          end
          
          % Setup optimization and run
-         x0  = [hi.radii(:) mdscale(hi.dists,dimLow)];
-         opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
+         x0  = mdscale(hi.dists,dimLow);
+         opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'Display','iter');%,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
          nonlcon = @(x) hi.constrain_pos_overlaps(x);
          fit = fmincon(@(x) stress(x,hi),x0,[],[],[],[],[],[],nonlcon,opts);
          % Output reduced SetOfHyps model
-         model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
+         model = SetOfHyps(fit,hi.radii(:),hi.categories);
          model.error = model.stress(hi);
       end
       function [c,ceq] = constrain_pos_overlaps(self,x)
          new = SetOfHyps(struct('centers',x,'radii',self.radii));
          % Any negative margin (positive overlap) must stay a non-positive margin (non-negative overlap).
-         c   = new.margins(self.margins<0);
+         c   = new.margins(self.margins<1000*eps);
          ceq = [];
       end
       function show(obj,varargin)
