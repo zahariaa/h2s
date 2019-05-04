@@ -117,41 +117,38 @@ classdef SetOfHyps < Hypersphere
             sec.ov(i) = ciprctile2tail(diff(overlap_boot(:,ixc2(:,i)),[],2));
          end
       end
-      function errtotal = stress(centers,hi)
-%       function [errtotal,grad,err] = stress(centers,hi)
-         if isa(centers,'SetOfHyps'), lo = centers;
-            fudge = 1;
-         else 
-            fudge  = centers(1);%1e-8;
-            centers= reshape(centers(2:end),numel(hi.radii),[]);
-            centers= centers+fudge*(centers-repmat(mean(centers),numel(hi.radii),1));
-            lo     = SetOfHyps(centers,hi.radii(:));
+      function [errtotal,grad,err] = stress(centers_and_radii,hi)
+         if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
+         else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
          end
+         fudge     = 1e-8;
+         erro      = ( (hi.overlap - lo.overlap)./hi.overlap ).^2;
+         ix        = abs(hi.overlap)<fudge;
+         erro(ix)  = 10*abs(hi.overlap(ix) - lo.overlap(ix));
+         errd      = (hi.dists/mean(hi.dists) - lo.dists/mean(lo.dists)).^2;
+         erra      = ( (hi.radii - lo.radii)./hi.radii ).^2;
+         err       = [errd erro erra];
+         errtotal  = sum(err);
 
-         erro      = (hi.overlap - lo.overlap).^2;
-         errd      = (hi.dists - lo.dists).^2;
-         %errd      = (hi.dists/mean(hi.dists) - lo.dists/mean(lo.dists)).^2;
-         %err       = [erro errd];
-         errtotal  = mean(erro);
-
-%          % Gradient: partial centers derivative of distances
-%          [n,d]= size(lo.centers);
-%          nn2  = (n^2-n)/2;
-%          dddc = zeros([n d nn2]);
-%          i = 0;
-%          for a = 1:n-1
-%             for b = a+1:n, i = i+1;
-%                dddc(a,:,i) = (lo.centers(a,:) - lo.centers(b,:) ) / lo.dists(i);
-%                dddc(b,:,i) = -dddc(a,:,i);
-%             end
-%          end
-%          % Gradient: partial derivatives of error, relative to distances and overlaps
-%          otherlo = sum(lo.dists) - lo.dists;
-%          % dEdd = 2*(nn2^2)*(lo.dists.*otherlo - sum(lo.dists.^2)+lo.dists.^2) / (sum(lo.dists)^3);
-%          dEdd = 2*(hi.dists   - lo.dists  );
-%          dEdo = 2*(hi.overlap - lo.overlap);
-%          % Gradient: put it all together
-%          grad = sum(dddc.*permute(repmat(dEdd'-dEdo',[1 n d]),[2 3 1]),3);
+         % Gradient: partial centers derivative of distances
+         [n,d]= size(lo.centers);
+         nn2  = (n^2-n)/2;
+         dddc = zeros([n d nn2]);
+         i = 0;
+         for a = 1:n-1
+            for b = a+1:n, i = i+1;
+               dddc(a,:,i) = (lo.centers(a,:) - lo.centers(b,:) ) / lo.dists(i);
+               dddc(b,:,i) = -dddc(a,:,i);
+            end
+         end
+         % Gradient: partial derivatives of error, relative to distances and overlaps
+         otherlo = sum(lo.dists) - lo.dists;
+         dEdd = 2*(nn2^2)*(lo.dists.*otherlo - sum(lo.dists.^2)+lo.dists.^2) / (sum(lo.dists)^3);
+         dEdo = -2*(hi.overlap - lo.overlap) ./ (hi.overlap.^2);
+         dEdo(ix) = 10*(lo.overlap(ix)-hi.overlap(ix))./abs(lo.overlap(ix)-hi.overlap(ix));
+         dEdr = -2*(hi.radii   - lo.radii  ) ./ (hi.radii  .^2);
+         % Gradient: put it all together
+         grad = [dEdr' sum(dddc.*permute(repmat(dEdd' - dEdo',[1 n d]),[2 3 1]),3)];
 
       end
       function model = h2s(obj,varargin)
@@ -183,20 +180,15 @@ classdef SetOfHyps < Hypersphere
          end
          
          % Setup optimization and run
-         x0   = [0.05; vectify(mdscale(hi.dists,dimLow))];
-         opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'Display','iter');%,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
+         x0  = [hi.radii(:) mdscale(hi.dists,dimLow)];
+         opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
          nonlcon = @(x) hi.constrain_pos_overlaps(x);
-         ub = [1 zeros(1,numel(x0)-1)];
-         lb = zeros(1,numel(x0));
-         fit = fmincon(@(x) stress(x,hi),x0,[],[],[],[],lb,ub,nonlcon,opts);
+         fit = fmincon(@(x) stress(x,hi),x0,[],[],[],[],[],[],nonlcon,opts);
          % Output reduced SetOfHyps model
-         fit(1)
-         fit = reshape(fit(2:end),numel(hi(1).radii),[]);
-         model = SetOfHyps(fit,hi.radii(:),hi.categories);
+         model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
          model.error = model.stress(hi);
       end
       function [c,ceq] = constrain_pos_overlaps(self,x)
-         x = reshape(x(2:end),numel(self.radii),[]);
          new = SetOfHyps(struct('centers',x,'radii',self.radii));
          % Any negative margin (positive overlap) must stay a non-positive margin (non-negative overlap).
          c   = new.margins(self.margins<0);
