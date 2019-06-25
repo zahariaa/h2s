@@ -123,11 +123,11 @@ for itype = 1:-1:0
 end
 
 %% TEST NEW STRESS FUNCTION
-orig = SetOfHyps(v{itype+1}',r{itype+1});
+orig = SetOfHyps(v{itype+1},r{itype+1});
 orig.categories = model.categories;
 low  = SetOfHyps(model);
 low.error = low.stress(orig);
-new  = orig.h2s
+new  = low.h2s(orig)%orig.h2s
 % Calculate significance
 [sig,sec] = orig.significance(points{itype+1},10000);
 % Plot
