@@ -22,6 +22,7 @@ classdef Categories
             cmd = sprintf('true(%u,1),',vectors);
             cmd = ['obj.vectors = blkdiag(' cmd(1:end-1) ');'];
             eval(cmd)
+            obj.vectors = ~~obj.vectors;
          end
          n = size(obj.vectors,2);
          if ~exist('labels','var') || isempty(labels)
