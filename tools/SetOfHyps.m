@@ -216,10 +216,21 @@ classdef SetOfHyps < Hypersphere
                                            'SpecularStrength', 1,...
                                            'DiffuseStrength',  1);
       end
-      function movie(self,times,timeLabel,SAVE)
+      function movie(self,times,timeLabel,varargin)
+      % function SetOfHyps.movie(times,timeLabel,<SAVEflag> or <StaticFrameAxes>)
+      % SetOfHyps.movie(times,timeLabel,SAVEflag) generates a movie, optionally saves
+      % SetOfHyps.movie(times,timeLabel,StaticFrameAxes) plots static frames in axes given
          nh     = numel(self);
-         if ~exist('SAVE','var') || isempty(SAVE), SAVE = false; end
-         if ~exist('timeLabel','var'), timeLabel = []; end
+         STATIC = false;
+         if nargin > 3
+            if        islogical(varargin{1}) , SAVE = varargin{1};
+            elseif all(ishandle(varargin{1})), SAVE = false; STATIC = true;
+                                               ax   = varargin{1};
+            end
+         else                                  SAVE = false;
+         end
+         if ~exist('ax'       ,'var'), ax        = repmat(gca,[1 nh]);   end
+         if ~exist('timeLabel','var'), timeLabel = [];    end
          % Calculate frame times
          if exist('times','var') && ~isempty(times)
             if isempty(timeLabel), timeLabel = 'ms'; end
@@ -252,7 +263,7 @@ classdef SetOfHyps < Hypersphere
          %% Do stuff
          ann = [];
          for i = 1:nh
-            cla; delete(ann);
+            axtivate(ax(i));
             % DRAW PLOT
             self(i).show(false,[]);
             if dimLow == 3,   self.camera(camSettings);   end
@@ -260,7 +271,14 @@ classdef SetOfHyps < Hypersphere
          
             %% Generate title string
             extratxt = sprintf('} %g %s',times(i),timeLabel);
-            ann = self(1).categories.legend([0.01 txtY(dimLow) 1 0.1],extratxt);
+            if STATIC
+               title(extratxt(3:end));
+               extratxt = [];
+            end
+            if i==1 || ~STATIC
+               delete(ann);
+               ann = self(1).categories.legend([0.01 txtY(dimLow) 1 0.1],extratxt);
+            end
             if ~SAVE
                drawnow
                pause(0.1)
@@ -268,7 +286,9 @@ classdef SetOfHyps < Hypersphere
                writeVideo(vidObj,getframe(gcf));
             end
          end
-         if SAVE
+         if STATIC
+            subplotResize([],[],0.01)
+         elseif SAVE
             close(vidObj)
             fprintf('\nVideo written to %s\n',SAVE)
          end
