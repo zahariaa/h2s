@@ -19,13 +19,13 @@ for d = ds
    [model,high] = hypersphere2sphere(points,categories,[],dimLow);
    model = SetOfHyps(model,groundtruth);
    %keyboard
-   testhi = SetOfHyps('estimate',points,categories);%,100);
+   testhi = SetOfHyps('estimate',points,categories);
    testhi.error = testhi.stress(groundtruth);
    testlo = testhi.h2s(dimLow);
    testlo.error = testlo.stress(groundtruth);
 
-   axtivate(fh.a.h((i-1)*2+1));  model.show(dimLow);
-   axtivate(fh.a.h((i-1)*2+2)); testlo.show(dimLow);
+   axtivate(fh.a.h((i-1)*2+1));  model.show;
+   axtivate(fh.a.h((i-1)*2+2)); testlo.show;
    drawnow;
    [groundtruth.overlap;model.overlap;testlo.overlap]
 end
