@@ -134,6 +134,7 @@ classdef SetOfHyps < Hypersphere
       % Optimizes stress of self.centers relative to hi
       % Takes as input: self.h2s(dimLow), self.h2s(hi), self.h2s(hi,dimLow)
       % dimLow defaluts to 2, hi defaults to self
+      % also can do self.h2s(true) to fix radii to hi dimensional ones
          for v = 2:nargin
             if isa(varargin{v-1},'SetOfHyps')
                hi = varargin{v-1};
@@ -142,11 +143,14 @@ classdef SetOfHyps < Hypersphere
                if     varargin{v-1} > 3, nboots = varargin{v-1};
                elseif varargin{v-1} > 0, dimLow = varargin{v-1};
                end
+            elseif islogical(varargin{v-1})
+               FIXRADII = varargin{v-1};
             end
          end
          if ~exist('dimLow','var'), dimLow = 2;   end
          if ~exist('nboots','var'), nboots = 0;   end
          if ~exist('hi'    ,'var'), hi = obj; lo = obj; end
+         if ~exist('FIXRADII','var'), FIXRADII = false; end
 
          % Recurse
          n = numel(hi);
@@ -160,9 +164,18 @@ classdef SetOfHyps < Hypersphere
          
          % Setup optimization and run
          x0  = [hi.radii(:) mdscale(hi.dists,dimLow)];
+         if FIXRADII
+            nr = numel(hi.radii);
+            Aeq = [eye(nr) zeros(nr, nr*dimLow)];
+            beq = hi.radii(:);
+         else
+            Aeq = []; beq = [];
+         end
+%          x0  = x0 - repmat(mean(x0),numel(hi.radii),1);
+%          x0  = x0*2;
          opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'Display','iter');%,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
          nonlcon = @(x) hi.constrain_pos_overlaps(x);
-         fit = fmincon(@(x) stress(x,hi),x0,[],[],[],[],[],[],[],opts);
+         fit = fmincon(@(x) stress(x,hi),x0,[],[],Aeq,beq,[],[],[],opts);
          % Output reduced SetOfHyps model
          model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
          model.error = model.stress(hi);
