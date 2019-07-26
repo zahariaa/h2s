@@ -1,6 +1,8 @@
 % demo_random
 
 seed = rng(0);
+SIMPLICES = true;
+another3  = false;
 
 ds = [3 3 4 4 6 6 9 9];%[3:5 3];
 
@@ -12,8 +14,16 @@ for d = ds
    i = i+1;
    j = 1;
    dimLow = min(d-1,3);
-   groundtruth = SetOfHyps(2*rand(d+1,d),rand(d+1,1));
-
+   if SIMPLICES
+      if     d==3 &&  another3
+         groundtruth = SetOfHyps([nsimplex(d)';nsimplex(d)'+3],ones(2*d+2,1));
+      else
+         another3    = true;
+         groundtruth = SetOfHyps(nsimplex(d)',ones(d+1,1));
+      end
+   else
+      groundtruth = SetOfHyps(2*rand(d+1,d),rand(d+1,1));
+   end
    [points,categories] = randnsimplex_of_nballs(groundtruth.centers,50,...
                                                 groundtruth.radii);
    [model,high] = hypersphere2sphere(points,categories,[],dimLow);
@@ -30,9 +40,9 @@ for d = ds
          testlo.error = testlo.stress(groundtruth);
       
          axtivate(fh.a.h((i-1)*nconditions+j)); testlo.show;
+         drawnow;
       end
    end
-   drawnow;
    %[groundtruth.overlap;model.overlap;testlo.overlap]
 end
 
