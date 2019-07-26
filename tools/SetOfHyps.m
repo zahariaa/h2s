@@ -144,13 +144,21 @@ classdef SetOfHyps < Hypersphere
                elseif varargin{v-1} > 0, dimLow = varargin{v-1};
                end
             elseif islogical(varargin{v-1})
-               FIXRADII = varargin{v-1};
+               FIXRADII = varargin{v-1}(1);
+               if numel(varargin{v-1})>1
+                  CONSTRAINT = varargin{v-1}(2);
+               end
             end
          end
          if ~exist('dimLow','var'), dimLow = 2;   end
          if ~exist('nboots','var'), nboots = 0;   end
          if ~exist('hi'    ,'var'), hi = obj; lo = obj; end
          if ~exist('FIXRADII','var'), FIXRADII = false; end
+         if ~exist('CONSTRAINT','var') || ~CONSTRAINT
+            nonlcon = [];
+         else
+            nonlcon = @(x) hi.constrain_pos_overlaps(x);
+         end
 
          % Recurse
          n = numel(hi);
@@ -174,14 +182,13 @@ classdef SetOfHyps < Hypersphere
 %          x0  = x0 - repmat(mean(x0),numel(hi.radii),1);
 %          x0  = x0*2;
          opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'Display','iter');%,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
-         nonlcon = @(x) hi.constrain_pos_overlaps(x);
-         fit = fmincon(@(x) stress(x,hi),x0,[],[],Aeq,beq,[],[],[],opts);
+         fit = fmincon(@(x) stress(x,hi),x0,[],[],Aeq,beq,[],[],nonlcon,opts);
          % Output reduced SetOfHyps model
          model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
          model.error = model.stress(hi);
       end
       function [c,ceq] = constrain_pos_overlaps(self,x)
-         new = SetOfHyps(struct('centers',x,'radii',self.radii));
+         new = SetOfHyps(struct('centers',x(:,2:end),'radii',x(:,1)));
          % Any negative margin (positive overlap) must stay a non-positive margin (non-negative overlap).
          c   = new.margins(self.margins<1000*eps);
          ceq = [];
