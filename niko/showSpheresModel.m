@@ -1,4 +1,4 @@
-function showSpheresModel(varargin)
+function [objHs,XYZ] = showSpheresModel(varargin)
 
 %% control variables
 patchDetail = 100;
@@ -25,14 +25,14 @@ if ~exist('ax','var') || isempty(ax), ax = gca; end
 axtivate(ax);
 
 if ~exist('titleStr','var')
-    titleStr = any2str('error <= ',ceil(model.error*100),'%');
+    titleStr = any2str('error <= ',ceil(max(model.error.^2)*100),'%');
 end
 title(titleStr);
 
 
 %% draw spheres
 covs = arrayfun(@(r) eye(3)*r^2,model.radii,'UniformOutput',false);
-objHs = draw3dEllipsoid(model.centers,covs,model.categories.colors,patchDetail,opacity);
+[objHs,XYZ] = draw3dEllipsoid(model.centers,covs,model.categories.colors,patchDetail,opacity);
 
 axis equal tight off;
 set(get(ax,'Parent'),'Renderer','OpenGL');

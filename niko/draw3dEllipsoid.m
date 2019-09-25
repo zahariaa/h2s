@@ -1,4 +1,4 @@
-function h = draw3dEllipsoid(location,covariance,col,n,opacity,RECURSED)
+function [h,XYZ] = draw3dEllipsoid(location,covariance,col,n,opacity,RECURSED)
 
 %% defaults
 if ~exist('location'  ,'var') || isempty(location  ), location = [0 0 0];  end
@@ -28,8 +28,9 @@ if mn > 1
    if numel(n      ) < mn;   n       = repmat({n      },[mn 1]);   end
    if numel(opacity) < mn;   opacity = repmat({opacity},[mn 1]);   end
    % Recursive call, with RECURSED flag set to true ...
-   h = cellfun( @draw3dEllipsoid, location,covariance,col,n,opacity,repmat({true},[mn 1]));
+   [h,XYZ] = cellfun( @draw3dEllipsoid, location,covariance,col,n,opacity,repmat({true},[mn 1]),'UniformOutput',false);
    lighting phong; camlight('headlight'); view(180,90); % ... so that lighting is only applied 1x
+   h  = vertcat (h{:});   XYZ = cat(1,XYZ{:});
    return
 elseif ~exist('RECURSED','var'), RECURSED = false;
 end
@@ -45,6 +46,7 @@ X2 = location(1) + reshape(xyz2(1,:),size(X));
 Y2 = location(2) + reshape(xyz2(2,:),size(Y));
 Z2 = location(3) + reshape(xyz2(3,:),size(Z));
 
+XYZ = cat(3,X2,Y2,Z2);
 %% draw 3d ellipsoid
 hold on;
 h = surf(X2,Y2,Z2,'FaceColor',col,'EdgeColor','none','FaceAlpha',opacity);

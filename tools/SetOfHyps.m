@@ -40,7 +40,7 @@ classdef SetOfHyps < Hypersphere
             if isa(varargin{v},'Categories')
                obj.categories = varargin{v};
             elseif isa(varargin{v},'SetOfHyps')
-               obj.error = obj.stress(varargin{v});
+               [~,~,obj.error] = obj.stress(varargin{v});
             end
          end
       end
@@ -121,13 +121,14 @@ classdef SetOfHyps < Hypersphere
          if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
          else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
          end
+         dimLow    = size(lo.centers,2);
          fudge     = 1e-8;
-         erro      = ( hi.overlap - lo.overlap ).^2;
-         errd      = ( hi.dists   - lo.dists   ).^2;
-         erra      = ( hi.radii   - lo.radii   ).^2;
-         err       = [errd erro erra];
-         errtotal  = sum(err);
-
+         erro      = hi.overlap - lo.overlap;
+         errd      = hi.dists   - lo.dists;
+         erra      = hi.radii   - lo.radii;
+         err       = abs([errd erro erra]);
+         errtotal  = mean( err.^2 );
+         %errtotal  = mean( mean(errd.^2) + mean(erro.^2) + mean(erra.^2) );
 
       end
       function model = h2s(obj,varargin)
@@ -185,20 +186,30 @@ classdef SetOfHyps < Hypersphere
          fit = fmincon(@(x) stress(x,hi),x0,[],[],Aeq,beq,[],[],nonlcon,opts);
          % Output reduced SetOfHyps model
          model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
-         model.error = model.stress(hi);
+         [~,~,model.error] = model.stress(hi);
       end
       function [c,ceq] = constrain_pos_overlaps(self,x)
          new = SetOfHyps(struct('centers',x(:,2:end),'radii',x(:,1)));
          % Any negative margin (positive overlap) must stay a non-positive margin (non-negative overlap).
-         c   = new.margins(self.margins<1000*eps);
+         c   = self.margins;%(self.margins<1000*eps);
          ceq = [];
       end
       function show(obj,varargin)
-         obj.error = mean(obj.error(:));
+         maxerror = max(obj.error.^2);
          switch size(obj.centers,2)
-            case 2; showCirclesModel(obj,varargin{:});
-            case 3; showSpheresModel(obj,varargin{:});
+            case 2; [~,XY] = showCirclesModel(obj,varargin{:});
+                    %% Draw max error bar
+                    maxXY = max(XY);
+                    maxline = plot(maxXY(1)*[1 1-maxerror],...
+                                   maxXY([2 2]),'k-','LineWidth',2);
+            case 3; [~,XY] = showSpheresModel(obj,varargin{:});
+                    %% Draw max error bar
+                    maxXY = vectify(max(max(XY,[],2)));
+                    maxline = plot3(maxXY(1)*[1 1-maxerror],...
+                                    maxXY([2 2]),maxXY([3 3]),...
+                                    'k-','LineWidth',2);
          end
+         axis tight equal off ij % puts error bar at bottom right
       end
       function camSettings = cameraCalc(obj)
          if numel(obj)>1 % concatenate center & radii
@@ -338,6 +349,7 @@ classdef SetOfHyps < Hypersphere
          lo          = SetOfHyps(x,obj.radii);
          % Recalculate error from high dimensional SetOfHyps obj
          lo.error    = reshape(undeal(3,@() lo.stress(obj)),(n^2-n)/2,[])';
+         lo.error    = lo.error.^2;
 
          % Plot
          figure(99);
