@@ -198,14 +198,20 @@ classdef SetOfHyps < Hypersphere
          maxerror = max(obj.error.^2);
          switch size(obj.centers,2)
             case 2; [~,XY] = showCirclesModel(obj,varargin{:});
+               %% Draw max error bar
+               maxXY = max(XY);
+               maxline = plot(maxXY([1 1]) - [0 maxerror],...
+                              maxXY([2 2]),'k-','LineWidth',4);
+               axis ij tight equal vis3d off % puts error bar at bottom right
             case 3; [~,XY] = showSpheresModel(obj,varargin{:});
+               %% Draw max error bar
+               axis ij tight equal vis3d off % puts error bar at bottom right
+               ax = gca;
+               ax.Units = 'normalized';
+               maxline = annotation('line',[1-maxerror/diff(ax.XLim) 1]*ax.Position(3)+ax.Position(1),...
+                                           ax.Position([2 2]),'LineWidth',4);
          end
-         axis ij tight equal vis3d off % puts error bar at bottom right
-         ax = gca;
-         ax.Units = 'normalized';
-         annline = annotation('line',[1-maxerror/diff(ax.XLim) 1]*ax.Position(3)+ax.Position(1),...
-                                     ax.Position([2 2]),'LineWidth',2);
-         if nargout > 0,   varargout = annline;   end
+         if nargout > 0,   varargout = maxline;   end
       end
       function camSettings = cameraCalc(obj)
          if numel(obj)>1 % concatenate center & radii
