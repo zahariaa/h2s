@@ -211,7 +211,29 @@ classdef SetOfHyps < Hypersphere
                maxline = annotation('line',[1-maxerror/diff(ax.XLim) 1]*ax.Position(3)+ax.Position(1),...
                                            ax.Position([2 2]),'LineWidth',4);
          end
-         if nargout > 0,   varargout = maxline;   end
+         %% DRAW SIGN FLIP ERROR LINES
+         ovlines = obj.plotOverlapErrors;
+
+         if nargout > 0,   varargout = {maxline,ovlines};   end
+      end
+      function errlines = plotOverlapErrors(obj)
+         n = numel(obj.radii);
+         ix = nchoosek_ix(n);
+         for i = 1:numel(obj.margins)
+            err      = obj.error(n+i)^2; % assumes order of errors is radii, margins, distances
+            centers  = obj.centers(ix(:,i),:);
+            dxy      = diff(centers);
+            midpoint = mean(centers);
+
+            if size(obj.centers,2)==2
+               errlines(i) = plot( midpoint(1) + [-1 1]*dxy(1)*err/2,...
+                                   midpoint(2) + [-1 1]*dxy(2)*err/2,'k-','LineWidth',2);
+            else
+               errlines(i) = plot3(midpoint(1) + [-1 1]*dxy(1)*err/2,...
+                                   midpoint(2) + [-1 1]*dxy(2)*err/2,...
+                                   midpoint(3) + [-1 1]*dxy(3)*err/2,'k-','LineWidth',2);
+            end
+         end
       end
       function camSettings = cameraCalc(obj)
          if numel(obj)>1 % concatenate center & radii
