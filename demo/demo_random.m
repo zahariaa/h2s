@@ -12,6 +12,7 @@ end
 
 nconditions = 5;
 fh = newfigure('n-random',[numel(ds) nconditions]);
+set(fh.f,'Units','normalized');
 
 i = 0;
 for d = ds
@@ -34,14 +35,14 @@ for d = ds
    model = SetOfHyps(model,groundtruth);
    %keyboard
    testhi = SetOfHyps('estimate',points,categories);%,100).merge;
-   testhi.error = testhi.stress(groundtruth);
+   [~,~,testhi.error] = testhi.stress(groundtruth);
    axtivate(fh.a.h((i-1)*nconditions+j));  model.show;
 
    for CONSTRAINT = [false true]
       for FIXRADII = [false true]
          j = j+1;
          testlo = testhi.h2s(dimLow,[FIXRADII CONSTRAINT]);
-         testlo.error = testlo.stress(groundtruth);
+         [~,~,testlo.error] = testlo.stress(groundtruth);
       
          axtivate(fh.a.h((i-1)*nconditions+j)); testlo.show;
          drawnow;

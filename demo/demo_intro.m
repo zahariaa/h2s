@@ -28,6 +28,9 @@ categories = Categories(n*ones(1,4));
 %% PLOT
 planelim = 2;
 for itype = 1:-1:0
+   orig = SetOfHyps(v{itype+1},r{itype+1});
+   orig.categories = categories;
+
    nCats = size(points{itype+1},1)/n;
    fh = newfigure(sprintf('intro%u',itype),[1 3]);
    axtivate(1)
@@ -102,6 +105,7 @@ for itype = 1:-1:0
    
    axtivate(3)
    model = hypersphere2sphere(points{itype+1}(1:(n*nCats),:),categories.select(1:nCats),[],2);
+   [~,~,model.error] = SetOfHyps(model).stress(orig);
    showCirclesModel(model,[],[]);
    for i = 1:nCats
       plot(model.centers(i,1),model.centers(i,2),'wo','MarkerSize',dotsz,...
@@ -123,10 +127,8 @@ for itype = 1:-1:0
 end
 
 %% TEST NEW STRESS FUNCTION
-orig = SetOfHyps(v{itype+1},r{itype+1});
-orig.categories = model.categories;
 low  = SetOfHyps(model);
-low.error = low.stress(orig);
+[~,~,low.error] = low.stress(orig);
 new  = low.h2s(orig)%orig.h2s
 % Calculate significance
 [sig,sec] = orig.significance(points{itype+1},10000);
