@@ -4,7 +4,11 @@ seed = rng(0);
 SIMPLICES = true;
 another3  = false;
 
-ds = [3 3 4 4 6 6 9 9];%[3:5 3];
+if SIMPLICES
+   ds = [3 5 7 3];
+else
+   ds = [3 3 4 4 6 6 9 9];
+end
 
 nconditions = 5;
 fh = newfigure('n-random',[numel(ds) nconditions]);
