@@ -131,12 +131,14 @@ low  = SetOfHyps(model);
 [~,~,low.error] = low.stress(orig);
 new  = low.h2s(orig)%orig.h2s
 % Calculate significance
-[sig,sec] = orig.significance(points{itype+1},10000);
+[orig.sig,sec] = orig.significance(points{itype+1},10000);
 % Plot
+low.sig = orig.sig;
+new.sig = orig.sig;
 fh = newfigure([2 2],'compare'); low.show(fh.a.h(1));
                                  new.show(fh.a.h(2));
 set(fh.f,'Renderer','openGL')
-orig.showSig(sig,fh.a.h(3));
+orig.showSig(orig.sig,fh.a.h(3));
 orig.showSig(sec,fh.a.h(4));
 orig.showSigLegend(fh.a.h(3));
 matchy(fh.a.h(3:4))

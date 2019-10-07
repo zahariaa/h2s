@@ -5,6 +5,8 @@ classdef SetOfHyps < Hypersphere
       dists      = NaN;
       margins    = NaN;
       ci         = [];  % confidence intervals, with raw bootstrap data
+      sig        = [];  % significance tests results
+      msflips    = [];  % margin sign flips
    end
    properties(GetAccess = 'private', SetAccess = 'private')
       boxPos     = [0.65 0.65];
@@ -117,7 +119,7 @@ classdef SetOfHyps < Hypersphere
             sec.ov(i) = ciprctile2tail(diff(overlap_boot(:,ixc2(:,i)),[],2));
          end
       end
-      function [errtotal,grad,err] = stress(centers_and_radii,hi)
+      function [errtotal,grad,err,msflips] = stress(centers_and_radii,hi)
          if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
          else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
          end
@@ -130,6 +132,8 @@ classdef SetOfHyps < Hypersphere
          errtotal  = mean( err.^2 );
          %errtotal  = mean( mean(errd.^2) + mean(erro.^2) + mean(erra.^2) );
 
+         msflips = ~(sign(hi.margins) == sign(lo.margins));
+         grad = [];
       end
       function model = h2s(obj,varargin)
       % Optimizes stress of self.centers relative to hi
@@ -212,17 +216,28 @@ classdef SetOfHyps < Hypersphere
                                            ax.Position([2 2]),'LineWidth',4);
          end
          %% DRAW SIGN FLIP ERROR LINES
-         ovlines = obj.plotOverlapErrors;
+         ovlines = obj.plotOverlapErrors(obj.sig.ov<0.05);
 
          if nargout > 0,   varargout = {maxline,ovlines};   end
       end
-      function errlines = plotOverlapErrors(obj)
+      function errlines = plotOverlapErrors(obj,sigov)
+         if ~exist('sigov','var')
+            sigov = true(1,numel(obj.margins));
+         end
+         if ~isempty(obj.msflips)
+            sigov = sigov .* obj.msflips;
+         end
+         if isempty(sigov) || ~any(sigov)
+            errlines = [];
+            return
+         end
          n = numel(obj.radii);
          ix = nchoosek_ix(n);
-         for i = 1:numel(obj.margins)
+         for i = find(sigov)
             err      = obj.error(n+i)^2; % assumes order of errors is radii, margins, distances
             centers  = obj.centers(ix(:,i),:);
             dxy      = diff(centers);
+            dxy      = dxy/norm(dxy);
             midpoint = mean(centers);
 
             if size(obj.centers,2)==2
