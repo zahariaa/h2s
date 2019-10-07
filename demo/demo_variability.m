@@ -20,30 +20,29 @@ i = 0;
 for d = ds
    dimLow = min(d-1,3);
 
-   for j = 1:nconditions
-      if SIMPLICES
-         if     d==3 &&  another3
-            groundtruth = SetOfHyps([nsimplex(d)';nsimplex(d)'+3],ones(2*d+2,1));
-         else
-            another3    = true;
-            groundtruth = SetOfHyps(nsimplex(d)',ones(d+1,1));
-         end
+   if SIMPLICES
+      if     d==3 &&  another3
+         groundtruth = SetOfHyps([nsimplex(d)';nsimplex(d)'+3],ones(2*d+2,1));
       else
-         groundtruth = SetOfHyps(2*rand(d+1,d),rand(d+1,1));
+         another3    = true;
+         groundtruth = SetOfHyps(nsimplex(d)',ones(d+1,1));
       end
-      [points,categories] = randnsimplex_of_nballs(groundtruth.centers,50,...
-                                                   groundtruth.radii);
-   
-      [model,high] = hypersphere2sphere(points,categories,[],dimLow);
-      model = SetOfHyps(model,groundtruth);
-      model.sig = model.significance(points,1000);
-      %keyboard
-      testhi = SetOfHyps('estimate',points,categories);%,100).merge;
-      [~,~,testhi.error,testhi.msflips] = testhi.stress(groundtruth);
-      testhi.sig = testhi.significance(points);
+   else
+      groundtruth = SetOfHyps(2*rand(d+1,d),rand(d+1,1));
+   end
+   [points,categories] = randnsimplex_of_nballs(groundtruth.centers,50,...
+                                                groundtruth.radii);
 
-      %axtivate(fh.a.h(i*2*nconditions+j));  model.show;
+   [model,high] = hypersphere2sphere(points,categories,[],dimLow);
+   model = SetOfHyps(model,groundtruth);
+   model.sig = model.significance(points,1000);
+   %keyboard
+   testhi = SetOfHyps('estimate',points,categories);%,100).merge;
+   [~,~,testhi.error,testhi.msflips] = testhi.stress(groundtruth);
+   testhi.sig = testhi.significance(points);
 
+   %axtivate(fh.a.h(i*2*nconditions+j));  model.show;
+   for j = 1:nconditions
       for MDS_INIT = [false true]
          testlo = testhi.h2s(dimLow,[FIXRADII CONSTRAINT MDS_INIT]);
          [~,~,testlo.error,testlo.msflips] = testlo.stress(groundtruth);
