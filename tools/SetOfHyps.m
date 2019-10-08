@@ -152,9 +152,12 @@ classdef SetOfHyps < Hypersphere
             if isa(varargin{v-1},'SetOfHyps')
                hi = varargin{v-1};
                lo = obj;
-            elseif isnumeric(varargin{v-1}) && numel(varargin{v-1})==1
-               if     varargin{v-1} > 3, nboots = varargin{v-1};
-               elseif varargin{v-1} > 0, dimLow = varargin{v-1};
+            elseif isnumeric(varargin{v-1})
+               switch numel(varargin{v-1})
+                  case 1;    dimLow                =         varargin{v-1};
+                  case 2;   [dimLow,nboots]        = dealvec(varargin{v-1});
+                  case 3;   [dimLow,nboots,ninits] = dealvec(varargin{v-1});
+                             varargin{v-1}(3) = 1; % change to 1 for recusive call below
                end
             elseif islogical(varargin{v-1})
                switch numel(varargin{v-1})
@@ -166,6 +169,7 @@ classdef SetOfHyps < Hypersphere
          end
          if ~exist('dimLow','var'), dimLow = 2;   end
          if ~exist('nboots','var'), nboots = 0;   end
+         if ~exist('ninits','var'), ninits = 1;   end
          if ~exist('hi'    ,'var'), hi = obj; lo = obj; end
          if ~exist('MDS_INIT','var'), MDS_INIT = true; end
          if ~exist('FIXRADII','var'), FIXRADII = true; end
@@ -175,7 +179,7 @@ classdef SetOfHyps < Hypersphere
             nonlcon = @(x) hi.constrain_pos_overlaps(x);
          end
 
-         % Recurse
+         % Recurse for multiple SetOfHyps objects
          n  = numel(hi);
          nr = numel(hi.radii);
          if n > 1
@@ -185,7 +189,7 @@ classdef SetOfHyps < Hypersphere
             end
             return
          end
-         
+
          % Setup optimization and run
          if MDS_INIT
             x0  = [hi.radii(:) mdscale(hi.dists,dimLow)];
@@ -207,6 +211,14 @@ classdef SetOfHyps < Hypersphere
          % Output reduced SetOfHyps model
          model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
          [~,~,model.error] = model.stress(hi);
+
+         % Recurse for multiple random initializations
+         for iinit = 2:ninits
+            tmp = obj.h2s(varargin);
+            if max(tmp.error) < max(model.error)
+               model = tmp;
+            end
+         end
       end
 
       function [c,ceq] = constrain_pos_overlaps(self,x)
