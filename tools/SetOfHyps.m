@@ -13,6 +13,7 @@ classdef SetOfHyps < Hypersphere
       boxSize    = 0.3;
       nSigLevs   = 3; % 3 means [0.95 0.99 0.999] levels
    end
+
    methods
       function obj = SetOfHyps(h,varargin)  % Contructor
          if isa(h,'SetOfHyps'), obj=h; return;
@@ -46,6 +47,7 @@ classdef SetOfHyps < Hypersphere
             end
          end
       end
+
       function obj = merge(self)
          obj = SetOfHyps(self(1));
          if numel(self)>1 % assumes Hypersphere was bootstrapped
@@ -54,6 +56,7 @@ classdef SetOfHyps < Hypersphere
             obj.ci.radii   = prctile(vertcat(self.radii),[2.5 97.5])';
          end
       end
+
       function obj = select(obj,i)
          n = numel(obj.radii);
          obj = select@Hypersphere(obj,i);
@@ -85,6 +88,7 @@ classdef SetOfHyps < Hypersphere
             end
          end
       end
+
       function [sig,sec] = significance(obj,points,N)
          if ~exist('N','var') || isempty(N), N=100; end
          % Compute confidence intervals on bootstrapped overlaps & radii for significance
@@ -119,6 +123,7 @@ classdef SetOfHyps < Hypersphere
             sec.ov(i) = ciprctile2tail(diff(overlap_boot(:,ixc2(:,i)),[],2));
          end
       end
+
       function [errtotal,grad,err,msflips] = stress(centers_and_radii,hi)
          if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
          else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
@@ -200,12 +205,14 @@ classdef SetOfHyps < Hypersphere
          model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
          [~,~,model.error] = model.stress(hi);
       end
+
       function [c,ceq] = constrain_pos_overlaps(self,x)
          new = SetOfHyps(struct('centers',x(:,2:end),'radii',x(:,1)));
          % Any negative margin (positive overlap) must stay a non-positive margin (non-negative overlap).
          c   = self.margins;%(self.margins<1000*eps);
          ceq = [];
       end
+
       function varargout = show(obj,varargin)
          maxerror = max(obj.error.^2);
          switch size(obj.centers,2)
@@ -228,6 +235,7 @@ classdef SetOfHyps < Hypersphere
 
          if nargout > 0,   varargout = {maxline,ovlines};   end
       end
+
       function errlines = plotOverlapErrors(obj,sigov)
          if ~exist('sigov','var')
             sigov = true(1,numel(obj.margins));
@@ -258,6 +266,7 @@ classdef SetOfHyps < Hypersphere
             end
          end
       end
+
       function camSettings = cameraCalc(obj)
          if numel(obj)>1 % concatenate center & radii
             obj(1).centers = vertcat(obj.centers);
@@ -280,6 +289,7 @@ classdef SetOfHyps < Hypersphere
          camSettings.CameraPosition = objectsCentroid'-normal*camDist;
          camSettings.CameraTarget   = objectsCentroid;
       end
+
       function camera(obj,camSettings)
          if ~exist('camSettings','var') || isempty(camSettings)
             camSettings = obj.cameraCalc;
@@ -294,6 +304,7 @@ classdef SetOfHyps < Hypersphere
                                            'SpecularStrength', 1,...
                                            'DiffuseStrength',  1);
       end
+
       function movie(self,times,timeLabel,varargin)
       % function SetOfHyps.movie(times,timeLabel,<SAVEflag> or <StaticFrameAxes>)
       % SetOfHyps.movie(times,timeLabel,SAVEflag) generates a movie, optionally saves
@@ -371,6 +382,7 @@ classdef SetOfHyps < Hypersphere
             fprintf('\nVideo written to %s\n',SAVE)
          end
       end
+
       function plotComparisons(self,type,times,ax)
          if ~exist('ax','var') || isempty(ax), ax = gca; end 
          n  = numel(self(1).radii);
@@ -384,6 +396,7 @@ classdef SetOfHyps < Hypersphere
          ylabel(type)
          xlim([min(times) max(times)]);
       end
+
       function stop = stressPlotFcn(obj,varargin)%x,optimValues,state)
          % unpack inputs
          x           = varargin{1};
@@ -432,6 +445,7 @@ classdef SetOfHyps < Hypersphere
 
          stop = false;
       end
+
       function showSig(obj,self,ax)
          % Parse inputs
          if isa(self,'SetOfHyps'), sig = self.sig;
@@ -522,6 +536,7 @@ classdef SetOfHyps < Hypersphere
          end
          axis equal ij off
       end
+
       function showSigLegend(self,ax)
          n        = numel(self.radii);
          boxPos   = self.boxPos;
