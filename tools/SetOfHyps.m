@@ -146,6 +146,8 @@ classdef SetOfHyps < Hypersphere
       % Takes as input: self.h2s(dimLow), self.h2s(hi), self.h2s(hi,dimLow)
       % dimLow defaluts to 2, hi defaults to self
       % also can do self.h2s(true) to fix radii to hi dimensional ones
+      % self.h2s([true true true]) fixes radii, constrains high positive
+      %    overlaps to be positive, and uses MDS for low centers initialization
          for v = 2:nargin
             if isa(varargin{v-1},'SetOfHyps')
                hi = varargin{v-1};
