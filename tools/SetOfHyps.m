@@ -140,6 +140,7 @@ classdef SetOfHyps < Hypersphere
          msflips = ~(sign(hi.margins) == sign(lo.margins));
          grad = [];
       end
+
       function model = h2s(obj,varargin)
       % Optimizes stress of self.centers relative to hi
       % Takes as input: self.h2s(dimLow), self.h2s(hi), self.h2s(hi,dimLow)

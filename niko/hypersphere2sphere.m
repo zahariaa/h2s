@@ -1,4 +1,4 @@
-function model = hypersphere2sphere(pointsOrDistMat,categories,estimator,dimLow)
+function [model,high] = hypersphere2sphere(pointsOrDistMat,categories,estimator,dimLow)
 
 % or should it be nball2ball?
 
@@ -99,6 +99,7 @@ switch estimator
             [estLocs(catI,:),locCI,estRadii(catI),radCI] = estimateHypersphere(points(logical(categories.vectors(:,catI)),:),nBootstrapSamples);
         end
 end
+high = SetOfHyps(estLocs, estRadii,categories);
 
 %% compute posteriors for distances and margins
 % margin = distance - r1 - r2
