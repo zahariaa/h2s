@@ -185,7 +185,7 @@ classdef SetOfHyps < Hypersphere
          if n > 1
             for i = 1:n
                stationarycounter(i,n);
-               model(i) = lo(i).h2s(dimLow,nboots);
+               model(i) = lo(i).h2s(varargin);
             end
             return
          end
