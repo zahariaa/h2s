@@ -149,16 +149,18 @@ classdef SetOfHyps < Hypersphere
                elseif varargin{v-1} > 0, dimLow = varargin{v-1};
                end
             elseif islogical(varargin{v-1})
-               FIXRADII = varargin{v-1}(1);
-               if numel(varargin{v-1})>1
-                  CONSTRAINT = varargin{v-1}(2);
+               switch numel(varargin{v-1})
+                  case 1;    FIXRADII                      =         varargin{v-1};
+                  case 2;   [FIXRADII,CONSTRAINT]          = dealvec(varargin{v-1});
+                  case 3;   [FIXRADII,CONSTRAINT,MDS_INIT] = dealvec(varargin{v-1});
                end
             end
          end
          if ~exist('dimLow','var'), dimLow = 2;   end
          if ~exist('nboots','var'), nboots = 0;   end
          if ~exist('hi'    ,'var'), hi = obj; lo = obj; end
-         if ~exist('FIXRADII','var'), FIXRADII = false; end
+         if ~exist('MDS_INIT','var'), MDS_INIT = true; end
+         if ~exist('FIXRADII','var'), FIXRADII = true; end
          if ~exist('CONSTRAINT','var') || ~CONSTRAINT
             nonlcon = [];
          else
@@ -166,7 +168,8 @@ classdef SetOfHyps < Hypersphere
          end
 
          % Recurse
-         n = numel(hi);
+         n  = numel(hi);
+         nr = numel(hi.radii);
          if n > 1
             for i = 1:n
                stationarycounter(i,n);
@@ -176,9 +179,14 @@ classdef SetOfHyps < Hypersphere
          end
          
          % Setup optimization and run
-         x0  = [hi.radii(:) mdscale(hi.dists,dimLow)];
+         if MDS_INIT
+            x0  = [hi.radii(:) mdscale(hi.dists,dimLow)];
+         else
+            cminmax = [min(hi.centers(:)) max(hi.centers(:))];
+            %% initialization of centers: random noise added to projection onto first 2 dimensions
+            x0  = [hi.radii(:) -0.1*diff(cminmax)*rand(nr,dimLow) + hi.centers(:,1:dimLow)];
+         end
          if FIXRADII
-            nr = numel(hi.radii);
             Aeq = [eye(nr) zeros(nr, nr*dimLow)];
             beq = hi.radii(:);
          else
