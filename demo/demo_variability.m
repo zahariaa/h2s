@@ -46,6 +46,13 @@ for d = ds
       for MDS_INIT = [false true]
          testlo = testhi.h2s(dimLow,[FIXRADII CONSTRAINT MDS_INIT]);
          [~,~,testlo.error,testlo.msflips] = testlo.stress(groundtruth);
+         for init = 2:5
+            tmp = testhi.h2s(dimLow,[FIXRADII CONSTRAINT MDS_INIT]);
+            [~,~,tmp.error,tmp.msflips] = testlo.stress(groundtruth);
+            if max(tmp.error) < max(testlo.error)
+               testlo = tmp;
+            end
+         end
          testlo.sig = testlo.significance(points);
       
          axtivate(fh.a.h((i*2+double(MDS_INIT))*nconditions+j)); testlo.show;
