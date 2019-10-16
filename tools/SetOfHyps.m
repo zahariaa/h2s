@@ -43,7 +43,7 @@ classdef SetOfHyps < Hypersphere
             if isa(varargin{v},'Categories')
                obj.categories = varargin{v};
             elseif isa(varargin{v},'SetOfHyps')
-               [~,~,obj.error] = obj.stress(varargin{v});
+               [~,~,obj.error,obj.msflips] = obj.stress(varargin{v});
             end
          end
       end
@@ -167,10 +167,12 @@ classdef SetOfHyps < Hypersphere
                end
             end
          end
-         if ~exist('dimLow','var'), dimLow = 2;   end
+         if ~exist('hi'    ,'var'), hi = obj; lo = obj; end
+         n  = numel(hi);
+         nr = numel(hi.radii);
+         if ~exist('dimLow','var'), dimLow = min(3,nr); end
          if ~exist('nboots','var'), nboots = 0;   end
          if ~exist('ninits','var'), ninits = 1;   end
-         if ~exist('hi'    ,'var'), hi = obj; lo = obj; end
          if ~exist('MDS_INIT','var'), MDS_INIT = true; end
          if ~exist('FIXRADII','var'), FIXRADII = true; end
          if ~exist('CONSTRAINT','var') || ~CONSTRAINT
@@ -180,8 +182,6 @@ classdef SetOfHyps < Hypersphere
          end
 
          % Recurse for multiple SetOfHyps objects
-         n  = numel(hi);
-         nr = numel(hi.radii);
          if n > 1
             for i = 1:n
                stationarycounter(i,n);
@@ -210,7 +210,7 @@ classdef SetOfHyps < Hypersphere
          fit = fmincon(@(x) stress(x,hi),x0,[],[],Aeq,beq,[],[],nonlcon,opts);
          % Output reduced SetOfHyps model
          model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
-         [~,~,model.error] = model.stress(hi);
+         [~,~,model.error,model.msflips] = model.stress(hi);
 
          % Recurse for multiple random initializations
          for iinit = 2:ninits
