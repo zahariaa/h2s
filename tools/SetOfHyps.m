@@ -229,7 +229,7 @@ classdef SetOfHyps < Hypersphere
       end
 
       function varargout = show(obj,varargin)
-         maxerror = max(obj.error.^2);
+         maxerror = max(obj.error);
          switch size(obj.centers,2)
             case 2; [~,XY] = showCirclesModel(obj,varargin{:});
                %% Draw max error bar

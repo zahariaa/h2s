@@ -11,7 +11,8 @@ elseif numel(figPanelSpec)==4,   figurePanel(figPanelSpec);
 elseif numel(figPanelSpec)==1 && ishandle(figPanelSpec), axtivate(figPanelSpec)
 end
 if ~exist('titleStr','var')
-    titleStr = any2str('error <= ',ceil(max(model.error.^2)*100),'%');
+   maxerror = max(model.error)/max([model.radii model.dists]);
+   titleStr = any2str('error <= ',ceil(maxerror*100),'%');
 end
 title(titleStr);
 

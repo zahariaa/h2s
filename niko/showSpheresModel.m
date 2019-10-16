@@ -25,7 +25,8 @@ if ~exist('ax','var') || isempty(ax), ax = gca; end
 axtivate(ax);
 
 if ~exist('titleStr','var')
-    titleStr = any2str('error <= ',ceil(max(model.error.^2)*100),'%');
+    maxerror = max(model.error)/max([model.radii model.dists]);
+    titleStr = any2str('error <= ',ceil(maxerror*100),'%');
 end
 title(titleStr);
 
