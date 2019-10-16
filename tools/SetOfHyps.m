@@ -200,16 +200,15 @@ classdef SetOfHyps < Hypersphere
             x0  = [hi.radii(:) -0.1*diff(cminmax)*rand(nr,dimLow) + hi.centers(:,1:dimLow)];
          end
          if FIXRADII
-            Aeq = [eye(nr) zeros(nr, nr*dimLow)];
-            beq = hi.radii(:);
+            fit = x0;
          else
             Aeq = []; beq = [];
+   %          x0  = x0 - repmat(mean(x0),numel(hi.radii),1);
+   %          x0  = x0*2;
+            opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'Display','iter');%,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
+            fit = fmincon(@(x) stress(x,hi),x0,[],[],Aeq,beq,[],[],nonlcon,opts);
+            % Output reduced SetOfHyps model
          end
-%          x0  = x0 - repmat(mean(x0),numel(hi.radii),1);
-%          x0  = x0*2;
-         opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'Display','iter');%,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
-         fit = fmincon(@(x) stress(x,hi),x0,[],[],Aeq,beq,[],[],nonlcon,opts);
-         % Output reduced SetOfHyps model
          model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
          [~,~,model.error,model.msflips] = model.stress(hi);
 
