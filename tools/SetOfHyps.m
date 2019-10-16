@@ -16,7 +16,8 @@ classdef SetOfHyps < Hypersphere
 
    methods
       function obj = SetOfHyps(h,varargin)  % Contructor
-         if isa(h,'SetOfHyps'), obj=h; return;
+         if ~exist('h','var'), return; % i don't understand why this line is necessary
+         elseif isa(h,'SetOfHyps'), obj=h; return;
          elseif isstruct(h) % Helper for older struct-based code
             h = Hypersphere(h.centers,h.radii);
          elseif ischar(h) && strcmpi(h,'estimate')
