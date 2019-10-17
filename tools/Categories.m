@@ -51,7 +51,11 @@ classdef Categories
          end
       end
       function obj = select(obj,i)
-         obj.labels  = obj.labels(i);
+         if islogical(i)
+            obj.labels  = obj.labels(find(i));
+         else
+            obj.labels  = obj.labels(i);
+         end
          obj.colors  = obj.colors(i,:);
          obj.vectors = obj.vectors(:,i);
       end
