@@ -1,6 +1,9 @@
 % humanwords.m : Loads Laura's data and runs h2s on it
 % for different cuts/categories of words
 
+FAST              = true;
+LOBES_NOT_REGIONS = true;
+
 %% LOAD AND RESHAPE DATA
 fprintf('Loading...');
 load('~/Desktop/humanwords/datan.mat')
@@ -8,7 +11,14 @@ load('~/Desktop/humanwords/elec.mat')
 load('~/Desktop/humanwords/features.mat')
 fprintf(' done.\n');
 
-datan = reshape(permute(datan,[1 3 2]),[],300);
+if LOBES_NOT_REGIONS
+   [regions,~,ir] = unique({elec.Loc2});
+else
+   [regions,~,ir] = unique({elec.Loc3});
+end
+nr = numel(regions);
+
+datan = permute(datan,[3 1 2]);
 
 %% MANUALLY MODIFY LAURA'S SEMANTIC CATEGORIES
 % nountype mod
@@ -34,35 +44,49 @@ ix = partspeechAZ(:,3) & sum(partspeechAZ(:,1:2),2)==1;
 partspeechAZ(ix,:) = false;
 
 % build category structures
+categoryTypes = {'myCategories', 'myCategories1', 'nountypeAZ', 'partspeechAZ', 'wordnet'};
 mycats(1)= Categories(mycategories,mycategorynames);
 mycats(2)= Categories(mycategory1 ,mycategorynames);
 mycats(3)= Categories(nountypeAZ  ,nountypeAZnames);
 mycats(4)= Categories(partspeechAZ,partspeechAZnames);
 mycats(5)= Categories(wordnetcategories,wordnetcategorynames);
 
-%% LOOP OVER ALL TYPES OF CATEGORIES, COMPUTE h2s
-for i = 1:5
-   % Deal with words belonging to multiple categories
-   ix = sum(mycats(i).vectors,2)==1;
-   icat = sum(mycats(i).vectors(ix,:))>4;
+% Deal with words belonging to multiple categories
+for i = 1:numel(mycats)
+   cix{i} = sum(mycats(i).vectors,2)==1;
+   icat = sum(mycats(i).vectors(cix{i},:))>4;
    if ~all(icat)
       mycats(i) = mycats(i).select(icat);
    end
-   ix = sum(mycats(i).vectors,2)==1;
-   mycats(i).vectors = mycats(i).vectors(ix,:);
-
-   % Run H2S
-   hi(i)  = SetOfHyps('estimate',datan(:,ix),mycats(i),1);
-   lo(i)  = hi(i).h2s(false);%(true);
-   lo(i).sig = lo(i).significance(datan(:,ix));
+   cix{i} = sum(mycats(i).vectors,2)==1;
+   mycats(i).vectors = mycats(i).vectors(cix{i},:);
 end
+
+%% LOOP OVER ALL TYPES OF CATEGORIES, COMPUTE h2s
+fprintf('Running h2s on regions ');
+for r = 1:nr
+   stationarycounter(r,nr);
+   for i = 1:numel(mycats)
+      dataslice = reshape(datan(ir==r,:,cix{i}),[],sum(cix{i}));
+      % Run H2S
+      reg(r).hi(i)  = SetOfHyps('estimate',dataslice,mycats(i),1);
+      reg(r).lo(i)  = reg(r).hi(i).h2s(FAST);
+      reg(r).lo(i).sig = reg(r).lo(i).significance(dataslice);
+   end
+end
+fprintf(' done.\n');
 
 %% RENDER h2s RESULTS
-[legy,legx] = meshgrid([0.65 0.35 0.05],[0.01 0.51]);
-figure;
-for i = 1:5
-   subplot(3,2,i);
-   lo(i).show(false);
-   mycats(i).legend([legx(i) legy(i) 0.33 0.3])
+for i = 1:numel(mycats)
+   fh(i) = figure('Name',categoryTypes{i});
+   for r = 1:nr
+      ax = subplot(ceil(sqrt(nr)),floor(sqrt(nr)),r);
+      reg(r).lo(i).show(false);
+      title({regions{r};ax.Title.String})
+   end
+   ann = mycats(i).legend([0.01 0.01 1 0.2]);
+   ann.VerticalAlignment = 'bottom';
 end
+
+printFig(fh,[],'png',450)
 
