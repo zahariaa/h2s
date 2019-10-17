@@ -40,7 +40,7 @@ set(get(ax,'Parent'),'Renderer','OpenGL');
 
 
 %% set view and lighting
-if SETCAMERA,  SetOfHyps(model.centers,model.radii).camera;   end
+if SETCAMERA,  model.camera;   end
 
 return
 end
