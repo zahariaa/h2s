@@ -40,7 +40,7 @@ mycats(3)= Categories(nountypeAZ  ,nountypeAZnames);
 mycats(4)= Categories(partspeechAZ,partspeechAZnames);
 mycats(5)= Categories(wordnetcategories,wordnetcategorynames);
 
-%% LOOP OVER ALL TYPES OF CATEGORIES
+%% LOOP OVER ALL TYPES OF CATEGORIES, COMPUTE h2s
 for i = 1:5
    % Deal with words belonging to multiple categories
    ix = sum(mycats(i).vectors,2)==1;
@@ -52,10 +52,17 @@ for i = 1:5
    mycats(i).vectors = mycats(i).vectors(ix,:);
 
    % Run H2S
-   myhi(i)  = SetOfHyps('estimate',datan(:,ix),mycats(i),1);
-   mylo(i)  = myhi(i).h2s(false);%(true);
-   mylo(i).sig = mylo(i).significance(datan(:,ix));
-   
-   figure; mylo(i).show(false); drawnow;
+   hi(i)  = SetOfHyps('estimate',datan(:,ix),mycats(i),1);
+   lo(i)  = hi(i).h2s(false);%(true);
+   lo(i).sig = lo(i).significance(datan(:,ix));
+end
+
+%% RENDER h2s RESULTS
+[legy,legx] = meshgrid([0.65 0.35 0.05],[0.01 0.51]);
+figure;
+for i = 1:5
+   subplot(3,2,i);
+   lo(i).show(false);
+   mycats(i).legend([legx(i) legy(i) 0.33 0.3])
 end
 
