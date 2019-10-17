@@ -113,7 +113,7 @@ classdef Categories
          end
          txt = [txt closingText];
       end
-      function [ann,anntxt] = legend(self,pos,extratxt)
+      function varargout = legend(self,pos,extratxt)
          if ~exist('extratxt','var'), extratxt = []; end
          anntxt = self(1).legendText(extratxt);
          
@@ -123,6 +123,12 @@ classdef Categories
          ann = annotation('TextBox',pos,'String',...
                anntxt,'EdgeColor','none','Interpreter','tex',...
                'HorizontalAlignment','left','Units','normalized');
+
+         switch nargout
+            case 0; varargout = {};
+            case 1; varargout = {ann};
+            case 2; varargout = {ann; anntxt};
+         end
       end
    end
 end
