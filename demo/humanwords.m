@@ -44,32 +44,30 @@ ix = partspeechAZ(:,3) & sum(partspeechAZ(:,1:2),2)==1;
 partspeechAZ(ix,:) = false;
 
 % build category structures
-categoryTypes = {'myCategories', 'myCategories1', 'nountypeAZ', 'partspeechAZ', 'wordnet'};
-mycats(1)= Categories(mycategories,mycategorynames);
-mycats(2)= Categories(mycategory1 ,mycategorynames);
-mycats(3)= Categories(nountypeAZ  ,nountypeAZnames);
-mycats(4)= Categories(partspeechAZ,partspeechAZnames);
-mycats(5)= Categories(wordnetcategories,wordnetcategorynames);
+cattypes = {'mycategory', 'mycategory1', 'nountypeAZ', 'partspeechAZ', 'wordnetcategory'};
+for i = 1:numel(cattypes)
+   eval(sprintf('cats(i) = Categories(%s,%snames);',cattypes{i},cattypes{i}));
+end
 
 % Deal with words belonging to multiple categories
-for i = 1:numel(mycats)
-   cix{i} = sum(mycats(i).vectors,2)==1;
-   icat = sum(mycats(i).vectors(cix{i},:))>4;
+for i = 1:numel(cats)
+   cix{i} = sum(cats(i).vectors,2)==1;
+   icat = sum(cats(i).vectors(cix{i},:))>4;
    if ~all(icat)
-      mycats(i) = mycats(i).select(icat);
+      cats(i) = cats(i).select(icat);
    end
-   cix{i} = sum(mycats(i).vectors,2)==1;
-   mycats(i).vectors = mycats(i).vectors(cix{i},:);
+   cix{i} = sum(cats(i).vectors,2)==1;
+   cats(i).vectors = cats(i).vectors(cix{i},:);
 end
 
 %% LOOP OVER ALL TYPES OF CATEGORIES, COMPUTE h2s
 fprintf('Running h2s on regions ');
 for r = 1:nr
    stationarycounter(r,nr);
-   for i = 1:numel(mycats)
+   for i = 1:numel(cats)
       dataslice = reshape(datan(ir==r,:,cix{i}),[],sum(cix{i}));
       % Run H2S
-      reg(r).hi(i)  = SetOfHyps('estimate',dataslice,mycats(i),1);
+      reg(r).hi(i)  = SetOfHyps('estimate',dataslice,cats(i),1);
       reg(r).lo(i)  = reg(r).hi(i).h2s(FAST);
       reg(r).lo(i).sig = reg(r).lo(i).significance(dataslice);
    end
@@ -77,14 +75,14 @@ end
 fprintf(' done.\n');
 
 %% RENDER h2s RESULTS
-for i = 1:numel(mycats)
-   fh(i) = figure('Name',categoryTypes{i});
+for i = 1:numel(cats)
+   fh(i) = figure('Name',cattypes{i});
    for r = 1:nr
       ax = subplot(ceil(sqrt(nr)),floor(sqrt(nr)),r);
       reg(r).lo(i).show(false);
       title({regions{r};ax.Title.String})
    end
-   ann = mycats(i).legend([0.01 0.01 1 0.2]);
+   ann = cats(i).legend([0.01 0.01 1 0.2]);
    ann.VerticalAlignment = 'bottom';
 end
 
