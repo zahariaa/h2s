@@ -139,7 +139,29 @@ classdef SetOfHyps < Hypersphere
          %errtotal  = mean( mean(errd.^2) + mean(erro.^2) + mean(erra.^2) );
 
          msflips = ~(sign(hi.margins) == sign(lo.margins));
-         grad = [];
+         % Gradient: partial centers derivative of distances (should be size of centers)
+         % Gradient: partial derivatives of error, relative to distances and overlaps
+         ix = nchoosek_ix(nc);
+         nc2 = size(ix,2);
+         
+         % center gradients
+         dddc = zeros(nc2,nc,dimLow);% 1./lo.dists;
+         centersdiff = lo.centers(ix(1,:),:) - lo.centers(ix(2,:),:);
+         for i = 1:nc2
+            dddc(i,ix(:,i),:) = dddc(i,ix(:,i),:) ...
+                                + shiftdim([1;-1]*centersdiff(i,:),-1);
+         end
+         dddc = dddc./repmat(lo.dists',[1 nc dimLow]);
+         dEdd = 2*( sum(erra(ix)) + errd );
+         dEdc = reshape(dEdd*reshape(dddc,nc2,[]),[nc dimLow]);
+
+         % radius gradients
+         dEdr = 2*erra';
+         for i = 1:nc
+            dEdr(ix(:,i)) =  dEdr(ix(:,i)) + 2*erro(ix(:,i))';
+         end
+         % Gradient: put it all together
+         grad = [dEdr dEdc];
       end
 
       function model = h2s(obj,varargin)
@@ -205,7 +227,7 @@ classdef SetOfHyps < Hypersphere
             Aeq = []; beq = [];
    %          x0  = x0 - repmat(mean(x0),numel(hi.radii),1);
    %          x0  = x0*2;
-            opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'Display','iter');%,'SpecifyObjectiveGradient',true,'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
+            opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'Display','iter','SpecifyObjectiveGradient',true,'DerivativeCheck','on');%'Display','off');%,'OutputFcn',@obj.stressPlotFcn);%,'DerivativeCheck','on');
             fit = fmincon(@(x) stress(x,hi),x0,[],[],Aeq,beq,[],[],nonlcon,opts);
             % Output reduced SetOfHyps model
          end
