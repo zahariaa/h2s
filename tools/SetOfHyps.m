@@ -129,10 +129,10 @@ classdef SetOfHyps < Hypersphere
          if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
          else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
          end
-         dimLow    = size(lo.centers,2);
+         [nc,dimLow]= size(lo.centers);
          fudge     = 1e-8;
-         erro      = hi.overlap - lo.overlap;
          errd      = hi.dists   - lo.dists;
+         erro      = hi.overlap - lo.overlap;
          erra      = hi.radii   - lo.radii;
          err       = abs([errd erro erra]);
          errtotal  = mean( err.^2 );
