@@ -156,12 +156,12 @@ classdef SetOfHyps < Hypersphere
          dEdc = reshape(dEdd*reshape(dddc,nc2,[]),[nc dimLow]);
 
          % radius gradients
-         dEdr = 2*erra';
+         dEdr = -2*erra';
          for i = 1:nc
-            dEdr(ix(:,i)) =  dEdr(ix(:,i)) + 2*erro(ix(:,i))';
+            dEdr(i) =  dEdr(i) + 2*sum(erro(~~sum(ix==i)));
          end
          % Gradient: put it all together
-         grad = [dEdr dEdc];
+         grad = [dEdr dEdc]/(2*nc2+nc);
       end
 
       function model = h2s(obj,varargin)
