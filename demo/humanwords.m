@@ -1,7 +1,7 @@
 % humanwords.m : Loads Laura's data and runs h2s on it
 % for different cuts/categories of words
 
-FAST              = true;
+FIXEDRADII        = false;
 LOBES_NOT_REGIONS = true;
 
 %% LOAD AND RESHAPE DATA
@@ -68,15 +68,16 @@ for r = 1:nr
       dataslice = reshape(datan(ir==r,:,cix{i}),[],sum(cix{i}));
       % Run H2S
       reg(r).hi(i)  = SetOfHyps('estimate',dataslice,cats(i),1);
-      reg(r).lo(i)  = reg(r).hi(i).h2s(FAST);
+      reg(r).lo(i)  = reg(r).hi(i).h2s(FIXEDRADII);
       reg(r).lo(i).sig = reg(r).lo(i).significance(dataslice);
    end
 end
 fprintf(' done.\n');
 
 %% RENDER h2s RESULTS
+lobes_or_regions = {'regions' 'lobes'};
 for i = 1:numel(cats)
-   fh(i) = figure('Name',cattypes{i});
+   fh(i) = figure('Name',sprintf('%s_%s',lobes_or_regions{LOBES_NOT_REGIONS+1},cattypes{i}));
    for r = 1:nr
       ax = subplot(ceil(sqrt(nr)),floor(sqrt(nr)),r);
       reg(r).lo(i).show(false);
