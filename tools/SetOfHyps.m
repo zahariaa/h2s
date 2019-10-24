@@ -215,7 +215,7 @@ classdef SetOfHyps < Hypersphere
 
          % Setup optimization and run
          if MDS_INIT
-            x0  = [hi.radii(:) mdscale(hi.dists,dimLow)];
+            x0  = [hi.radii(:) mdscale(hi.dists,dimLow,'Criterion','metricstress')];
          else
             cminmax = [min(hi.centers(:)) max(hi.centers(:))];
             %% initialization of centers: random noise added to projection onto first 2 dimensions
