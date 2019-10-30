@@ -487,6 +487,8 @@ classdef SetOfHyps < Hypersphere
          % Parse inputs
          if ~exist('values','var'), values = []; end
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
+         set(0,'CurrentFigure',get(ax,'Parent'))
+         set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
 
          % Determine size of matrix
          N       = numel(values);
@@ -515,26 +517,6 @@ classdef SetOfHyps < Hypersphere
          sqScl  = 0.8;            % scale factor for squares
          csep   = -2*sqSz/3;      % separation between matrix box and circle key
 
-         %% DRAW ACTUAL BOXES
-         switch lower(boxpart)
-            case 'uppert'
-               for i = 1:N
-                  rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
-                            'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
-               end
-            case 'lowert'
-   %             plot(boxPos(1)+shift(upperX-sqSz,-1),boxPos(2)+upperX,'k--')
-               for i = 1:N
-               rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
-                         'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
-               end
-            case 'diagonal'
-               for i = 1:N
-               rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
-                         'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
-               end
-         end
-
          if SETUP
 %          %% DRAW UNDER-BOX OVERLAP/MARGIN SIGNIFIER AREAS
 %          upperX = [vectify(repmat(1:n,[2 1]));1]*sqSz;
@@ -559,23 +541,44 @@ classdef SetOfHyps < Hypersphere
                             'EdgeColor',obj.categories.colors(i,:))
                end
             else
-               ix = nchoosek_ix(nCats,2);
+               cix = nchoosek_ix(nCats,2);
                for i = 1:nCatsc2
                   rectangle('Position',[boxPos+[(i-0.5)*sqSz csep] 0.4*[sqSz sqSz]],...
-                            'FaceColor',obj.categories.colors(ix(1,i),:),'Curvature',1,...
-                            'EdgeColor',obj.categories.colors(ix(1,i),:))
+                            'FaceColor',obj.categories.colors(cix(1,i),:),'Curvature',1,...
+                            'EdgeColor',obj.categories.colors(cix(1,i),:))
                   rectangle('Position',[boxPos+[csep (i-0.5)*sqSz] 0.4*[sqSz sqSz]],...
-                            'FaceColor',obj.categories.colors(ix(1,i),:),'Curvature',1,...
-                            'EdgeColor',obj.categories.colors(ix(1,i),:))
+                            'FaceColor',obj.categories.colors(cix(1,i),:),'Curvature',1,...
+                            'EdgeColor',obj.categories.colors(cix(1,i),:))
                   rectangle('Position',[boxPos+[(i-0.9)*sqSz csep] 0.4*[sqSz sqSz]],...
-                            'FaceColor',obj.categories.colors(ix(2,i),:),'Curvature',1,...
-                            'EdgeColor',obj.categories.colors(ix(2,i),:))
+                            'FaceColor',obj.categories.colors(cix(2,i),:),'Curvature',1,...
+                            'EdgeColor',obj.categories.colors(cix(2,i),:))
                   rectangle('Position',[boxPos+[csep (i-0.9)*sqSz] 0.4*[sqSz sqSz]],...
-                            'FaceColor',obj.categories.colors(ix(2,i),:),'Curvature',1,...
-                            'EdgeColor',obj.categories.colors(ix(2,i),:))
+                            'FaceColor',obj.categories.colors(cix(2,i),:),'Curvature',1,...
+                            'EdgeColor',obj.categories.colors(cix(2,i),:))
                end
             end
          end
+
+         %% DRAW ACTUAL BOXES
+         switch lower(boxpart)
+            case 'uppert'
+               for i = 1:N
+                  rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
+                            'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
+               end
+            case 'lowert'
+   %             plot(boxPos(1)+shift(upperX-sqSz,-1),boxPos(2)+upperX,'k--')
+               for i = 1:N
+               rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
+                         'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
+               end
+            case 'diagonal'
+               for i = 1:N
+               rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
+                         'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
+               end
+         end
+
          axis equal ij off
       end
 
@@ -601,9 +604,6 @@ classdef SetOfHyps < Hypersphere
          mat = statsmat(sigThresh.ma,sigThresh.ov,sigThresh.ra);
 
          % Time to get a-plottin'
-         set(0,'CurrentFigure',get(ax,'Parent'))
-         set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
-
          obj.shapesInABox('uppert'  ,1-sigThresh.ma,ax)
          obj.shapesInABox('diagonal',1-sigThresh.ra)
          obj.shapesInABox('lowert'  ,1-sigThresh.ov)
