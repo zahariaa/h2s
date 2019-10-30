@@ -483,6 +483,102 @@ classdef SetOfHyps < Hypersphere
          stop = false;
       end
 
+      function shapesInABox(obj,boxpart,values,ax)
+         % Parse inputs
+         if ~exist('values','var'), values = []; end
+         if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
+
+         % Determine size of matrix
+         N       = numel(values);
+         nCats   = size(obj.categories.colors,1);
+         nCatsc2 = nchoosek(nCats,2);
+         if ~isempty(ax.UserData)
+            SETUP = false;
+            n = ax.UserData;
+         else
+            SETUP = true;
+            switch N
+               case nCatsc2;             FIRSTORDER = true;  n = nCats;  % margins 1st order
+               case nchoosek(nCatsc2,2); FIRSTORDER = false; n = nCatsc2;% ma/ov diff 2nd order
+               case nCatsc2^2;           FIRSTORDER = false; n = nCatsc2;% full matrix 2nd order
+               case 0;                   FIRSTORDER = true;  n = nCats;  % (empty) radii 1st order
+               case nCats;               FIRSTORDER = true;  n = nCats;  % radii diff 2nd order
+               case nCats^2;             FIRSTORDER = true;  n = nCats;  % full matrix 1st order
+            end
+            ax.UserData = n;
+         end
+         ix = nchoosek_ix(n,2);
+
+         % Box parameters
+         boxPos = obj.boxPos;     % starting coordinates for box containing matrix
+         sqSz   = obj.boxSize/n;  % size of individual squares in matrix box
+         sqScl  = 0.8;            % scale factor for squares
+         csep   = -2*sqSz/3;      % separation between matrix box and circle key
+
+         %% DRAW ACTUAL BOXES
+         switch lower(boxpart)
+            case 'uppert'
+               for i = 1:N
+                  rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
+                            'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
+               end
+            case 'lowert'
+   %             plot(boxPos(1)+shift(upperX-sqSz,-1),boxPos(2)+upperX,'k--')
+               for i = 1:N
+               rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
+                         'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
+               end
+            case 'diagonal'
+               for i = 1:N
+               rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
+                         'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
+               end
+         end
+
+         if SETUP
+%          %% DRAW UNDER-BOX OVERLAP/MARGIN SIGNIFIER AREAS
+%          upperX = [vectify(repmat(1:n,[2 1]));1]*sqSz;
+%          plot(boxPos(1)+upperX,boxPos(2)+shift(upperX-sqSz,-1),'k-' )
+            %% LABELS
+            if FIRSTORDER
+                  text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.1)]],'HorizontalAlignment','center','String','Overlap')
+                  text('Position',[boxPos+[sqSz*(n+0.1) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Margin','Rotation',90)
+            else
+                  text('Position',[boxPos+[sqSz*(n+0.1) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Margin/overlap difference','Rotation',90)
+                  text('Position',[boxPos+sqSz*n],'String','Radius difference','Rotation',-45)
+            end
+
+            %% COLOR KEY: circles
+            if FIRSTORDER
+               for i = 1:nCats
+                  rectangle('Position',[boxPos+[(i-0.75)*sqSz csep] 0.5*[sqSz sqSz]],...
+                            'FaceColor',obj.categories.colors(i,:),'Curvature',1,...
+                            'EdgeColor',obj.categories.colors(i,:))
+                  rectangle('Position',[boxPos+[csep (i-0.75)*sqSz] 0.5*[sqSz sqSz]],...
+                            'FaceColor',obj.categories.colors(i,:),'Curvature',1,...
+                            'EdgeColor',obj.categories.colors(i,:))
+               end
+            else
+               ix = nchoosek_ix(nCats,2);
+               for i = 1:nCatsc2
+                  rectangle('Position',[boxPos+[(i-0.5)*sqSz csep] 0.4*[sqSz sqSz]],...
+                            'FaceColor',obj.categories.colors(ix(1,i),:),'Curvature',1,...
+                            'EdgeColor',obj.categories.colors(ix(1,i),:))
+                  rectangle('Position',[boxPos+[csep (i-0.5)*sqSz] 0.4*[sqSz sqSz]],...
+                            'FaceColor',obj.categories.colors(ix(1,i),:),'Curvature',1,...
+                            'EdgeColor',obj.categories.colors(ix(1,i),:))
+                  rectangle('Position',[boxPos+[(i-0.9)*sqSz csep] 0.4*[sqSz sqSz]],...
+                            'FaceColor',obj.categories.colors(ix(2,i),:),'Curvature',1,...
+                            'EdgeColor',obj.categories.colors(ix(2,i),:))
+                  rectangle('Position',[boxPos+[csep (i-0.9)*sqSz] 0.4*[sqSz sqSz]],...
+                            'FaceColor',obj.categories.colors(ix(2,i),:),'Curvature',1,...
+                            'EdgeColor',obj.categories.colors(ix(2,i),:))
+               end
+            end
+         end
+         axis equal ij off
+      end
+
       function showSig(obj,self,ax)
          % Parse inputs
          if isa(self,'SetOfHyps'), sig = self.sig;
@@ -507,71 +603,11 @@ classdef SetOfHyps < Hypersphere
          % Time to get a-plottin'
          set(0,'CurrentFigure',get(ax,'Parent'))
          set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
-         %imagesc(mat)
 
-         n = size(mat,1); ix = nchoosek_ix(n,2); N = size(ix,2);
-         % Box parameters
-         boxPos = obj.boxPos;     % starting coordinates for box containing matrix
-         sqSz   = obj.boxSize/n;  % size of individual squares in matrix box
-         sqScl  = 0.8;            % scale factor for squares
-         csep   = -2*sqSz/3;      % separation between matrix box and circle key
-
-         %% DRAW UNDER-BOX OVERLAP/MARGIN SIGNIFIER AREAS
-         upperX = [vectify(repmat(1:n,2,[]));1]*sqSz;
-         plot(boxPos(1)+upperX,boxPos(2)+shift(upperX-sqSz,-1),'k-' )
-
-         %% DRAW ACTUAL BOXES
-         for i = 1:N
-            rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
-                      'Curvature',0.2,'FaceColor',[1 1 1]*(1-sigThresh.ma(i)),'EdgeColor','k')
-         end
-         if isempty(sig.ra)
-            plot(boxPos(1)+shift(upperX-sqSz,-1),boxPos(2)+upperX,'k--')
-            for i = 1:N
-            rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
-                      'Curvature',0.2,'FaceColor',[1 1 1]*(1-sigThresh.ov(i)),'EdgeColor','k')
-            end
-            text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.1)]],'HorizontalAlignment','center','String','Overlap')
-            text('Position',[boxPos+[sqSz*(n+0.1) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Margin','Rotation',90)
-         else
-            for i = 1:n
-            rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
-                      'Curvature',0.2,'FaceColor',[1 1 1]*(1-sigThresh.ra(i)),'EdgeColor','k')
-            end
-            text('Position',[boxPos+[sqSz*(n+0.1) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Margin/overlap difference','Rotation',90)
-            text('Position',[boxPos+sqSz*n],'String','Radius difference','Rotation',-45)
-         end
-
-         %% COLOR KEY: circles
-         nCats   = size(obj.categories.colors,1);
-         nCatsc2 = nchoosek(nCats,2);
-         if isempty(sig.ra)
-            for i = 1:n
-               rectangle('Position',[boxPos+[(i-0.75)*sqSz csep] 0.5*[sqSz sqSz]],...
-                         'FaceColor',obj.categories.colors(i,:),'Curvature',1,...
-                         'EdgeColor',obj.categories.colors(i,:))
-               rectangle('Position',[boxPos+[csep (i-0.75)*sqSz] 0.5*[sqSz sqSz]],...
-                         'FaceColor',obj.categories.colors(i,:),'Curvature',1,...
-                         'EdgeColor',obj.categories.colors(i,:))
-            end
-         else
-            ix = nchoosek_ix(nCats,2);
-            for i = 1:nCatsc2
-               rectangle('Position',[boxPos+[(i-0.5)*sqSz csep] 0.4*[sqSz sqSz]],...
-                         'FaceColor',obj.categories.colors(ix(1,i),:),'Curvature',1,...
-                         'EdgeColor',obj.categories.colors(ix(1,i),:))
-               rectangle('Position',[boxPos+[csep (i-0.5)*sqSz] 0.4*[sqSz sqSz]],...
-                         'FaceColor',obj.categories.colors(ix(1,i),:),'Curvature',1,...
-                         'EdgeColor',obj.categories.colors(ix(1,i),:))
-               rectangle('Position',[boxPos+[(i-0.9)*sqSz csep] 0.4*[sqSz sqSz]],...
-                         'FaceColor',obj.categories.colors(ix(2,i),:),'Curvature',1,...
-                         'EdgeColor',obj.categories.colors(ix(2,i),:))
-               rectangle('Position',[boxPos+[csep (i-0.9)*sqSz] 0.4*[sqSz sqSz]],...
-                         'FaceColor',obj.categories.colors(ix(2,i),:),'Curvature',1,...
-                         'EdgeColor',obj.categories.colors(ix(2,i),:))
-            end
-         end
-         axis equal ij off
+         obj.shapesInABox('uppert'  ,1-sigThresh.ma,ax)
+         obj.shapesInABox('diagonal',1-sigThresh.ra)
+         obj.shapesInABox('lowert'  ,1-sigThresh.ov)
+%          obj.shapesInABox('matrix'  ,1-mat,ax)
       end
 
       function showSigLegend(self,ax)
