@@ -483,15 +483,22 @@ classdef SetOfHyps < Hypersphere
          stop = false;
       end
 
-      function shapesInABox(obj,boxpart,values,ax)
+      function shapesInABox(obj,values,varargin)
          % Parse inputs
+         for v = 1:nargin-2
+            if        ischar(varargin{v}), boxpart = varargin{v};
+            elseif isnumeric(varargin{v}), sizes   = varargin{v};
+            elseif  ishandle(varargin{v}), ax      = varargin{v};
+            end
+         end
          if ~exist('values','var'), values = []; end
+         N = numel(values);
+         if ~exist('sizes' ,'var'),  sizes = ones(N,1); end
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
          set(0,'CurrentFigure',get(ax,'Parent'))
          set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
 
-         % Determine size of matrix
-         N       = numel(values);
+         % Determine size of matrix, save it in figure
          nCats   = size(obj.categories.colors,1);
          nCatsc2 = nchoosek(nCats,2);
          if ~isempty(ax.UserData)
@@ -563,18 +570,18 @@ classdef SetOfHyps < Hypersphere
          switch lower(boxpart)
             case 'uppert'
                for i = 1:N
-                  rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
+                  rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
                             'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
                end
             case 'lowert'
    %             plot(boxPos(1)+shift(upperX-sqSz,-1),boxPos(2)+upperX,'k--')
                for i = 1:N
-               rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
+               rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
                          'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
                end
             case 'diagonal'
                for i = 1:N
-               rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl)/2) sqScl*[sqSz sqSz]],...
+               rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
                          'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
                end
          end
@@ -604,9 +611,8 @@ classdef SetOfHyps < Hypersphere
          mat = statsmat(sigThresh.ma,sigThresh.ov,sigThresh.ra);
 
          % Time to get a-plottin'
-         obj.shapesInABox('uppert'  ,1-sigThresh.ma,ax)
-         obj.shapesInABox('diagonal',1-sigThresh.ra)
-         obj.shapesInABox('lowert'  ,1-sigThresh.ov)
+         obj.shapesInABox(1-sigThresh.ma,'uppert',ax)
+         obj.shapesInABox(1-sigThresh.ra,'diagonal')
 %          obj.shapesInABox('matrix'  ,1-mat,ax)
       end
 
