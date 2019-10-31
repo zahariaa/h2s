@@ -486,7 +486,10 @@ classdef SetOfHyps < Hypersphere
       function shapesInABox(obj,values,varargin)
          % Parse inputs
          for v = 1:nargin-2
-            if        ischar(varargin{v}), boxpart = varargin{v};
+            if        ischar(varargin{v})
+               if strcmpi(varargin{v},'size'), sizes = values;
+               else                        boxpart = varargin{v};
+               end
             elseif isnumeric(varargin{v}), sizes   = varargin{v};
             elseif  ishandle(varargin{v}), ax      = varargin{v};
             end
