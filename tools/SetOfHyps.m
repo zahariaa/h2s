@@ -505,7 +505,7 @@ classdef SetOfHyps < Hypersphere
          nCatsc2 = nchoosek(nCats,2);
          if ~isempty(ax.UserData)
             SETUP = false;
-            n = ax.UserData;
+            [n,FIRSTORDER] = dealvec(ax.UserData);
          else
             SETUP = true;
             switch N
@@ -516,7 +516,7 @@ classdef SetOfHyps < Hypersphere
                case nCats;               FIRSTORDER = true;  n = nCats;  % radii diff 2nd order
                case nCats^2;             FIRSTORDER = true;  n = nCats;  % full matrix 1st order
             end
-            ax.UserData = n;
+            ax.UserData = [n FIRSTORDER];
          end
          ix = nchoosek_ix(n,2);
 
@@ -579,6 +579,7 @@ classdef SetOfHyps < Hypersphere
                          'Curvature',sign(eps+abs(values(i))),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
                end
             case 'diagonal' % plot as circles!
+               if FIRSTORDER, colors = mat2cell(obj.categories.colors,ones(n,1)); end
                for i = 1:N
                rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
                          'Curvature',sign(abs(values(i))),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
