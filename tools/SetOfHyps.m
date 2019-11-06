@@ -184,25 +184,19 @@ classdef SetOfHyps < Hypersphere
                end
             elseif islogical(varargin{v-1})
                switch numel(varargin{v-1})
-                  case 1;    FIXRADII                      =         varargin{v-1};
-                  case 2;   [FIXRADII,CONSTRAINT]          = dealvec(varargin{v-1});
-                  case 3;   [FIXRADII,CONSTRAINT,MDS_INIT] = dealvec(varargin{v-1});
+                  case 1;    FIXRADII           =         varargin{v-1};
+                  case 2;   [FIXRADII,MDS_INIT] = dealvec(varargin{v-1});
                end
             end
          end
          if ~exist('hi'    ,'var'), hi = obj; lo = obj; end
          n  = numel(hi);
-         nr = numel(hi.radii);
-         if ~exist('dimLow','var'), dimLow = min(3,nr); end
+         [nr,d] = size(hi.centers);
+         if ~exist('dimLow','var'), dimLow = min(3,min(nr,d)); end
          if ~exist('nboots','var'), nboots = 0;   end
          if ~exist('ninits','var'), ninits = 1;   end
          if ~exist('MDS_INIT','var'), MDS_INIT = true; end
          if ~exist('FIXRADII','var'), FIXRADII = true; end
-         if ~exist('CONSTRAINT','var') || ~CONSTRAINT
-            nonlcon = [];
-         else
-            nonlcon = @(x) hi.constrain_pos_overlaps(x);
-         end
 
          % Recurse for multiple SetOfHyps objects
          if n > 1
@@ -224,13 +218,12 @@ classdef SetOfHyps < Hypersphere
          if FIXRADII
             fit = x0;
          else
-            Aeq = []; beq = [];
    %          x0  = x0 - repmat(mean(x0),numel(hi.radii),1);
    %          x0  = x0*2;
-            opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'Display','iter','SpecifyObjectiveGradient',true);%,'DerivativeCheck','on');%'Display','off');%,'OutputFcn',@obj.stressPlotFcn);
-            fit = fmincon(@(x) stress(x,hi),x0,[],[],Aeq,beq,[],[],nonlcon,opts);
-            % Output reduced SetOfHyps model
+            opts = optimoptions(@fminunc,'TolFun',1e-4,'TolX',1e-4,'Display','iter','SpecifyObjectiveGradient',true);%,'DerivativeCheck','on');%'Display','off');%,'OutputFcn',@obj.stressPlotFcn);
+            fit = fminunc(@(x) stress(x,hi),x0,opts);
          end
+         % Output reduced SetOfHyps model
          model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
          [~,~,model.error,model.msflips] = model.stress(hi);
 
@@ -241,13 +234,6 @@ classdef SetOfHyps < Hypersphere
                model = tmp;
             end
          end
-      end
-
-      function [c,ceq] = constrain_pos_overlaps(self,x)
-         new = SetOfHyps(struct('centers',x(:,2:end),'radii',x(:,1)));
-         % Any negative margin (positive overlap) must stay a non-positive margin (non-negative overlap).
-         c   = self.margins;%(self.margins<1000*eps);
-         ceq = [];
       end
 
       function varargout = show(obj,varargin)
