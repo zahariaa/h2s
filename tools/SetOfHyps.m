@@ -94,17 +94,21 @@ classdef SetOfHyps < Hypersphere
          if ~exist('N','var') || isempty(N), N=100; end
          % Compute confidence intervals on bootstrapped overlaps & radii for significance
          boots        = SetOfHyps('estimate',points,obj.categories,N,'stratified').merge;
+         dist_boot    =  vertcat(boots.ci.bootstraps.dists);
          radii_boot   = reshape([boots.ci.bootstraps.radii],[],N)';
          margin_boot  =  vertcat(boots.ci.bootstraps.margins);
          overlap_boot = cell2mat_concat(arrayfun(@overlap,boots.ci.bootstraps,'UniformOutput',false));
 %% compute significance
          ciprctileLtail = @(x)        mean(x>0);
          ciprctile2tail = @(x) abs(2*(mean(x<0)-0.5));
+         %% TODO: DELETE margin_boot/sig.ma?
          % What percentile confidence interval of bootstrapped margins contains 0?
          sig.ma = ciprctileLtail(margin_boot);
-         % What percentile confidence interval of bootstrapped overlaps contains 0?
-         sig.ov = ciprctileLtail(overlap_boot);
+         % What percentile confidence interval of bootstrapped overlap/margins contains 0?
+         sig.ov = ciprctile2tail(overlap_boot);
          sig.ra = [];
+         % What percentile confidence interval of bootstrapped distances contains 0?
+         sig.di = ciprctileLtail(dist_boot);
 
 %% SECOND-ORDER COMPARISONS
          % compute indices of radii corresponding to overlaps
@@ -113,15 +117,14 @@ classdef SetOfHyps < Hypersphere
          nc2c2 = nchoosek(nc2,2);
          ix    = nchoosek_ix(n);
          ixc2  = nchoosek_ix(nc2);
-         %dists_boot = cell2mat_concat(arrayfun(@dists,boots.ci.bootstraps,'UniformOutput',false));
 
-         sec = struct('ra',NaN(1,nc2),'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2));
+         sec = struct('ra',NaN(1,nc2),'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2),'di',NaN(1,nc2c2));
          for i = 1:nc2
             sec.ra(i) = ciprctile2tail(diff(  radii_boot(:,  ix(:,i)),[],2));
          end
          for i = 1:nc2c2
-            sec.ma(i) = ciprctile2tail(diff( margin_boot(:,ixc2(:,i)),[],2));
             sec.ov(i) = ciprctile2tail(diff(overlap_boot(:,ixc2(:,i)),[],2));
+            sec.di(i) = ciprctile2tail(diff(   dist_boot(:,ixc2(:,i)),[],2));
          end
       end
 
@@ -473,17 +476,27 @@ classdef SetOfHyps < Hypersphere
          % Parse inputs
          for v = 1:nargin-2
             if        ischar(varargin{v})
-               if strcmpi(varargin{v},'size'), sizes = values;
-               else                        boxpart = varargin{v};
+               switch lower(varargin{v})
+                  case 'size';             sizes     = abs(values);
+                  %case 'edgecolors';        sizes     = values;
+                  otherwise                boxpart   = varargin{v};
                end
-            elseif isnumeric(varargin{v}), sizes   = varargin{v};
-            elseif  ishandle(varargin{v}), ax      = varargin{v};
+            elseif isnumeric(varargin{v}), edgecolors= varargin(v);
+            elseif    iscell(varargin{v}), edgecolors= varargin{v};
+            elseif  ishandle(varargin{v}), ax        = varargin{v};
             end
          end
          if ~exist('values','var'), values = []; end
          N = numel(values);
          if ~exist('sizes' ,'var'),  sizes = ones(N,1); end
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
+         if ~exist('edgecolors','var') || isempty(edgecolors)
+            edgecolors = repmat({'k'},ones(1,N)); edgewidth = 1;
+            colors = mat2cell(abs(values(:))*[1 1 1],ones(1,N));
+         else
+            edgewidth = 4; colors = repmat({'None'},[1 N]);
+         end
+         if numel(edgecolors)==1, edgecolors = repmat(edgecolors,[1 N]); end
          set(0,'CurrentFigure',get(ax,'Parent'))
          set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
 
@@ -510,7 +523,7 @@ classdef SetOfHyps < Hypersphere
          % Box parameters
          boxPos = obj.boxPos;     % starting coordinates for box containing matrix
          sqSz   = obj.boxSize/n;  % size of individual squares in matrix box
-         sqScl  = 0.8;            % scale factor for squares
+         sqScl  = 1;%0.8;         % scale factor for squares
          csep   = -2*sqSz/3;      % separation between matrix box and circle key
 
          if SETUP
@@ -519,24 +532,17 @@ classdef SetOfHyps < Hypersphere
 %          plot(boxPos(1)+upperX,boxPos(2)+shift(upperX-sqSz,-1),'k-' )
             %% LABELS
             if FIRSTORDER
-                  text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.1)]],'HorizontalAlignment','center','String','Overlap')
-                  text('Position',[boxPos+[sqSz*(n+0.1) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Margin','Rotation',90)
+                  text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.1)]],'HorizontalAlignment','center','String','Separation')
+                  text('Position',[boxPos+[sqSz*(n+0.1) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Overlap','Rotation',90)
+                  text('Position',[boxPos+sqSz*n],'String','Radius','Rotation',-45)
             else
-                  text('Position',[boxPos+[sqSz*(n+0.1) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Margin/overlap difference','Rotation',90)
+                  text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.1)]],'HorizontalAlignment','center','String','Separation difference')
+                  text('Position',[boxPos+[sqSz*(n+0.1) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Overlap difference','Rotation',90)
                   text('Position',[boxPos+sqSz*n],'String','Radius difference','Rotation',-45)
             end
 
-            %% COLOR KEY: circles
-            if FIRSTORDER
-               for i = 1:nCats
-                  rectangle('Position',[boxPos+[(i-0.75)*sqSz csep] 0.5*[sqSz sqSz]],...
-                            'FaceColor',obj.categories.colors(i,:),'Curvature',1,...
-                            'EdgeColor',obj.categories.colors(i,:))
-                  rectangle('Position',[boxPos+[csep (i-0.75)*sqSz] 0.5*[sqSz sqSz]],...
-                            'FaceColor',obj.categories.colors(i,:),'Curvature',1,...
-                            'EdgeColor',obj.categories.colors(i,:))
-               end
-            else
+            %% COLOR KEY: circles (only for second-order/difference comparisons)
+            if ~FIRSTORDER
                cix = nchoosek_ix(nCats,2);
                for i = 1:nCatsc2
                   rectangle('Position',[boxPos+[(i-0.5)*sqSz csep] 0.4*[sqSz sqSz]],...
@@ -556,22 +562,26 @@ classdef SetOfHyps < Hypersphere
          end
 
          %% DRAW ACTUAL BOXES
+         if strfind(boxpart,'f')
+            boxpart = boxpart(2:end);
+            colors = edgecolors;
+         end
          switch lower(boxpart)
             case 'uppert'
                for i = 1:N
                   rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
-                            'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
+                            'Curvature',sign(eps+abs(values(i))),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
                end
             case 'lowert'
    %             plot(boxPos(1)+shift(upperX-sqSz,-1),boxPos(2)+upperX,'k--')
                for i = 1:N
                rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
-                         'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
+                         'Curvature',sign(eps+abs(values(i))),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
                end
-            case 'diagonal'
+            case 'diagonal' % plot as circles!
                for i = 1:N
                rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
-                         'Curvature',0.2,'FaceColor',[1 1 1]*values(i),'EdgeColor','k')
+                         'Curvature',sign(abs(values(i))),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
                end
          end
 
@@ -599,10 +609,47 @@ classdef SetOfHyps < Hypersphere
          % Reshape into matrix
          mat = statsmat(sigThresh.ma,sigThresh.ov,sigThresh.ra);
 
+         n = numel(obj.radii);
          % Time to get a-plottin'
-         obj.shapesInABox(1-sigThresh.ma,'uppert',ax)
+         obj.shapesInABox(1-sigThresh.ov,'uppert',ax)
+         obj.shapesInABox(1-sigThresh.di,'lowert',ax)
+         if ~isempty(sigThresh.ra)
          obj.shapesInABox(1-sigThresh.ra,'diagonal')
+         title('Significant values')
+         else
+         obj.shapesInABox(0.5*ones(n,1),'fdiagonal',mat2cell(obj.categories.colors,ones(n,1)))
+         title('Significant differences')
+         end
 %          obj.shapesInABox('matrix'  ,1-mat,ax)
+      end
+
+      function showValues(obj,varargin)
+         % Parse inputs
+         for v = 1:nargin-1
+            if isa(varargin{v},'SetOfHyps'), hi = varargin{v};
+            elseif ishandle(varargin{v}),    ax = varargin{v};
+            end
+         end
+         if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
+         if ~exist('hi','var') || isempty(hi), hi = obj; obj = [];    end
+
+         n = numel(hi.radii);
+         catcolors = mat2cell(hi.categories.colors,ones(n,1));
+         maxVal = max(abs([hi.margins(:);hi.radii(:);hi.dists(:)]));
+          hi.shapesInABox(-hi.margins/maxVal,'fuppert','size',[0 0 0],ax)
+          hi.shapesInABox( hi.radii  /maxVal,'fdiagonal','size',catcolors)
+          hi.shapesInABox( hi.dists  /maxVal,'flowert','size',[0 0 0])
+
+         if ~isempty(obj)
+         maxVal = max(abs([obj.margins(:);obj.radii(:);obj.dists(:)]));
+
+         obj.shapesInABox(-obj.margins/maxVal,'uppert','size',[0.5 0.5 0.5],ax)
+         obj.shapesInABox( obj.radii  /maxVal,'diagonal','size',[0.5 0.5 0.5])
+         obj.shapesInABox( obj.dists  /maxVal,'lowert','size',[0.5 0.5 0.5])
+         title('Values comparison')
+         else
+         title('Values')
+         end
       end
 
       function showSigLegend(self,ax)
