@@ -589,12 +589,20 @@ classdef SetOfHyps < Hypersphere
          axis equal ij off
       end
 
-      function showSig(obj,self,ax)
+      function showSig(obj,varargin)
          % Parse inputs
-         if isa(self,'SetOfHyps'), sig = self.sig;
-         else                      sig = self;
+         for v = 1:nargin-1
+            if isa(varargin{v},'SetOfHyps'), sig = varargin{v}.sig;
+            elseif ishandle(varargin{v}),    ax  = varargin{v};
+            elseif ischar(  varargin{v}),    LGND = varargin{v};
+            else                             sig = varargin{v};
+            end
          end
-         if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
+         if ~exist('ax'  ,'var') || isempty(ax ) , ax   = gca; axis ij off; end
+         if ~exist('sig' ,'var') || isempty(sig) , sig  = obj.sig;          end
+         if exist('LGND','var') && ~isempty(LGND) && strcmpi(LGND,'legend'), LGND = true;
+         else                                                                LGND = false;
+         end
 
          nSigLevs = obj.nSigLevs; % 3 means [0.95 0.99 0.999] levels
 
@@ -616,12 +624,13 @@ classdef SetOfHyps < Hypersphere
          obj.shapesInABox(1-sigThresh.di,'lowert',ax)
          if ~isempty(sigThresh.ra)
          obj.shapesInABox(1-sigThresh.ra,'diagonal')
-         title('Significant values')
+         title('Significant differences')
          else
          obj.shapesInABox(0.5*ones(n,1),'fdiagonal',mat2cell(obj.categories.colors,ones(n,1)))
-         title('Significant differences')
+         title('Significant values')
          end
 %          obj.shapesInABox('matrix'  ,1-mat,ax)
+         if LGND, obj.showSigLegend(ax); end
       end
 
       function showValues(obj,varargin)
