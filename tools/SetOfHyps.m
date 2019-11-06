@@ -488,6 +488,23 @@ classdef SetOfHyps < Hypersphere
          end
          if ~exist('values','var'), values = []; end
          N = numel(values);
+         % If whole matrix of values passed, recursively call on each matrix part, after normalizing by abs-max
+         if size(values,1)==sqrt(N) && size(values,2)==sqrt(N)
+            if exist('boxpart','var') && (boxpart=='f' || strcmpi(boxpart,'fmatrix'))
+               boxpart = 'f';
+            else
+               boxpart = '';
+            end
+            % Strip varargin if boxpart provided
+            varargin = varargin(cell2mat_concat(cellfun(@(x) ~any(strcmpi(x,boxpart)),varargin,'UniformOutput',false)));
+
+            maxVal = max(abs(values(:)));
+            obj.shapesInABox(values(triu(~~values, 1))/maxVal,[boxpart 'uppert'],varargin{:})
+            obj.shapesInABox(             diag(values)/maxVal,[boxpart 'diagonal'],varargin{:})
+            obj.shapesInABox(values(tril(~~values,-1))/maxVal,[boxpart 'lowert'],varargin{:})
+            return
+         end
+         % Continue input parsing
          if ~exist('sizes' ,'var'),  sizes = ones(N,1); end
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
          if ~exist('edgecolors','var') || isempty(edgecolors)
@@ -497,6 +514,7 @@ classdef SetOfHyps < Hypersphere
             edgewidth = 4; colors = repmat({'None'},[1 N]);
          end
          if numel(edgecolors)==1, edgecolors = repmat(edgecolors,[1 N]); end
+         % Set up axes
          set(0,'CurrentFigure',get(ax,'Parent'))
          set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
 
@@ -643,19 +661,10 @@ classdef SetOfHyps < Hypersphere
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
          if ~exist('hi','var') || isempty(hi), hi = obj; obj = [];    end
 
-         n = numel(hi.radii);
-         catcolors = mat2cell(hi.categories.colors,ones(n,1));
-         maxVal = max(abs([hi.margins(:);hi.radii(:);hi.dists(:)]));
-          hi.shapesInABox(-hi.margins/maxVal,'fuppert','size',[0 0 0],ax)
-          hi.shapesInABox( hi.radii  /maxVal,'fdiagonal','size',catcolors)
-          hi.shapesInABox( hi.dists  /maxVal,'flowert','size',[0 0 0])
+         hi.shapesInABox(statsmat(-hi.margins,hi.dists,hi.radii),'size','f',[0 0 0],ax)
 
          if ~isempty(obj)
-         maxVal = max(abs([obj.margins(:);obj.radii(:);obj.dists(:)]));
-
-         obj.shapesInABox(-obj.margins/maxVal,'uppert','size',[0.5 0.5 0.5],ax)
-         obj.shapesInABox( obj.radii  /maxVal,'diagonal','size',[0.5 0.5 0.5])
-         obj.shapesInABox( obj.dists  /maxVal,'lowert','size',[0.5 0.5 0.5])
+         obj.shapesInABox(statsmat(-obj.margins,obj.dists,obj.radii),'size',[0.5 0.5 0.5],ax)
          title('Values comparison')
          else
          title('Values')
