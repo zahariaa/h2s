@@ -97,7 +97,7 @@ classdef SetOfHyps < Hypersphere
          dist_boot    =  vertcat(boots.ci.bootstraps.dists);
          radii_boot   = reshape([boots.ci.bootstraps.radii],[],N)';
          margin_boot  =  vertcat(boots.ci.bootstraps.margins);
-         overlap_boot = cell2mat_concat(arrayfun(@overlap,boots.ci.bootstraps,'UniformOutput',false));
+         %overlap_boot = cell2mat_concat(arrayfun(@overlap,boots.ci.bootstraps,'UniformOutput',false));
 %% compute significance
          ciprctileLtail = @(x)        mean(x>0);
          ciprctile2tail = @(x) abs(2*(mean(x<0)-0.5));
@@ -105,7 +105,7 @@ classdef SetOfHyps < Hypersphere
          % What percentile confidence interval of bootstrapped margins contains 0?
          sig.ma = ciprctileLtail(margin_boot);
          % What percentile confidence interval of bootstrapped overlap/margins contains 0?
-         sig.ov = ciprctile2tail(overlap_boot);
+         sig.ov = ciprctileLtail(-margin_boot);
          sig.ra = [];
          % What percentile confidence interval of bootstrapped distances contains 0?
          sig.di = ciprctileLtail(dist_boot);
@@ -123,7 +123,7 @@ classdef SetOfHyps < Hypersphere
             sec.ra(i) = ciprctile2tail(diff(  radii_boot(:,  ix(:,i)),[],2));
          end
          for i = 1:nc2c2
-            sec.ov(i) = ciprctile2tail(diff(overlap_boot(:,ixc2(:,i)),[],2));
+            sec.ov(i) = ciprctile2tail(diff(-margin_boot(:,ixc2(:,i)),[],2));
             sec.di(i) = ciprctile2tail(diff(   dist_boot(:,ixc2(:,i)),[],2));
          end
       end
