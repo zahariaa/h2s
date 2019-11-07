@@ -36,16 +36,19 @@ for d = ds
    model.sig = model.significance(points,1000);
    %keyboard
    testhi = SetOfHyps('estimate',points,categories,groundtruth);%,100).merge;
-   testhi.sig = testhi.significance(points);
+   [testhi.sig,sechi] = testhi.significance(points);
    axtivate(fh.a.h((i-1)*nconditions+j));  model.show;
 
-   for CONSTRAINT = [false true]
-      for FIXRADII = [false true]
+   for MDS_INIT = true%[false true]
+      for FIXRADII = false%[false true]
          j = j+1;
-         testlo = testhi.h2s(dimLow,[FIXRADII CONSTRAINT],groundtruth);
-         testlo.sig = testlo.significance(points);
+         testlo = testhi.h2s(dimLow,[FIXRADII MDS_INIT],groundtruth);
+         [testlo.sig,seclo] = testlo.significance(points,1000);
       
-         axtivate(fh.a.h((i-1)*nconditions+j)); testlo.show;
+         testlo.show(      fh.a.h((i-1)*nconditions+j  ));
+         testlo.showValues(fh.a.h((i-1)*nconditions+j+1),testhi);
+         testhi.showSig(   fh.a.h((i-1)*nconditions+j+2),'legend');
+         testhi.showSig(   fh.a.h((i-1)*nconditions+j+3),sechi);
          drawnow;
       end
    end

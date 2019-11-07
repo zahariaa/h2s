@@ -498,10 +498,10 @@ classdef SetOfHyps < Hypersphere
             % Strip varargin if boxpart provided
             varargin = varargin(cell2mat_concat(cellfun(@(x) ~any(strcmpi(x,boxpart)),varargin,'UniformOutput',false)));
 
-            maxVal = max(abs(values(:)));
-            obj.shapesInABox(values(triu(~~values, 1))/maxVal,[boxpart 'uppert'],varargin{:})
-            obj.shapesInABox(             diag(values)/maxVal,[boxpart 'diagonal'],varargin{:})
-            obj.shapesInABox(values(tril(~~values,-1))/maxVal,[boxpart 'lowert'],varargin{:})
+            values = values/max(abs(values(:)));
+            obj.shapesInABox(values(triu(~~values, 1)),[boxpart 'uppert'  ],varargin{:})
+            obj.shapesInABox(diag(values)             ,[boxpart 'diagonal'],varargin{:})
+            obj.shapesInABox(values(tril(~~values,-1)),[boxpart 'lowert'  ],varargin{:})
             return
          end
          % Continue input parsing
@@ -509,10 +509,12 @@ classdef SetOfHyps < Hypersphere
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
          if ~exist('edgecolors','var') || isempty(edgecolors)
             edgecolors = repmat({'k'},ones(1,N)); edgewidth = 1;
-            colors = mat2cell(abs(values(:))*[1 1 1],ones(1,N));
+            colors = mat2cell(1-abs(values(:))*[1 1 1],ones(1,N));
          else
-            edgewidth = 4; colors = repmat({'None'},[1 N]);
+            edgewidth = 2; colors = repmat({'None'},[1 N]);
          end
+         % separate values (color) and value signs (circle or square)
+         circleNotSquare = double(values>-eps); %values = abs(values); % would set values>=0, but not needed
          if numel(edgecolors)==1, edgecolors = repmat(edgecolors,[1 N]); end
          % Set up axes
          set(0,'CurrentFigure',get(ax,'Parent'))
@@ -588,19 +590,19 @@ classdef SetOfHyps < Hypersphere
             case 'uppert'
                for i = 1:N
                   rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
-                            'Curvature',sign(eps+abs(values(i))),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
+                            'Curvature',circleNotSquare(i),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
                end
             case 'lowert'
    %             plot(boxPos(1)+shift(upperX-sqSz,-1),boxPos(2)+upperX,'k--')
                for i = 1:N
                rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
-                         'Curvature',sign(eps+abs(values(i))),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
+                         'Curvature',circleNotSquare(i),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
                end
             case 'diagonal' % plot as circles!
                if FIRSTORDER, colors = mat2cell(obj.categories.colors,ones(n,1)); end
                for i = 1:N
                rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
-                         'Curvature',sign(abs(values(i))),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
+                         'Curvature',circleNotSquare(i),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
                end
          end
 
@@ -632,22 +634,19 @@ classdef SetOfHyps < Hypersphere
                sigThresh.(f) = sigThresh.(f) + double(sig.(f)>(1-10^-i));
             end
          end
-         sigThresh = structfun(@(x) x/nSigLevs,sigThresh,'UniformOutput',false);
-         % Reshape into matrix
-         mat = statsmat(sigThresh.ma,sigThresh.ov,sigThresh.ra);
+         sigThresh = structfun(@(x) max(0,x/nSigLevs-1e-5),sigThresh,'UniformOutput',false);
 
          n = numel(obj.radii);
          % Time to get a-plottin'
-         obj.shapesInABox(1-sigThresh.ov,'uppert',ax)
-         obj.shapesInABox(1-sigThresh.di,'lowert',ax)
+         obj.shapesInABox(sigThresh.ov-sigThresh.ma,'uppert',ax)
+         obj.shapesInABox(sigThresh.di,'lowert',ax)
          if ~isempty(sigThresh.ra)
-         obj.shapesInABox(1-sigThresh.ra,'diagonal')
+         obj.shapesInABox(sigThresh.ra,'diagonal')
          title('Significant differences')
          else
-         obj.shapesInABox(0.5*ones(n,1),'fdiagonal',mat2cell(obj.categories.colors,ones(n,1)))
+         obj.shapesInABox(0.9*ones(n,1),'size','fdiagonal')
          title('Significant values')
          end
-%          obj.shapesInABox('matrix'  ,1-mat,ax)
          if LGND, obj.showSigLegend(ax); end
       end
 
