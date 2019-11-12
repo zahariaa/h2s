@@ -3,8 +3,9 @@
 % 
 % 2018-03-02 AZ Created
 
-dimLow = 2;
-model  = 'vgg';
+dimLow = 3;
+model  = 'lenet';
+epsilon = 0.1;
 colors = [250   138   117
           246   136   159
           215   148   196
@@ -16,7 +17,7 @@ colors = [250   138   117
           182   173    74
           223   157    79]/255;
 % MNIST, trained model responses, from pyTorch
-data = load(sprintf('demo/mnist_%s.mat',model)); % Trained 3 layer FC net on MNIST
+data = load(sprintf('demo/mnist_%s_eps%0.2f.mat',model,epsilon)); % Trained 3 layer FC net on MNIST
 label2resp = @(L,chunk) cell2mat_concat(arrayfun(@(i) L(chunk)==i,0:9,'UniformOutput',false))';
 
 chunk = 1:10000;
@@ -39,6 +40,7 @@ cats.(model) = Categories(label2resp(data.labels,chunk),...
 
 %% Estimate hyperspheres, run h2s
 for i = 1:nlayers+1
+   stationarycounter(i,nlayers+1)
    hi.(model)(i) = SetOfHyps('estimate',data.x{i}(chunk,:),cats.(model));
    lo.(model)(i) = hi.(model)(i).h2s(dimLow);
    if all(lo.(model)(i).radii==0)
@@ -48,7 +50,7 @@ for i = 1:nlayers+1
 end
 
 %% PLOT
-fh = newfigure(sprintf('%s_h2s%u',model,dimLow),...
+fh = newfigure(sprintf('%s_eps%0.2f_h2s%u',model,epsilon,dimLow),...
                [floor(sqrt(nlayers+1)) ceil(sqrt(nlayers+1))]);
 for i = 1:nlayers+1; axtivate(fh.a.h(i)); lo.(model)(i).show; end
 
