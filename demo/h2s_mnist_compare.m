@@ -3,7 +3,8 @@
 % 
 % 2018-03-02 AZ Created
 
-dimLow = 3;
+dimLow = 2;
+model  = 'vgg';
 colors = [250   138   117
           246   136   159
           215   148   196
@@ -15,39 +16,41 @@ colors = [250   138   117
           182   173    74
           223   157    79]/255;
 % MNIST, trained model responses, from pyTorch
-lenet = load('demo/mnist_LeNet5.mat'); % Trained 3 layer FC net on MNIST
+data = load(sprintf('demo/mnist_%s.mat',model)); % Trained 3 layer FC net on MNIST
 label2resp = @(L,chunk) cell2mat_concat(arrayfun(@(i) L(chunk)==i,0:9,'UniformOutput',false))';
 
 chunk = 1:10000;
 
 %% reorganize data structure
-for i = 1:5
-   eval(sprintf('lenet.x{%u} = lenet.x%u;lenet = rmfield(lenet,"x%u");',i,i,i));
+nlayers = numel(fieldnames(data))-1;
+for i = 1:nlayers
+   eval(sprintf('data.x{%u} = data.x%u;data = rmfield(data,"x%u");',i,i,i));
 end
 %% compute final output
-lenet.x{6} = label2resp(maxix(lenet.x{5}(chunk,:),[],2)'-1,chunk);
+data.x{nlayers+1} = label2resp(maxix(data.x{nlayers}(chunk,:),[],2)'-1,chunk);
 
 %% Construct labels
 % right now this uses the true labels
-cats.lenet = Categories(label2resp(lenet.labels,chunk),...
+cats.(model) = Categories(label2resp(data.labels,chunk),...
                         arrayfun(@num2str,0:9,'UniformOutput',false)',colors);
 % % output labels
-% cats.lenet = Categories(lenet.x{6},...
+% cats.(model) = Categories(data.x{end},...
 %                         arrayfun(@num2str,0:9,'UniformOutput',false)',colors);
 
 %% Estimate hyperspheres, run h2s
-for i = 1:6
-   hi.lenet(i) = SetOfHyps('estimate',lenet.x{i}(chunk,:),cats.lenet);
-   lo.lenet(i) = hi.lenet(i).h2s(dimLow);
-   if all(lo.lenet(i).radii==0)
-      lo.lenet(i).radii = 0.05*ones(1,10);
+for i = 1:nlayers+1
+   hi.(model)(i) = SetOfHyps('estimate',data.x{i}(chunk,:),cats.(model));
+   lo.(model)(i) = hi.(model)(i).h2s(dimLow);
+   if all(lo.(model)(i).radii==0)
+      lo.(model)(i).radii = 0.05*ones(1,10);
    end
-   [lo.lenet(i).sig,lo.sec(i)] = lo.lenet(i).significance(lenet.x{i}(chunk,:),100);
+   [lo.(model)(i).sig,lo.sec(i)] = lo.(model)(i).significance(data.x{i}(chunk,:),100);
 end
 
 %% PLOT
-fh = newfigure(sprintf('lenet_h2s%u',dimLow),[2 3]);
-for i = 1:6; axtivate(fh.a.h(i)); lo.lenet(i).show; end
+fh = newfigure(sprintf('%s_h2s%u',model,dimLow),...
+               [floor(sqrt(nlayers+1)) ceil(sqrt(nlayers+1))]);
+for i = 1:nlayers+1; axtivate(fh.a.h(i)); lo.(model)(i).show; end
 
 if dimLow==2,   printFig(fh.f,[],'eps')
 else            printFig(fh.f,[],'png',450)
