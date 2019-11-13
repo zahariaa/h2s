@@ -508,7 +508,7 @@ classdef SetOfHyps < Hypersphere
          if ~exist('sizes' ,'var'),  sizes = ones(N,1); end
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
          if ~exist('edgecolors','var') || isempty(edgecolors)
-            edgecolors = repmat({'k'},ones(1,N)); edgewidth = 1;
+            edgecolors = repmat({'None'},ones(1,N)); edgewidth = 1;
             colors = mat2cell(1-abs(values(:))*[1 1 1],ones(1,N));
          else
             edgewidth = 2; colors = repmat({'None'},[1 N]);
