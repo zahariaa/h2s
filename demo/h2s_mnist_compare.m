@@ -42,6 +42,7 @@ cats.(model) = Categories(label2resp(data.labels,chunk),...
 for i = 1:nlayers+1
    stationarycounter(i,nlayers+1)
    hi.(model)(i) = SetOfHyps('estimate',data.x{i}(chunk,:),cats.(model));
+   [hi.(model)(i).sig,hi.sec(i)] = hi.(model)(i).significance(data.x{i}(chunk,:),100);
    lo.(model)(i) = hi.(model)(i).h2s(dimLow);
    if all(lo.(model)(i).radii==0)
       lo.(model)(i).radii = 0.05*ones(1,10);
@@ -50,11 +51,19 @@ for i = 1:nlayers+1
 end
 
 %% PLOT
-fh = newfigure(sprintf('%s_eps%0.2f_h2s%u',model,epsilon,dimLow),...
-               [floor(sqrt(nlayers+1)) ceil(sqrt(nlayers+1))]);
-for i = 1:nlayers+1; axtivate(fh.a.h(i)); lo.(model)(i).show; end
+subplots = [floor(sqrt(nlayers+1)) ceil(sqrt(nlayers+1))];
+fh = newfigure(subplots,[],[],sprintf(       '%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
+fh = newfigure(subplots,fh,[],sprintf('values_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
+fh = newfigure(subplots,fh,[],sprintf( 'stats_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
+fh = newfigure(subplots,fh,[],sprintf('stats2_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
+for i = 1:nlayers+1
+   lo.(model)(i).show(fh.a(1).h(i));                     title(sprintf('Layer %u',i));
+   lo.(model)(i).showValues(fh.a(2).h(i),hi.(model)(i)); title(sprintf('Layer %u',i));
+   hi.(model)(i).showSig(fh.a(3).h(i),'legend');         title(sprintf('Layer %u',i));
+   hi.(model)(i).showSig(fh.a(4).h(i),hi.sec(i));        title(sprintf('Layer %u',i));
+end
 
-if dimLow==2,   printFig(fh.f,[],'eps')
-else            printFig(fh.f,[],'png',450)
+if dimLow==2,   printFig(fh,[],'eps')
+else            printFig(fh.f(2:4),[],'eps'); printFig(fh.f(1),[],'png',300)
 end
 
