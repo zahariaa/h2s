@@ -276,7 +276,7 @@ classdef SetOfHyps < Hypersphere
          n = numel(obj.radii);
          ix = nchoosek_ix(n);
          for i = find(sigov)
-            err      = obj.error(n+i)^2; % assumes order of errors is radii, margins, distances
+            err      = obj.error(n+i); % assumes order of errors is radii, margins, distances
             centers  = obj.centers(ix(:,i),:);
             dxy      = diff(centers);
             dxy      = dxy/norm(dxy);
