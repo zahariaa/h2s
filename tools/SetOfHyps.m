@@ -589,20 +589,26 @@ classdef SetOfHyps < Hypersphere
          switch lower(boxpart)
             case 'uppert'
                for i = 1:N
+                  if ~all(colors{i}==1)
                   rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
                             'Curvature',circleNotSquare(i),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
+                  end
                end
             case 'lowert'
    %             plot(boxPos(1)+shift(upperX-sqSz,-1),boxPos(2)+upperX,'k--')
                for i = 1:N
-               rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
-                         'Curvature',circleNotSquare(i),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
+                  if ~all(colors{i}==1)
+                  rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
+                            'Curvature',circleNotSquare(i),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
+                  end
                end
             case 'diagonal' % plot as circles!
                if FIRSTORDER, colors = mat2cell(obj.categories.colors,ones(n,1)); end
                for i = 1:N
-               rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
-                         'Curvature',circleNotSquare(i),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
+                  if ~all(colors{i}==1)
+                  rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
+                            'Curvature',circleNotSquare(i),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
+                  end
                end
          end
 
