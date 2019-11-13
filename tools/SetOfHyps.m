@@ -552,13 +552,13 @@ classdef SetOfHyps < Hypersphere
 %          plot(boxPos(1)+upperX,boxPos(2)+shift(upperX-sqSz,-1),'k-' )
             %% LABELS
             if FIRSTORDER
-                  text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.1)]],'HorizontalAlignment','center','String','Separation')
-                  text('Position',[boxPos+[sqSz*(n+0.1) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Overlap','Rotation',90)
-                  text('Position',[boxPos+sqSz*n],'String','Radius','Rotation',-45)
+                  text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.5)]],'HorizontalAlignment','center','String','Separation','FontSize',12)
+                  text('Position',[boxPos+[sqSz*(n+0.5) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Overlap','Rotation',90,'FontSize',12)
+                  text('Position',[boxPos+sqSz*n],'String','Radius','Rotation',-45,'FontSize',12)
             else
-                  text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.1)]],'HorizontalAlignment','center','String','Separation difference')
-                  text('Position',[boxPos+[sqSz*(n+0.1) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Overlap difference','Rotation',90)
-                  text('Position',[boxPos+sqSz*n],'String','Radius difference','Rotation',-45)
+                  text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.5)]],'HorizontalAlignment','center','String','Separation difference','FontSize',12)
+                  text('Position',[boxPos+[sqSz*(n+0.5) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Overlap difference','Rotation',90,'FontSize',12)
+                  text('Position',[boxPos+sqSz*n],'String','Radius difference','Rotation',-45,'FontSize',12)
             end
 
             %% COLOR KEY: circles (only for second-order/difference comparisons)
