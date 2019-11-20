@@ -31,22 +31,19 @@ classdef Categories
             obj.labels  = labels;
          end
          if ~exist('colors','var')
-            if n <= 4
-               c = [0 0 0; 0.8 0 0; 0 0.8 0; 0 0 0.8];
-            elseif verLessThan('matlab','9.4')
-               c = [250   138   117
-                    246   136   159
-                    215   148   196
-                    162   166   215
-                    100   180   210
-                     61   187   180
-                     88   189   139
-                    135   184    98
-                    182   173    74
-                    223   157    79]/255;
-            else c = lines;
+            c = [250   138   117
+                 246   136   159
+                 215   148   196
+                 162   166   215
+                 100   180   210
+                  61   187   180
+                  88   189   139
+                 135   184    98
+                 182   173    74
+                 223   157    79]/255;
+            if n >5, obj.colors = c(1:n,:);
+            else     obj.colors = c(2*(1:n),:);
             end
-            obj.colors = c(1:n,:);
          else obj.colors = colors;
          end
       end
