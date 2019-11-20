@@ -17,6 +17,9 @@ colors = [250   138   117
           135   184    98
           182   173    74
           223   157    79]/255;
+h2sfile = sprintf('demo/mnist_%s_eps%0.2f_h2s.mat',model,epsilon);
+if exist(h2sfile,'file'), load(h2sfile); fprintf('Loaded h2s from %s\n',h2sfile);
+else
 % MNIST, trained model responses, from pyTorch
 data = load(sprintf('demo/mnist_%s_eps%0.2f.mat',model,epsilon)); % Trained 3 layer FC net on MNIST
 label2resp = @(L,chunk) cell2mat_concat(arrayfun(@(i) L(chunk)==i,0:9,'UniformOutput',false))';
@@ -50,21 +53,19 @@ for i = 1:nlayers+1
    end
    [lo.(model)(i).sig,lo.sec(i)] = lo.(model)(i).significance(data.x{i}(chunk,:),1000);
 end
+save(h2sfile,'hi','lo','cats','nlayers')
+end
 
 %% PLOT
 fh = newfigure([3 nlayers+1],[],[],sprintf( 'combo_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
 fh = newfigure([1 nlayers+1],fh,[],sprintf('stats2_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
 for i = 1:nlayers+1
-   if i<nlayers+1
-      titlestr = sprintf('Layer %u',i);
-      legendstr = [];
-   else
-      titlestr = 'Final readout';
-      legendstr = 'legend';
+   if i<nlayers+1,   titlestr = sprintf('Layer %u',i);
+   else              titlestr = 'Final readout';
    end
    lo.(model)(i).show(fh.a(1).h(i));                               title(titlestr);
    lo.(model)(i).showValues(fh.a(1).h(i+nlayers+1),hi.(model)(i));
-   hi.(model)(i).showSig(fh.a(1).h(i+2*(nlayers+1)),legendstr);
+   hi.(model)(i).showSig(fh.a(1).h(i+2*(nlayers+1)));
    hi.(model)(i).showSig(fh.a(2).h(i),hi.sec(i));                  title(titlestr);
 end
 
