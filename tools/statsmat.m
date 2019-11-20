@@ -9,18 +9,13 @@ if ~exist('lowert'  ,'var'), lowert = zeros(size(uppert)); end
 if ~exist('uppert'  ,'var'), uppert = zeros(size(lowert)); end
 if ~exist('diagonal','var') || isempty(diagonal)
    n = ceil(sqrt(2*numel(uppert)));
-   diagonal = zeros(n,1);
+   diagonal = ones(n,1);
 else
    n = numel(diagonal);
 end
 
-ix = nchoosek_ix(n);
-
 % Fill in matrix
 mat = diag(diagonal);
-
-for i = 1:numel(uppert)
-   mat(ix(1,i),ix(2,i)) = lowert(i);
-   mat(ix(2,i),ix(1,i)) = uppert(i);
-end
+mat(triu(true(n), 1)) = uppert;
+mat(tril(true(n),-1)) = lowert;
 

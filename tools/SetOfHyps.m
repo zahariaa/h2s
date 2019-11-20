@@ -474,12 +474,12 @@ classdef SetOfHyps < Hypersphere
 
       function shapesInABox(obj,values,varargin)
          % Parse inputs
+         side = '';
          for v = 1:nargin-2
             if        ischar(varargin{v})
                switch lower(varargin{v})
-                  case 'size';             sizes     = abs(values);
-                  %case 'edgecolors';        sizes     = values;
-                  otherwise                boxpart   = varargin{v};
+                  case {'size','left','right'}; side = varargin{v}; sizes = abs(values);
+                  otherwise                  boxpart = varargin{v};
                end
             elseif isnumeric(varargin{v}), edgecolors= varargin(v);
             elseif    iscell(varargin{v}), edgecolors= varargin{v};
@@ -489,19 +489,11 @@ classdef SetOfHyps < Hypersphere
          if ~exist('values','var'), values = []; end
          N = numel(values);
          % If whole matrix of values passed, recursively call on each matrix part, after normalizing by abs-max
-         if size(values,1)==sqrt(N) && size(values,2)==sqrt(N)
-            if exist('boxpart','var') && (boxpart=='f' || strcmpi(boxpart,'fmatrix'))
-               boxpart = 'f';
-            else
-               boxpart = '';
-            end
-            % Strip varargin if boxpart provided
-            varargin = varargin(cell2mat_concat(cellfun(@(x) ~any(strcmpi(x,boxpart)),varargin,'UniformOutput',false)));
-
-            values = values/max(abs(values(:)));
-            obj.shapesInABox(values(triu(~~values, 1)),[boxpart 'uppert'  ],varargin{:})
-            obj.shapesInABox(diag(values)             ,[boxpart 'diagonal'],varargin{:})
-            obj.shapesInABox(values(tril(~~values,-1)),[boxpart 'lowert'  ],varargin{:})
+         if ~any(values), return
+         elseif size(values,1)==sqrt(N) && size(values,2)==sqrt(N)
+            obj.shapesInABox(values(triu(true(sqrt(N)), 1)),'uppert'  ,varargin{:})
+            obj.shapesInABox(diag(values)                  ,'diagonal',varargin{:})
+            obj.shapesInABox(values(tril(true(sqrt(N)),-1)),'lowert'  ,varargin{:})
             return
          end
          % Continue input parsing
@@ -509,7 +501,7 @@ classdef SetOfHyps < Hypersphere
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
          if ~exist('edgecolors','var') || isempty(edgecolors)
             edgecolors = repmat({'None'},ones(1,N)); edgewidth = 1;
-            colors = mat2cell(1-abs(values(:))*[1 1 1],ones(1,N));
+            colors = mat2cell(zeros(N,3),ones(1,N));
          else
             edgewidth = 2; colors = repmat({'None'},[1 N]);
          end
@@ -543,7 +535,7 @@ classdef SetOfHyps < Hypersphere
          % Box parameters
          boxPos = obj.boxPos;     % starting coordinates for box containing matrix
          sqSz   = obj.boxSize/n;  % size of individual squares in matrix box
-         sqScl  = 1;%0.8;         % scale factor for squares
+         sqScl  = 0.97;%0.8;         % scale factor for squares
          csep   = -2*sqSz/3;      % separation between matrix box and circle key
 
          if SETUP
@@ -582,36 +574,35 @@ classdef SetOfHyps < Hypersphere
          end
 
          %% DRAW ACTUAL BOXES
-         if strfind(boxpart,'f')
-            boxpart = boxpart(2:end);
-            colors = edgecolors;
+         tt = linspace(-pi/2,pi/2,50)+pi;
+         if     strcmpi(side,'left'),   lside =  1;
+         elseif strcmpi(side,'right'),  lside = -1;
          end
-         switch lower(boxpart)
-            case 'uppert'
-               for i = 1:N
-                  if ~all(colors{i}==1)
-                  rectangle('Position',[boxPos+sqSz*(ix(:,i)'-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
-                            'Curvature',circleNotSquare(i),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
-                  end
-               end
-            case 'lowert'
-   %             plot(boxPos(1)+shift(upperX-sqSz,-1),boxPos(2)+upperX,'k--')
-               for i = 1:N
-                  if ~all(colors{i}==1)
-                  rectangle('Position',[boxPos+sqSz*(fliplr(ix(:,i)')-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
-                            'Curvature',circleNotSquare(i),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
-                  end
-               end
-            case 'diagonal' % plot as circles!
-               if FIRSTORDER, colors = mat2cell(obj.categories.colors,ones(n,1)); end
-               for i = 1:N
-                  if ~all(colors{i}==1)
-                  rectangle('Position',[boxPos+[sqSz sqSz]*(i-1+(1-sqScl*sizes(i))/2) sizes(i)*sqScl*[sqSz sqSz]],...
-                            'Curvature',circleNotSquare(i),'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
-                  end
-               end
+         if     strcmpi(boxpart,'lowert'), ix = flip(ix);
+         elseif strcmpi(boxpart,'diagonal') % plot as circles!
+            ix = repmat(1:nchoosek(n,2),[2 1]);
+            if FIRSTORDER, colors = mat2cell(obj.categories.colors,ones(n,1)); end
          end
-
+         for i = 1:N
+            if ~all(colors{i}==1)
+               switch lower(side)
+                  case {'left';'right'}
+                     if circleNotSquare(i)
+                        patchx = -0.5 + ix(1,i) + lside*cos(tt)*sizes(i)*sqScl/2;
+                        patchy = -0.5 + ix(2,i) + lside*sin(tt)*sizes(i)*sqScl/2;
+                     else
+                        patchx = -0.5 + ix(1,i) + [0 -lside -lside 0]*sizes(i)*sqScl/2;
+                        patchy = -0.5 + ix(2,i) + [1 1 -1 -1]*sizes(i)*sqScl/2;
+                     end
+                     patch(boxPos(1)+sqSz*patchx,boxPos(2)+sqSz*patchy,colors{i},...
+                           'EdgeColor',edgecolors{i},'LineWidth',edgewidth);
+                  otherwise
+                     rectangle('Position',[boxPos+sqSz*(ix(:,i)'-(1+sqScl*sizes(i))/2) ...
+                                           sizes(i)*sqScl*[sqSz sqSz]],'Curvature',circleNotSquare(i),...
+                               'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
+               end
+            end
+         end
          axis equal ij off
       end
 
@@ -644,14 +635,9 @@ classdef SetOfHyps < Hypersphere
 
          n = numel(obj.radii);
          % Time to get a-plottin'
-         obj.shapesInABox(sigThresh.ov-sigThresh.ma,'uppert',ax)
-         obj.shapesInABox(sigThresh.di,'lowert',ax)
-         if ~isempty(sigThresh.ra)
-         obj.shapesInABox(sigThresh.ra,'diagonal')
-         title('Significant differences')
-         else
-         obj.shapesInABox(0.9*ones(n,1),'size','fdiagonal')
-         title('Significant values')
+         obj.shapesInABox(statsmat(sigThresh.ov-sigThresh.ma,sigThresh.di,sigThresh.ra),ax)
+         if ~isempty(sigThresh.ra), title('Significant differences')
+         else                       title('Significant values')
          end
          if LGND, obj.showSigLegend(ax); end
       end
@@ -666,12 +652,18 @@ classdef SetOfHyps < Hypersphere
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
          if ~exist('hi','var') || isempty(hi), hi = obj; obj = [];    end
 
-         hi.shapesInABox(statsmat(-hi.margins,hi.dists,hi.radii),'size','f',[0 0 0],ax)
+         himat = statsmat( -hi.margins, hi.dists, hi.radii);
 
          if ~isempty(obj)
-         obj.shapesInABox(statsmat(-obj.margins,obj.dists,obj.radii),'size',[0.5 0.5 0.5],ax)
+         lomat = statsmat(-obj.margins,obj.dists,obj.radii);
+         % Normalize both to same scale
+         maxval = max(abs([himat(:);lomat(:)]));
+
+          hi.shapesInABox(himat/maxval,'left', ax)
+         obj.shapesInABox(lomat/maxval,'right',ax)
          title('Values comparison')
          else
+          hi.shapesInABox(himat/max(abs(himat(:))),'size',ax)
          title('Values')
          end
       end
