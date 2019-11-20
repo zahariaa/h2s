@@ -281,14 +281,24 @@ classdef SetOfHyps < Hypersphere
             dxy      = diff(centers);
             dxy      = dxy/norm(dxy);
             midpoint = mean(centers);
+            % Compute overlap midpoint
+            % need to assign +/-1 to larger/smaller center coordinate?
+            ov_edges = centers + [1;-1].*obj.radii(ix(:,i))'*dxy;
+            ov_midpoint = mean(ov_edges);
+            % % debug
+            % keyboard
+            % plot(centers(:,1),centers(:,2),'ko')
+            % plot(midpoint(:,1),midpoint(:,2),'ro')
+            % plot(ov_edges(:,1),ov_edges(:,2),'go')
+            % plot(ov_midpoint(:,1),ov_midpoint(:,2),'rx')
 
             if size(obj.centers,2)==2
-               errlines(i) = plot( midpoint(1) + [-1 1]*dxy(1)*err/2,...
-                                   midpoint(2) + [-1 1]*dxy(2)*err/2,'k-','LineWidth',2);
+               errlines(i) = plot( ov_midpoint(1) + [-1 1]*dxy(1)*err/2,...
+                                   ov_midpoint(2) + [-1 1]*dxy(2)*err/2,'k-','LineWidth',2);
             else
-               errlines(i) = plot3(midpoint(1) + [-1 1]*dxy(1)*err/2,...
-                                   midpoint(2) + [-1 1]*dxy(2)*err/2,...
-                                   midpoint(3) + [-1 1]*dxy(3)*err/2,'k-','LineWidth',2);
+               errlines(i) = plot3(ov_midpoint(1) + [-1 1]*dxy(1)*err/2,...
+                                   ov_midpoint(2) + [-1 1]*dxy(2)*err/2,...
+                                   ov_midpoint(3) + [-1 1]*dxy(3)*err/2,'k-','LineWidth',2);
             end
          end
       end
