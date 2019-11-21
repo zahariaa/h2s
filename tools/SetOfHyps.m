@@ -257,18 +257,23 @@ classdef SetOfHyps < Hypersphere
                                            ax.Position([2 2]),'LineWidth',4);
          end
          %% DRAW SIGN FLIP ERROR LINES
-         ovlines = obj.plotOverlapErrors(obj.sig.ov<0.05);
+         ovlines = obj.plotOverlapErrors;
 
          if nargout > 0,   varargout = {maxline,ovlines};   end
       end
 
-      function errlines = plotOverlapErrors(obj,sigov)
-         if ~exist('sigov','var')
-            sigov = true(1,numel(obj.margins));
+      function errlines = plotOverlapErrors(obj,thresh)
+         if ~exist('thresh','var') || iesmpty(thresh)
+            thresh = 0.95;
          end
-         if ~isempty(obj.msflips)
-            sigov = sigov .* obj.msflips;
+
+         if isempty(obj.sig),     sigov = true(1,numel(obj.margins));
+         else                     sigov = sum([obj.sig.ov;obj.sig.ma] > thresh);
          end
+         if isempty(obj.msflips), obj.msflips = zeros(size(sigov));
+         end
+         sigov = sigov .* obj.msflips;
+
          if isempty(sigov) || ~any(sigov)
             errlines = [];
             return
