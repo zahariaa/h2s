@@ -484,23 +484,24 @@ classdef SetOfHyps < Hypersphere
 
       function shapesInABox(obj,values,varargin)
          % Parse inputs
+         if ~exist('values','var'), values = []; end
+         if ~any(values), return; end
+         N = numel(values);
          side = '';
          for v = 1:nargin-2
             if        ischar(varargin{v})
                switch lower(varargin{v})
                   case {'size','left','right'}; side = varargin{v}; sizes = abs(values);
+                  case 'color';               colors = mat2cell(1-abs(values(:))*[1 1 1],ones(1,N));
                   otherwise                  boxpart = varargin{v};
                end
-            elseif isnumeric(varargin{v}), edgecolors= varargin(v);
-            elseif    iscell(varargin{v}), edgecolors= varargin{v};
-            elseif  ishandle(varargin{v}), ax        = varargin{v};
+            elseif isnumeric(varargin{v}), colors = varargin(v);
+            elseif    iscell(varargin{v}), colors = varargin{v};
+            elseif  ishandle(varargin{v}), ax     = varargin{v};
             end
          end
-         if ~exist('values','var'), values = []; end
-         N = numel(values);
          % If whole matrix of values passed, recursively call on each matrix part, after normalizing by abs-max
-         if ~any(values), return
-         elseif size(values,1)==sqrt(N) && size(values,2)==sqrt(N)
+         if size(values,1)==sqrt(N) && size(values,2)==sqrt(N)
             obj.shapesInABox(values(triu(true(sqrt(N)), 1)),'uppert'  ,varargin{:})
             obj.shapesInABox(diag(values)                  ,'diagonal',varargin{:})
             obj.shapesInABox(values(tril(true(sqrt(N)),-1)),'lowert'  ,varargin{:})
@@ -509,15 +510,13 @@ classdef SetOfHyps < Hypersphere
          % Continue input parsing
          if ~exist('sizes' ,'var'),  sizes = ones(N,1); end
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
-         if ~exist('edgecolors','var') || isempty(edgecolors)
-            edgecolors = repmat({'None'},ones(1,N)); edgewidth = 1;
+         if ~exist('colors','var') || isempty(colors)
             colors = mat2cell(zeros(N,3),ones(1,N));
-         else
-            edgewidth = 2; colors = repmat({'None'},[1 N]);
          end
          % separate values (color) and value signs (circle or square)
          circleNotSquare = double(values>-eps); %values = abs(values); % would set values>=0, but not needed
-         if numel(edgecolors)==1, edgecolors = repmat(edgecolors,[1 N]); end
+         if numel(colors)==1, colors = repmat(colors,[1 N]); end
+         edgewidth = 1;
          % Set up axes
          set(0,'CurrentFigure',get(ax,'Parent'))
          set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
@@ -605,11 +604,11 @@ classdef SetOfHyps < Hypersphere
                         patchy = -0.5 + ix(2,i) + [1 1 -1 -1]*sizes(i)*sqScl/2;
                      end
                      patch(boxPos(1)+sqSz*patchx,boxPos(2)+sqSz*patchy,colors{i},...
-                           'EdgeColor',edgecolors{i},'LineWidth',edgewidth);
+                           'EdgeColor','None','LineWidth',edgewidth);
                   otherwise
                      rectangle('Position',[boxPos+sqSz*(ix(:,i)'-(1+sqScl*sizes(i))/2) ...
                                            sizes(i)*sqScl*[sqSz sqSz]],'Curvature',circleNotSquare(i),...
-                               'FaceColor',colors{i},'EdgeColor',edgecolors{i},'LineWidth',edgewidth)
+                               'FaceColor',colors{i},'EdgeColor','None','LineWidth',edgewidth)
                end
             end
          end
@@ -645,7 +644,7 @@ classdef SetOfHyps < Hypersphere
 
          n = numel(obj.radii);
          % Time to get a-plottin'
-         obj.shapesInABox(statsmat(sigThresh.ov-sigThresh.ma,sigThresh.di,sigThresh.ra),ax)
+         obj.shapesInABox(statsmat(sigThresh.ov-sigThresh.ma,sigThresh.di,sigThresh.ra),'color',ax)
          if ~isempty(sigThresh.ra), title('Significant differences')
          else                       title('Significant values')
          end
