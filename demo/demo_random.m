@@ -1,8 +1,9 @@
 % demo_random
 
-seed = rng(0);
-SIMPLICES = false; %true;
-another3  = false;
+%% USER-CHOSEN PARAMETERS
+SEED      = rng(1);
+SIMPLICES = true;
+ALLOW3D   = false;
 
 if SIMPLICES
    ds = [3 5 7 3];
@@ -10,15 +11,25 @@ else
    ds = [3 4 6 9];
 end
 
+%% FIGURE SETUP
+if SIMPLICES
+   figtitle = sprintf('n-simplices_h2s%u',ALLOW3D+2);
+else
+   figtitle = sprintf('n-random_h2s%u'   ,ALLOW3D+2);
+end
 nconditions = 5;
-fh = newfigure('n-random',[numel(ds) nconditions]);
+another3  = false;
+fh = newfigure(figtitle,[numel(ds) nconditions]);
 set(fh.f,'Units','normalized');
 
+%% FIGURE GENERATION LOOP
 i = 0;
 for d = ds
    i = i+1;
    j = 1;
-   dimLow = min(d-1,3);
+   if ALLOW3D, dimLow = min(d-1,3);
+   else        dimLow = 2;
+   end
    if SIMPLICES
       if     d==3 &&  another3
          groundtruth = SetOfHyps([nsimplex(d)';nsimplex(d)'+3],ones(2*d+2,1));
@@ -53,5 +64,10 @@ for d = ds
       end
    end
    %[groundtruth.overlap;model.overlap;testlo.overlap]
+end
+
+%% PRINT
+if ALLOW3D, printFig(fh,[],'png',450);
+else        printFig(fh,[],'eps');
 end
 
