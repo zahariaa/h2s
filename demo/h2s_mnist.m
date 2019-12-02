@@ -3,8 +3,8 @@
 % 
 % 2018-03-02 AZ Created
 
-images = loadMNISTImages('data/train-images-idx3-ubyte');
-labels = loadMNISTLabels('data/train-labels-idx1-ubyte');
+images = loadMNISTImages('data/MNIST/raw/train-images-idx3-ubyte');
+labels = loadMNISTLabels('data/MNIST/raw/train-labels-idx1-ubyte');
 chunk = 1:1000;
 
 label2resp = @(L) cell2mat(arrayfun(@(i) L(chunk)==mod(i,10),1:10,'UniformOutput',false));
