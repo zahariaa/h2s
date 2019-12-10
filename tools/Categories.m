@@ -41,7 +41,8 @@ classdef Categories
                  135   184    98
                  182   173    74
                  223   157    79]/255;
-            if n >5, obj.colors = c(1:n,:);
+                     % duplicate colors if more requested than exist in c
+            if n >5, obj.colors = c(mod((1:n)-1,size(c,1))+1,:);
             else     obj.colors = c(2*(1:n),:);
             end
          else obj.colors = colors;
