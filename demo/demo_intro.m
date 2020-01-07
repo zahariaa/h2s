@@ -1,15 +1,25 @@
 % demo_intro: generates introductory explanation figure
 
-n     = 50;
-nCats = 4;
-dotsz = 6;
+INTROFIG = true;
+n        = 50;
+nCats    = 4;
+dotsz    = 6;
 
 %% Simulate data
+if INTROFIG
+points = randnball(nCats*n,3);
+points = {points(1:n*(nCats-1),:), points};
+
 % % line of spheres
 % for i = 2:4
 %    points{1}((i-1)*n+1:i*n,1) = points{1}((i-1)*n+1:i*n,1) + i-1;
 % end
 % tetrahedron of spheres
+v{2} = [1 0 -1/sqrt(2); -1 0 -1/sqrt(2); 0 1 1/sqrt(2); 0 -1 1/sqrt(2)];
+v{1} = v{2}(1:3,:);% + [0.5 0 0;zeros(2,3)]';
+v{1}(2,3)=-0.5;
+r = {[0.75 1 1.25],[1 1 1 1]};
+else
 v{1} = [9 0 0; [9 9]/sqrt(2) 0; [4 4]/sqrt(2) 0; 0 0 0] - [1;1;1;1]*[6 0 0];
 r = {1:4,ones(1,6)/sqrt(3/2)};
 
@@ -19,6 +29,8 @@ v{2} = nsimplex(3)';
 v{2} = v{2}([1:3 2:4],:) + [[3;3;3;-3;-3;-3] zeros(6,2)];
 
 points = cellfun(@(x) randnball(n*numel(x),3),r,'UniformOutput',false);
+end
+
 for j = 1:numel(r)
    for i = 1:numel(r{j})
       points{j}((i-1)*n+1:i*n,:) = r{j}(i)*points{j}((i-1)*n+1:i*n,:) ...
@@ -28,8 +40,10 @@ end
 
 
 %% PLOT
-planelim = 2;
+planelim = (8*~INTROFIG)+2;
 for itype = 0%1%1:-1:0
+   if ~INTROFIG && itype > 0, continue; end
+
    orig = SetOfHyps(v{itype+1},r{itype+1});
    orig.categories = Categories(n*ones(1,numel(r{itype+1})));
 
@@ -41,13 +55,13 @@ for itype = 0%1%1:-1:0
             points{itype+1}((i-1)*n+1:i*n,3),'wo','MarkerSize',dotsz,...
             'MarkerFaceColor',orig.categories.colors(i,:));
    end
-   draw3Daxes([0 0 0],5*[-1 1 -1 1 -1 1]*planelim); axis equal vis3d off; view(40,22); rotate3d;
+   draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*planelim); axis equal vis3d off; view(40,22); rotate3d;
 
    axtivate(2) 
    sh = draw3dEllipsoid(v{itype+1},...
             arrayfun(@(x) eye(3)*x^2,r{itype+1},'UniformOutput',false),...
             orig.categories.colors(1:nCats,:),[],0.4);
-   draw3Daxes([0 0 0],5*[-1 1 -1 1 -1 1]*planelim); view(40,22);
+   draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*planelim); view(40,22);
    match3D(fh.a.h(1),fh.a.h(2));
    set(fh.f,'Renderer','openGL');
    axis(fh.a.h(3),'off');
