@@ -4,9 +4,10 @@ function h2s_mnist_compare(epsilon)
 % 
 % 2018-03-02 AZ Created
 
+if ~nargin, epsilon = 0; end
+
 dimLow = 2;
 model  = 'lenet';
-%epsilon = 0;
 colors = [250   138   117
           246   136   159
           215   148   196
@@ -25,7 +26,7 @@ chunk = 1:10000;
 
 %% Load raw MNIST (probably not aligned to pyTorch stuff)
 data.x{1}   = indexm(loadMNISTImages('data/MNIST/raw/t10k-images-idx3-ubyte'),[],chunk)';
-data.labels = {loadMNISTLabels('data/MNIST/raw/t10k-labels-idx1-ubyte'); data.labels};
+data.labels = {loadMNISTLabels('data/MNIST/raw/t10k-labels-idx1-ubyte')'; data.labels};
 
 %% reorganize data structure
 nlayers = numel(fieldnames(data))-2;
@@ -117,9 +118,9 @@ keyboard
 fh = newfigure([3 nlayers+2],[],[],sprintf( 'combo_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
 fh = newfigure([1 nlayers+2],fh,[],sprintf('stats2_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
 for i = 1:nlayers+2
-   if i<nlayers+2,   titlestr = sprintf('Layer %u',i-1);
-   elseif i==1,      titlestr = 'Raw images';
-   else              titlestr = 'Final readout';
+   if i==1,            titlestr = 'Raw images';
+   elseif i<nlayers+2, titlestr = sprintf('Layer %u',i-1);
+   else                titlestr = 'Final readout';
    end
    lo.(model)(i).show(fh.a(1).h(i));                               title(titlestr);
    lo.(model)(i).showValues(fh.a(1).h(i+nlayers+2),hi.(model)(i));
@@ -132,9 +133,9 @@ ms=5;
 chunk = 1:1000;
 fh = newfigure([4 nlayers+2],fh,[],sprintf('compare_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
 for i = 1:nlayers+2
-   if i<nlayers+2,   titlestr = sprintf('Layer %u',i-1);
-   elseif i==1,      titlestr = 'Raw images';
-   else              titlestr = 'Final readout';
+   if i==1,            titlestr = 'Raw images';
+   elseif i<nlayers+2, titlestr = sprintf('Layer %u',i-1);
+   else                titlestr = 'Final readout';
    end
    lo.(model)(i).show(fh.a(end).h(i));   title(titlestr);
    for j = 1:3
@@ -147,7 +148,7 @@ for i = 1:nlayers+2
                  'MarkerEdgeColor','none', 'MarkerSize',ms);
           end
       end
-      axis equal off
+      axis equal square off
    end
 end
 
