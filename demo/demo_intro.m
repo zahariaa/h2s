@@ -60,13 +60,14 @@ for itype = 0%1%1:-1:0
    axtivate(2) 
    sh = draw3dEllipsoid(v{itype+1},...
             arrayfun(@(x) eye(3)*x^2,r{itype+1},'UniformOutput',false),...
-            orig.categories.colors(1:nCats,:),[],0.4);
+            orig.categories.colors(1:nCats,:),[],0.5);
    draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*planelim); view(40,22);
    match3D(fh.a.h(1),fh.a.h(2));
    set(fh.f,'Renderer','openGL');
    axis(fh.a.h(3),'off');
-   set(sh,'AmbientStrength',0,'SpecularStrength',1,'DiffuseStrength',1);
-   camlight('left'); lighting phong
+   set(sh,'AmbientStrength',0.5,'SpecularStrength',1,'DiffuseStrength',1);
+   %camlight('left');
+   lighting phong
 
 %% PLOT PLANE
    if itype==0
@@ -80,10 +81,10 @@ for itype = 0%1%1:-1:0
       X = X([1 2 4 3 1]);
       Y = Y([1 2 4 3 1]);
       % limit plane extent to within axis limits (so plane outline is visible)
-      X(X>0) = min(planelim,(planelim-b(3))/m(1)); X(X<0) = max(-planelim,(-planelim-b(3))/m(1));
-      Y(Y>0) = min(planelim,(planelim-b(3))/m(2)); Y(Y<0) = max(-planelim,(-planelim-b(3))/m(2));
+      X(X>0) = min(planelim,(planelim-b(3))/abs(m(1))); X(X<0) = max(-planelim,(-planelim-b(3))/abs(m(1)));
+      Y(Y>0) = min(planelim,(planelim-b(3))/abs(m(2))); Y(Y<0) = max(-planelim,(-planelim-b(3))/abs(m(2)));
       plane = patch(X+b(1),Y+b(2),m(1)*X+m(2)*Y+b(3),zeros(size(X)),...
-                    'EdgeColor','k','LineWidth',1,'FaceColor',[0.5 0.5 0.5],'FaceAlpha',0.5);
+                    'EdgeColor','k','LineWidth',1,'FaceColor',[0.95 0.95 0.95],'FaceAlpha',0.5);
       % scaling for intersection circles
       mx = sqrt(1/(1+m(1)^2));
       my = sqrt(1/(1+m(2)^2));
@@ -100,9 +101,10 @@ for itype = 0%1%1:-1:0
    end
    % %DEBUG
    % axis([-4 4 -4 4 -4 4])
-   % keyboard
    % export spheres in png
    subplotResize(fh.a.h,[],0.01); printFig([],[],'png',200);
+   axis(axis*1.1)
+
    delete([sh(:);circ(:);plane]);   % delete spheres, intersection circles, and plane for pdf
 
    for i=1:nCats % Plot centers and radii
