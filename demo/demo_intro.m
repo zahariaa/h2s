@@ -40,12 +40,13 @@ end
 
 
 %% PLOT
-planelim = (8*~INTROFIG)+2;
-for itype = 0%1%1:-1:0
-   if ~INTROFIG && itype > 0, continue; end
-
+for itype = 1;%0;%1:-1:0
+planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
    orig = SetOfHyps(v{itype+1},r{itype+1});
    orig.categories = Categories(n*ones(1,numel(r{itype+1})));
+   if ~INTROFIG  && itype==0
+   orig.categories.colors = orig.categories.colors([1 4 3 2],:);
+   end
 
    nCats = size(points{itype+1},1)/n;
    fh = newfigure(sprintf('intro%u',itype),[1 3]);
@@ -70,7 +71,7 @@ for itype = 0%1%1:-1:0
    lighting phong
 
 %% PLOT PLANE
-   if itype==0
+   if INTROFIG && itype==0
       % Compute intersection plane coefficients
       m = rref([v{itype+1}(1:3,:) ones(3,1)]);
       m = m(:,end);
@@ -102,9 +103,9 @@ for itype = 0%1%1:-1:0
    % %DEBUG
    % axis([-4 4 -4 4 -4 4])
    % export spheres in png
-   subplotResize(fh.a.h,[],0.01); printFig([],[],'png',200);
    axis(axis*1.1)
 
+   subplotResize(fh.a.h,[],0.01); printFig([],[],'png',200);
    delete([sh(:);circ(:);plane]);   % delete spheres, intersection circles, and plane for pdf
 
    for i=1:nCats % Plot centers and radii
@@ -146,6 +147,9 @@ end
 
 %% TEST NEW STRESS FUNCTION
 low  = SetOfHyps(model);
+if ~INTROFIG  && itype==0
+low.categories.colors = low.categories.colors([1 4 3 2],:);
+end
 [~,~,low.error] = low.stress(orig);
 new  = low.h2s(orig,2)%orig.h2s
 % Calculate significance
