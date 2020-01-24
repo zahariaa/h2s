@@ -641,10 +641,10 @@ classdef SetOfHyps < Hypersphere
 
          % Convert to sigmas significance, maxed to nSig(=3) and floored
          %sig = structfun(@(x) erfinv(x)*sqrt(2),sig,'UniformOutput',false);
-         sigThresh = structfun(@(x) x>0.95,sig,'UniformOutput',false);
+         sigThresh = structfun(@(x) fdr_bh(1-x,1-0.95),sig,'UniformOutput',false);
          for i = 2:nSigLevs
             for f = fieldnames(sig)'; f=f{1};
-               sigThresh.(f) = sigThresh.(f) + double(sig.(f)>(1-10^-i));
+               sigThresh.(f) = sigThresh.(f) + double(fdr_bh(1-sig.(f),10^-i));
             end
          end
          sigThresh = structfun(@(x) max(0,x/nSigLevs-1e-5),sigThresh,'UniformOutput',false);
