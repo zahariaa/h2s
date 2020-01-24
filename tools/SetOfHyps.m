@@ -245,8 +245,10 @@ classdef SetOfHyps < Hypersphere
             case 2; [~,XY] = showCirclesModel(obj,varargin{:});
                %% Draw max error bar
                maxXY = max(XY);
+               if ~isnan(maxerror)
                maxline = plot(maxXY([1 1]) - [0 maxerror],...
                               maxXY([2 2]),'k-','LineWidth',4);
+               end
                axis ij tight equal vis3d off % puts error bar at bottom right
             case 3; [~,XY] = showSpheresModel(obj,varargin{:});
                %% Draw max error bar
