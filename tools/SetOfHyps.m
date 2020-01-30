@@ -132,13 +132,14 @@ classdef SetOfHyps < Hypersphere
          if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
          else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
          end
+         alpha     = [1 1 1]; % for testing gradients with hyperparameters
          [nc,dimLow]= size(lo.centers);
          fudge     = 1e-8;
          errd      = hi.dists   - lo.dists;
          erro      = hi.margins - lo.margins;
          erra      = hi.radii   - lo.radii;
          err       = abs([errd erro erra]);
-         errtotal  = mean( err.^2 );
+         errtotal  = mean([alpha(1)*errd.^2 alpha(2)*erro.^2 alpha(3)*erra.^2]);
          %errtotal  = mean( mean(errd.^2) + mean(erro.^2) + mean(erra.^2) );
 
          msflips = ~(sign(hi.margins) == sign(lo.margins));
@@ -155,13 +156,13 @@ classdef SetOfHyps < Hypersphere
                                 + shiftdim([1;-1]*centersdiff(i,:),-1);
          end
          dddc = dddc./repmat(lo.dists',[1 nc dimLow]);
-         dEdd = 2*( errd + erro );
+         dEdd = 2*(alpha(1)*errd + alpha(2)*erro );
          dEdc = reshape(dEdd*reshape(dddc,nc2,[]),[nc dimLow]);
 
          % radius gradients
-         dEdr = -2*erra';
+         dEdr = -2*alpha(3)*erra';
          for i = 1:nc
-            dEdr(i) =  dEdr(i) + 2*sum(erro(~~sum(ix==i)));
+            dEdr(i) =  dEdr(i) + 2*alpha(2)*sum(erro(~~sum(ix==i)));
          end
          % Gradient: put it all together
          grad = [dEdr dEdc]/(2*nc2+nc);
