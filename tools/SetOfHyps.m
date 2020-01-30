@@ -258,6 +258,9 @@ classdef SetOfHyps < Hypersphere
                ax.Units = 'normalized';
                maxline = annotation('line',[1-maxerror/diff(ax.XLim) 1]*ax.Position(3)+ax.Position(1),...
                                            ax.Position([2 2]),'LineWidth',4);
+            otherwise
+               obj.h2s.show(varargin);
+               return
          end
          %% DRAW SIGN FLIP ERROR LINES
          ovlines = obj.plotOverlapErrors;
