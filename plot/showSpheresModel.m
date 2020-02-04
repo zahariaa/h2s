@@ -2,7 +2,7 @@ function [objHs,XYZ] = showSpheresModel(varargin)
 
 %% control variables
 patchDetail = 100;
-opacity = 0.25;
+opacity = 0.5;
 
 %% preparations
 SETCAMERA = true;

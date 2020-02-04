@@ -19,7 +19,7 @@ if mn > 1
    else         location   = repmat({ location(:)'},[mn 1]);
    end
    if iscell(covariance) && nr==mn, covariance = covariance(:);
-   elseif nr>1, covariance = num2cell(covariance,3);
+   elseif nr>1, covariance = vectify(num2cell(covariance,[1 2]));
    else         covariance = repmat({ covariance  },[mn 1]);
    end
    if nc>1,     col        = num2cell(col,2);
