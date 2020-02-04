@@ -88,7 +88,7 @@ classdef Categories
 
          n = size(obj.vectors,2);
          if ~exist('labels','var') || isempty(labels)
-            obj.labels  = arrayfun(@(n) sprintf('category %u',n),1:n,'UniformOutput',false);
+            obj.labels  = mat2cell([repmat('category ',[n 1]) num2str((1:n)')],ones(n,1))';
          else
             obj.labels  = labels;
          end
