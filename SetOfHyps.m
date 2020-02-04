@@ -1,56 +1,105 @@
-classdef SetOfHyps < Hypersphere
-   properties
-      categories = NaN;
-      error      = NaN;
-      dists      = NaN;
-      margins    = NaN;
+classdef Hypersphere < handle
+   properties (SetObservable, GetObservable, AbortSet)
+      centers    % [n x d] matrix: n centers of d-dimensional hyperspheres
+      radii      % [1 x n] vector: radii of each of n hyperspheres
+      categories(1,1)   % Categories object
+   end
+   properties (SetAccess = protected)
+      volume     % volume of hypersphere(s) (auto-computed)
+      dists      % distances between centers of hyperspheres (auto-computed)
+      margins    % margins between hyperspheres along center-connection lines (auto-computed)
       ci         = [];  % confidence intervals, with raw bootstrap data
+      error      = NaN; % [n-choose-2 x 1] vector of errors for each summary stat
       sig        = [];  % significance tests results
+      sigdiff    = [];  % significant differences tests results
       msflips    = [];  % margin sign flips
    end
-   properties(GetAccess = 'private', SetAccess = 'private')
+   properties (Dependent, SetAccess = protected)
+      overlap    % overlaps (negative margins) between hyperspheres along center-connection lines
+   end
+   properties (GetAccess = 'private', SetAccess = 'private')
       boxPos     = [0.65 0.65];
       boxSize    = 0.3;
       nSigLevs   = 3; % 3 means [0.95 0.99 0.999] levels
    end
 
    methods
-      function obj = SetOfHyps(h,varargin)  % Contructor
-         if ~exist('h','var'), return; % i don't understand why this line is necessary
-         elseif isa(h,'SetOfHyps'), obj=h; return;
-         elseif isstruct(h) % Helper for older struct-based code
-            h = Hypersphere(h.centers,h.radii);
-         elseif ischar(h) && strcmpi(h,'estimate')
-            obj = estimateHypersphere(varargin{:});
-            obj = SetOfHyps(obj,varargin{:});%.merge;
+      function obj = Hypersphere(centers,radii,varargin)
+         % Contructor for Hypersphere object for hypersphere2sphere, SetOfHyps
+         % e.g.:
+         % hyp = Hypersphere(centers,radii)
+         % 
+
+         % WRITE ACTUAL DOCUMENTATION HERE
+
+         % Methods:
+         % Hypersphere.select
+         % Hypersphere.merge
+         % 
+         % 2018-06-07 AZ Created
+         % 
+         % See also SETOFHYPS, CATEGORIES
+
+         if nargin==0; return; end
+
+         if isa(centers,'Hypersphere'), obj = centers; return;
+         elseif ischar(centers) && strcmpi(centers,'estimate')
+            obj = estimateHypersphere(radii,varargin{:});
             return
-         elseif isa(h,'Hypersphere') && numel(h)>1
-            % convert all to SetOfHyps objects
-            % note: use Hypersphere.merge to merge Hypersphere objects
-            for i = 1:numel(h)
-               obj(i) = SetOfHyps(h(i),varargin{:});
+         elseif isstruct(centers) % Helper for older struct-based code
+            obj = Hypersphere(centers.centers,centers.radii);
+            return
+         end
+
+         % Recurse if multiple centers provided (e.g., bootstrapping)
+         if iscell(centers) 
+            obj = repmat(Hypersphere(),[numel(centers) 1]);
+            for i = 1:numel(centers)
+               obj(i) = Hypersphere(centers{i},radii(i));
             end
             return
-         elseif ~isa(h,'Hypersphere')
-            h = Hypersphere(h,varargin{1});
-            varargin = varargin(2:end);
          end
-         obj.centers    = h.centers;
-         obj.radii      = h.radii;
-         obj.dists      = h.dists;
-         obj.margins    = h.margins;
+         % Ensure consistent formatting
+         if size(centers,1) ~= numel(radii), obj.centers = centers';
+         else                                obj.centers = centers;
+         end
+         obj.radii = radii;
+
          obj.categories = Categories(numel(obj.radii));
          for v = 1:numel(varargin)
             if isa(varargin{v},'Categories')
                obj.categories = varargin{v};
-            elseif isa(varargin{v},'SetOfHyps')
-               [~,~,obj.error,obj.msflips] = obj.stress(varargin{v});
             end
          end
+
+         % Update dependent properties, but save them to reduce on-line compute
+         obj.volume = obj.volume();
+         obj.setPostCenters();
+
+         % Set up listeners to update dependent properties only on centers/radii set
+         addlistener(obj,'centers','PostSet',@obj.setPostCenters);
+         addlistener(obj,'radii'  ,'PostSet',@obj.setPostRadii);
+      end
+
+      function obj = select(obj,i)
+         % Hypersphere.select: outputs a Hypersphere object that has been
+         %    subsampled to have one or more hyperspheres, indexed by input i
+         % e.g.:
+         % fewerhyps = allhyps.select(i)
+         %    where i can be a logical vector or list of indices
+         % 
+         obj.centers = obj.centers(i,:);
+         obj.radii   = obj.radii(i);
+         obj.categories = obj.categories.select(i);
+      end
+
+      function obj = concat(self)
+         obj = Hypersphere(cat(1,self.centers),[self.radii]);
       end
 
       function obj = merge(self)
-         obj = SetOfHyps(self(1));
+         % uses 1st object's categories
+         obj = Hypersphere(mean(cat(3,self.centers),3),mean(cat(1,self.radii)),self(1).categories);
          if numel(self)>1 % assumes Hypersphere was bootstrapped
             obj.ci.bootstraps = self;
             obj.ci.centers = prctile(cat(3,self.centers),[2.5 97.5],3);
@@ -58,42 +107,76 @@ classdef SetOfHyps < Hypersphere
          end
       end
 
-      function obj = select(obj,i)
-         n = numel(obj.radii);
-         obj = select@Hypersphere(obj,i);
-         obj.categories = obj.categories.select(i);
-         % select pairs
-         j=0; sel=[]; 
-         for a = 1:n-1
-            for b = a+1:n, j=j+1;
-               if sum(ismember(i,[a b]))==2, sel = [sel j]; end
+
+      %% SET FUNCTION TO VALIDATE CENTERS
+      function self = set.centers(self,centers)
+         arguments
+            self
+            centers {mustBeNumeric}
+         end
+         % Ensure consistent formatting
+         if isempty(self.radii)
+            self.centers = centers;
+         else
+            if     size(centers,1) == numel(self.radii)
+               self.centers = centers;
+            elseif size(centers,2) == numel(self.radii)
+               self.centers = centers';
+            else
+               error('size of radii and centers don''t match')
             end
          end
-         obj.dists   = obj.dists(sel);
-         obj.margins = obj.margins(sel);
       end
-      function ovp = permuteoverlaps(obj,points,N)
-         % Permutation tests for margin significance:
-         %    null hypothesis = full overlap
-         if ~exist('N','var') || isempty(N), N=100; end
-         n   = numel(obj.radii);
-         n2  = nchoosek(n,2);
-         ix  = nchoosek_ix(n);
-         ovp = NaN(N,n2);
-         for i = 1:n2
-            catperm = obj.select(ix(:,i)).categories.permute(N);
-            for j = 1:N
-               tmpobj   = SetOfHyps('estimate',points,catperm(j));
-               % Normalize permuted overlaps by maximum possible overlap
-               ovp(j,i) = tmpobj.overlap*0.5/min(tmpobj.radii);
-            end
+      %% SET FUNCTION TO VALIDATE RADII
+      function self = set.radii(self,radii)
+         arguments
+            self
+            radii {mustBeNonnegative}
          end
+         if ~isempty(radii) && ~isempty(self.centers) ...
+            && numel(radii) ~= size(self.centers,1)
+            error('size of radii and centers don''t match')
+         end
+         self.radii = radii(:)';
       end
 
-      function [sig,sec] = significance(obj,points,N)
+
+      %% SET FUNCTIONS TO COMPUTE AND STORE VOLUME, DISTS, MARGINS, OVERLAPS
+      function self = set.volume(self,~)   % Compute volume of a single hypersphere
+         d = size(self.centers,2);
+         self.volume = (self.radii.^d).*(pi.^(d/2))./gamma((d/2)+1);
+      end
+      function self = set.dists(self,~)    % Compute distance between two hyperspheres
+         n = numel(self.radii);
+         self.dists = zeros(1,(n^2-n)/2);
+         i=0;
+         for a = 1:n-1
+            for b = a+1:n, i=i+1;
+               self.dists(i) = sqrt(sum(diff(self.centers([a b],:)).^2));
+            end
+         end
+      end
+      function self = set.margins(self,~)
+         n = numel(self.radii);
+         d = self.dists;
+         self.margins = zeros(1,(n^2-n)/2);
+         i=0;
+         for a = 1:n-1
+            for b = a+1:n, i=i+1;
+               self.margins(i) = d(i) - self.radii(a) - self.radii(b);
+            end
+         end
+      end
+      function ov = get.overlap(self,~)      % Compute overlap distance of two hyperspheres
+         ov = -self.margins;
+      end
+
+
+      %% HIGHER ORDER FUNCTIONS
+      function self = significance(self,points,N)
          if ~exist('N','var') || isempty(N), N=100; end
          % Compute confidence intervals on bootstrapped overlaps & radii for significance
-         boots        = SetOfHyps('estimate',points,obj.categories,N,'stratified').merge;
+         boots        = Hypersphere('estimate',points,self.categories,N,'stratified').merge;
          dist_boot    =  vertcat(boots.ci.bootstraps.dists);
          radii_boot   = reshape([boots.ci.bootstraps.radii],[],N)';
          margin_boot  =  vertcat(boots.ci.bootstraps.margins);
@@ -103,71 +186,35 @@ classdef SetOfHyps < Hypersphere
          ciprctile2tail = @(x) abs(2*(mean(x<0)-0.5));
          %% TODO: DELETE margin_boot/sig.ma?
          % What percentile confidence interval of bootstrapped margins contains 0?
-         sig.ma = ciprctileLtail(margin_boot);
+         self.sig.ma = ciprctileLtail(margin_boot);
          % What percentile confidence interval of bootstrapped overlap/margins contains 0?
-         sig.ov = ciprctileLtail(-margin_boot);
-         sig.ra = [];
+         self.sig.ov = ciprctileLtail(-margin_boot);
+         self.sig.ra = [];
          % What percentile confidence interval of bootstrapped distances contains 0?
-         sig.di = ciprctileLtail(dist_boot);
+         self.sig.di = ciprctileLtail(dist_boot);
 
 %% SECOND-ORDER COMPARISONS
          % compute indices of radii corresponding to overlaps
-         n     = numel(obj.radii);
+         n     = numel(self.radii);
          nc2   = nchoosek(n,2);
          nc2c2 = nchoosek(nc2,2);
          ix    = nchoosek_ix(n);
          ixc2  = nchoosek_ix(nc2);
 
-         sec = struct('ra',NaN(1,nc2),'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2),'di',NaN(1,nc2c2));
+         self.sigdiff = struct('ra',NaN(1,nc2),'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2),'di',NaN(1,nc2c2));
          for i = 1:nc2
-            sec.ra(i) = ciprctile2tail(diff(  radii_boot(:,  ix(:,i)),[],2));
+            self.sigdiff.ra(i) = ciprctile2tail(diff(  radii_boot(:,  ix(:,i)),[],2));
          end
          for i = 1:nc2c2
-            sec.ov(i) = ciprctile2tail(diff(-margin_boot(:,ixc2(:,i)),[],2));
-            sec.di(i) = ciprctile2tail(diff(   dist_boot(:,ixc2(:,i)),[],2));
+            self.sigdiff.ov(i) = ciprctile2tail(diff(-margin_boot(:,ixc2(:,i)),[],2));
+            self.sigdiff.di(i) = ciprctile2tail(diff(   dist_boot(:,ixc2(:,i)),[],2));
          end
       end
 
-      function [errtotal,grad,err,msflips] = stress(centers_and_radii,hi)
-         if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
-         else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
-         end
-         alpha     = [1 1 1]; % for testing gradients with hyperparameters
-         [nc,dimLow]= size(lo.centers);
-         fudge     = 1e-8;
-         errd      = hi.dists   - lo.dists;
-         erro      = hi.margins - lo.margins;
-         erra      = hi.radii   - lo.radii;
-         err       = abs([errd erro erra]);
-         errtotal  = mean([alpha(1)*errd.^2 alpha(2)*erro.^2 alpha(3)*erra.^2]);
-         %errtotal  = mean( mean(errd.^2) + mean(erro.^2) + mean(erra.^2) );
-
-         msflips = ~(sign(hi.margins) == sign(lo.margins));
-         % Gradient: partial centers derivative of distances (should be size of centers)
-         % Gradient: partial derivatives of error, relative to distances and overlaps
-         ix = nchoosek_ix(nc);
-         nc2 = size(ix,2);
+      function self = stressUpdate(self,otherHyp)
+         [~,~,self.error,self.msflips] = self.stress([self.radii(:) self.centers],otherHyp);
+      end
          
-         % center gradients
-         dddc = zeros(nc2,nc,dimLow);% 1./lo.dists;
-         centersdiff = lo.centers(ix(2,:),:) - lo.centers(ix(1,:),:);
-         for i = 1:nc2
-            dddc(i,ix(:,i),:) = dddc(i,ix(:,i),:) ...
-                                + shiftdim([1;-1]*centersdiff(i,:),-1);
-         end
-         dddc = dddc./repmat(lo.dists',[1 nc dimLow]);
-         dEdd = 2*(alpha(1)*errd + alpha(2)*erro );
-         dEdc = reshape(dEdd*reshape(dddc,nc2,[]),[nc dimLow]);
-
-         % radius gradients
-         dEdr = -2*alpha(3)*erra';
-         for i = 1:nc
-            dEdr(i) =  dEdr(i) + 2*alpha(2)*sum(erro(~~sum(ix==i)));
-         end
-         % Gradient: put it all together
-         grad = [dEdr dEdc]/(2*nc2+nc);
-      end
-
       function model = h2s(obj,varargin)
       % Optimizes stress of self.centers relative to hi
       % Takes as input: self.h2s(dimLow), self.h2s(hi), self.h2s(hi,dimLow)
@@ -176,7 +223,7 @@ classdef SetOfHyps < Hypersphere
       % self.h2s([true true true]) fixes radii, constrains high positive
       %    overlaps to be positive, and uses MDS for low centers initialization
          for v = 2:nargin
-            if isa(varargin{v-1},'SetOfHyps')
+            if isa(varargin{v-1},'Hypersphere')
                hi = varargin{v-1};
                lo = obj;
             elseif isnumeric(varargin{v-1})
@@ -202,7 +249,7 @@ classdef SetOfHyps < Hypersphere
          if ~exist('MDS_INIT','var'), MDS_INIT = true; end
          if ~exist('FIXRADII','var'), FIXRADII = true; end
 
-         % Recurse for multiple SetOfHyps objects
+         % Recurse for multiple Hypersphere objects
          if n > 1
             for i = 1:n
                stationarycounter(i,n);
@@ -227,9 +274,9 @@ classdef SetOfHyps < Hypersphere
             opts = optimoptions(@fminunc,'TolFun',1e-4,'TolX',1e-4,'Display','iter','SpecifyObjectiveGradient',true);%,'DerivativeCheck','on');%'Display','off');%,'OutputFcn',@obj.stressPlotFcn);
             fit = fminunc(@(x) stress(x,hi),x0,opts);
          end
-         % Output reduced SetOfHyps model
-         model = SetOfHyps(fit(:,2:end),fit(:,1),hi.categories);
-         [~,~,model.error,model.msflips] = model.stress(hi);
+         % Output reduced Hypersphere model
+         model = Hypersphere(fit(:,2:end),fit(:,1),hi.categories);
+         model.stressUpdate(hi);
 
          % Recurse for multiple random initializations
          for iinit = 2:ninits
@@ -239,6 +286,7 @@ classdef SetOfHyps < Hypersphere
             end
          end
       end
+
 
       function varargout = show(obj,varargin)
          maxerror = max(obj.error);
@@ -353,9 +401,9 @@ classdef SetOfHyps < Hypersphere
       end
 
       function movie(self,times,timeLabel,varargin)
-      % function SetOfHyps.movie(times,timeLabel,<SAVEflag> or <StaticFrameAxes>)
-      % SetOfHyps.movie(times,timeLabel,SAVEflag) generates a movie, optionally saves
-      % SetOfHyps.movie(times,timeLabel,StaticFrameAxes) plots static frames in axes given
+      % function Hypersphere.movie(times,timeLabel,<SAVEflag> or <StaticFrameAxes>)
+      % Hypersphere.movie(times,timeLabel,SAVEflag) generates a movie, optionally saves
+      % Hypersphere.movie(times,timeLabel,StaticFrameAxes) plots static frames in axes given
          nh     = numel(self);
          STATIC = false;
          if nargin > 3
@@ -452,9 +500,9 @@ classdef SetOfHyps < Hypersphere
          % preliminaries
          n           = size(x,1);
          cols        = colormap('lines');
-         % copy hi radii to lo SetOfHyps
-         lo          = SetOfHyps(x,obj.radii);
-         % Recalculate error from high dimensional SetOfHyps obj
+         % copy hi radii to lo Hypersphere
+         lo          = Hypersphere(x,obj.radii);
+         % Recalculate error from high dimensional Hypersphere obj
          lo.error    = reshape(undeal(3,@() lo.stress(obj)),(n^2-n)/2,[])';
          lo.error    = lo.error.^2;
 
@@ -629,7 +677,7 @@ classdef SetOfHyps < Hypersphere
       function showSig(obj,varargin)
          % Parse inputs
          for v = 1:nargin-1
-            if isa(varargin{v},'SetOfHyps'), sig = varargin{v}.sig;
+            if isa(varargin{v},'Hypersphere'), sig = varargin{v}.sig;
             elseif ishandle(varargin{v}),    ax  = varargin{v};
             elseif ischar(  varargin{v}),    LGND = varargin{v};
             else                             sig = varargin{v};
@@ -665,7 +713,7 @@ classdef SetOfHyps < Hypersphere
       function showValues(obj,varargin)
          % Parse inputs
          for v = 1:nargin-1
-            if isa(varargin{v},'SetOfHyps'), hi = varargin{v};
+            if isa(varargin{v},'Hypersphere'), hi = varargin{v};
             elseif ishandle(varargin{v}),    ax = varargin{v};
             end
          end
@@ -709,6 +757,63 @@ classdef SetOfHyps < Hypersphere
                  ['p<' num2str(10^-i)])
          end
          axis equal ij off
+      end
+   end
+
+
+   methods(Access = 'private')
+      %% UPDATE DISTS, MARGINS IF CENTERS CHANGED
+      function setPostCenters(self,src,event)
+         self.dists   = self.dists();
+         self.margins = self.margins();
+         % [~,~,self.error,self.msflips] = self.stress();
+      end
+      function setPostRadii(self,src,event)
+         self.volume  = self.volume();
+         self.margins = self.margins();
+         % [~,~,self.error,self.msflips] = self.stress();
+      end
+   end
+
+   methods(Static)
+      function [errtotal,grad,err,msflips] = stress(centers_and_radii,hi)
+         if isa(centers_and_radii,'Hypersphere'), lo = centers_and_radii;
+         else lo = Hypersphere(centers_and_radii(:,2:end),centers_and_radii(:,1));
+         end
+         alpha     = [1 1 1]; % for testing gradients with hyperparameters
+         [nc,dimLow]= size(lo.centers);
+         fudge     = 1e-8;
+         errd      = hi.dists   - lo.dists;
+         erro      = hi.margins - lo.margins;
+         erra      = hi.radii   - lo.radii;
+         err       = abs([errd erro erra]);
+         errtotal  = mean([alpha(1)*errd.^2 alpha(2)*erro.^2 alpha(3)*erra.^2]);
+         %errtotal  = mean( mean(errd.^2) + mean(erro.^2) + mean(erra.^2) );
+
+         msflips = ~(sign(hi.margins) == sign(lo.margins));
+         % Gradient: partial centers derivative of distances (should be size of centers)
+         % Gradient: partial derivatives of error, relative to distances and overlaps
+         ix = nchoosek_ix(nc);
+         nc2 = size(ix,2);
+         
+         % center gradients
+         dddc = zeros(nc2,nc,dimLow);% 1./lo.dists;
+         centersdiff = lo.centers(ix(2,:),:) - lo.centers(ix(1,:),:);
+         for i = 1:nc2
+            dddc(i,ix(:,i),:) = dddc(i,ix(:,i),:) ...
+                                + shiftdim([1;-1]*centersdiff(i,:),-1);
+         end
+         dddc = dddc./repmat(lo.dists',[1 nc dimLow]);
+         dEdd = 2*(alpha(1)*errd + alpha(2)*erro );
+         dEdc = reshape(dEdd*reshape(dddc,nc2,[]),[nc dimLow]);
+
+         % radius gradients
+         dEdr = -2*alpha(3)*erra';
+         for i = 1:nc
+            dEdr(i) =  dEdr(i) + 2*alpha(2)*sum(erro(~~sum(ix==i)));
+         end
+         % Gradient: put it all together
+         grad = [dEdr dEdc]/(2*nc2+nc);
       end
    end
 end
