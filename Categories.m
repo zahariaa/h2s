@@ -11,7 +11,7 @@ classdef Categories
                  135   184    98
                  182   173    74
                  223   157    79]/255; 
-      vectors = true;  % [n x c] logical matrix: (n = # points, c = # categories)
+      vectors  % [n x c] logical matrix: (n = # points, c = # categories)
    end
    methods
       function obj = Categories(vectors,labels,colors)
@@ -80,13 +80,20 @@ classdef Categories
             eval(cmd)
             obj.vectors = logical(obj.vectors);
          elseif isnumeric(vectors)                  % input option (2)
-            obj.vectors = false(numel(vectors),max(vectors));
-            for i = unique(vectors)'
-               obj.vectors(vectors==i,i) = true;
+            if numel(vectors)==1
+               obj.vectors = [];
+               n = vectors;
+            else
+               obj.vectors = false(numel(vectors),max(vectors));
+               for i = unique(vectors)'
+                  obj.vectors(vectors==i,i) = true;
+               end
             end
          end
 
-         n = size(obj.vectors,2);
+         if ~isempty(obj.vectors)
+            n = size(obj.vectors,2);
+         end
          if ~exist('labels','var') || isempty(labels)
             obj.labels  = mat2cell([repmat('category ',[n 1]) num2str((1:n)')],ones(n,1))';
          else
