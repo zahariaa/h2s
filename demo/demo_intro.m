@@ -43,7 +43,7 @@ end
 for itype = 1;%0;%1:-1:0
 planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
    orig = SetOfHyps(v{itype+1},r{itype+1});
-   orig.categories = Categories(n*ones(1,numel(r{itype+1})));
+   orig.categories = Categories({n*ones(1,numel(r{itype+1}))});
    if ~INTROFIG  && itype==0
    orig.categories.colors = orig.categories.colors([1 4 3 2],:);
    end
@@ -124,8 +124,8 @@ planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
    
    axtivate(3)
    model = hypersphere2sphere(points{itype+1}(1:(n*nCats),:),orig.categories.select(1:nCats),[],2);
-   [~,~,model.error] = SetOfHyps(model).stress(orig);
-   showCirclesModel(model,[],[]);
+   model = SetOfHyps(model).stressUpdate(orig);
+   model.show;
    for i = 1:nCats
       plot(model.centers(i,1),model.centers(i,2),'wo','MarkerSize',dotsz,...
            'MarkerFaceColor',orig.categories.colors(i,:))
@@ -150,18 +150,15 @@ low  = SetOfHyps(model);
 if ~INTROFIG  && itype==0
 low.categories.colors = low.categories.colors([1 4 3 2],:);
 end
-[~,~,low.error] = low.stress(orig);
+low.stressUpdate(orig);
 new  = low.h2s(orig,2)%orig.h2s
 % Calculate significance
-[orig.sig,sec] = orig.significance(points{itype+1},10000);
+orig.significance(points{itype+1},400);
 % Plot
-low.sig = orig.sig;
-new.sig = orig.sig;
 fh = newfigure([3 2],'compare'); low.show(fh.a.h(1));
                                  new.show(fh.a.h(2));
 set(fh.f,'Renderer','openGL')
-orig.showSig(fh.a.h(5),'legend');
-orig.showSig(sec,fh.a.h(6));
+orig.showSig(fh.a.h(5:6),'legend');
 matchy(fh.a.h(5:6))
 
 low.showValues(fh.a.h(3))
@@ -174,8 +171,7 @@ printFig(fh.f,[],'eps')
 fh = newfigure([1 4],'stats');
 new.show(fh.a.h(1));
 new.showValues(low,fh.a.h(2))
-orig.showSig(fh.a.h(3));
-orig.showSig(sec,fh.a.h(4));
+orig.showSig(fh.a.h(3:4));
 matchy(fh.a.h(2:4))
 % Print
 set(fh.f,'Renderer','painters')

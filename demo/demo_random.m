@@ -42,24 +42,24 @@ for d = ds
    end
    [points,categories] = randnsimplex_of_nballs(groundtruth.centers,50,...
                                                 groundtruth.radii);
-   [model,high] = hypersphere2sphere(points,categories,[],dimLow);
-   model = SetOfHyps(model,groundtruth);
-   model.sig = model.significance(points,1000);
+   model = hypersphere2sphere(points,categories,[],dimLow);
+   model = SetOfHyps(model).stressUpdate(groundtruth);
+   model.significance(points,1000);
    %keyboard
    testhi = SetOfHyps('estimate',points,categories,groundtruth);%,100).merge;
-   [testhi.sig,sechi] = testhi.significance(points);
+   testhi.significance(points,1000);
    axtivate(fh.a.h((i-1)*nconditions+j));  model.show;
 
    for MDS_INIT = true%[false true]
       for FIXRADII = false%[false true]
          j = j+1;
          testlo = testhi.h2s(dimLow,[FIXRADII MDS_INIT],groundtruth);
-         [testlo.sig,seclo] = testlo.significance(points,1000);
+         testlo.significance(points,1000);
       
          testlo.show(      fh.a.h((i-1)*nconditions+j  ));
-         testlo.showValues(fh.a.h((i-1)*nconditions+j+1),testhi);
+         testlo.showValues(fh.a.h((i-1)*nconditions+j+1));
          testhi.showSig(   fh.a.h((i-1)*nconditions+j+2),'legend');
-         testhi.showSig(   fh.a.h((i-1)*nconditions+j+3),sechi);
+         testhi.showSig(   fh.a.h((i-1)*nconditions+j+3),'sigdiff');
          drawnow;
       end
    end
