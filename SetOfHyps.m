@@ -235,7 +235,8 @@ classdef SetOfHyps < Hypersphere
          else
    %          x0  = x0 - repmat(mean(x0),numel(hi.radii),1);
    %          x0  = x0*2;
-            opts = optimoptions(@fminunc,'TolFun',1e-4,'TolX',1e-4,'Display','iter','SpecifyObjectiveGradient',true);%,'DerivativeCheck','on');%'Display','off');%,'OutputFcn',@obj.stressPlotFcn);
+            opts = optimoptions(@fminunc,'TolFun',1e-4,'TolX',1e-4,'Display','iter',...
+                        'SpecifyObjectiveGradient',true);%,'DerivativeCheck','on');%'Display','off');
             if DBUGPLOT
                opts.OutputFcn = @self.stressPlotFcn;
             end
@@ -255,10 +256,10 @@ classdef SetOfHyps < Hypersphere
       end
 
 
-      function varargout = show(obj,varargin)
-         maxerror = max(obj.error);
-         switch size(obj.centers,2)
-            case 2; [~,XY] = showCirclesModel(obj,varargin{:});
+      function varargout = show(self,varargin)
+         maxerror = max(self.error);
+         switch size(self.centers,2)
+            case 2; [~,XY] = showCirclesModel(self,varargin{:});
                %% Draw max error bar
                maxXY = max(XY);
                if ~isnan(maxerror)
@@ -266,7 +267,7 @@ classdef SetOfHyps < Hypersphere
                               maxXY([2 2]),'k-','LineWidth',4);
                end
                axis ij tight equal vis3d off % puts error bar at bottom right
-            case 3; [~,XY] = showSpheresModel(obj,varargin{:});
+            case 3; [~,XY] = showSpheresModel(self,varargin{:});
                %% Draw max error bar
                axis ij tight equal vis3d off % puts error bar at bottom right
                ax = gca;
@@ -274,42 +275,42 @@ classdef SetOfHyps < Hypersphere
                maxline = annotation('line',[1-maxerror/diff(ax.XLim) 1]*ax.Position(3)+ax.Position(1),...
                                            ax.Position([2 2]),'LineWidth',4);
             otherwise
-               obj.h2s.show(varargin);
+               varargout = self.h2s.show(varargin);
                return
          end
          %% DRAW SIGN FLIP ERROR LINES
-         ovlines = obj.plotOverlapErrors;
+         ovlines = self.plotOverlapErrors;
 
          if nargout > 0,   varargout = {maxline,ovlines};   end
       end
 
-      function errlines = plotOverlapErrors(obj,thresh)
+      function errlines = plotOverlapErrors(self,thresh)
          if ~exist('thresh','var') || iesmpty(thresh)
             thresh = 0.95;
          end
 
-         if isempty(obj.sig),     sigov = true(1,numel(obj.margins));
-         else                     sigov = sum([obj.sig.ov;obj.sig.ma] > thresh);
+         if isempty(self.sig),    sigov = true(1,numel(self.margins));
+         else                     sigov = sum([self.sig.ov;self.sig.ma] > thresh);
          end
-         if isempty(obj.msflips), obj.msflips = zeros(size(sigov));
+         if isempty(self.msflips), self.msflips = zeros(size(sigov));
          end
-         sigov = sigov .* obj.msflips;
+         sigov = sigov .* self.msflips;
 
          if isempty(sigov) || ~any(sigov)
             errlines = [];
             return
          end
-         n = numel(obj.radii);
+         n = numel(self.radii);
          ix = nchoosek_ix(n);
          for i = find(sigov)
-            err      = obj.error(n+i); % assumes order of errors is radii, margins, distances
-            centers  = obj.centers(ix(:,i),:);
+            err      = self.error(n+i); % assumes order of errors is radii, margins, distances
+            centers  = self.centers(ix(:,i),:);
             dxy      = diff(centers);
             dxy      = dxy/norm(dxy);
             midpoint = mean(centers);
             % Compute overlap midpoint
             % need to assign +/-1 to larger/smaller center coordinate?
-            ov_edges = centers + [1;-1].*obj.radii(ix(:,i))'*dxy;
+            ov_edges = centers + [1;-1].*self.radii(ix(:,i))'*dxy;
             ov_midpoint = mean(ov_edges);
             % % debug
             % keyboard
@@ -318,7 +319,7 @@ classdef SetOfHyps < Hypersphere
             % plot(ov_edges(:,1),ov_edges(:,2),'go')
             % plot(ov_midpoint(:,1),ov_midpoint(:,2),'rx')
 
-            if size(obj.centers,2)==2
+            if size(self.centers,2)==2
                errlines(i) = plot( ov_midpoint(1) + [-1 1]*dxy(1)*err/2,...
                                    ov_midpoint(2) + [-1 1]*dxy(2)*err/2,'k-','LineWidth',2);
             else
@@ -329,9 +330,9 @@ classdef SetOfHyps < Hypersphere
          end
       end
 
-      function camera(obj,camSettings)
+      function camera(self,camSettings)
          if ~exist('camSettings','var') || isempty(camSettings)
-            camSettings = obj.cameraCalc;
+            camSettings = self.cameraCalc;
          end
          for f = fields(camSettings)'
             set(gca,f{1},camSettings.(f{1}));
@@ -436,31 +437,35 @@ classdef SetOfHyps < Hypersphere
          xlim([min(times) max(times)]);
       end
 
-      function showSig(obj,varargin)
+      function showSig(self,varargin)
          % Parse inputs
          for v = 1:nargin-1
             if   ishandle(varargin{v}),      ax  = varargin{v};
             elseif ischar(varargin{v})
                switch lower(varargin{v})
                   case 'legend';            LGND = true;
-                  case 'sig';               sig  = obj.sig;
-                  case {'sigdiff', 'diff'}; sig  = obj.sigdiff;
+                  case 'sig';               sig  = self.sig;
+                  case {'sigdiff', 'diff'}; sig  = self.sigdiff;
                end
             elseif islogical(varargin{v}),  LGND = varargin{v};
             end
          end
          if ~exist('ax'  ,'var') || isempty(ax ) , ax   = gca; axis ij off; end
-         if ~exist('sig' ,'var') || isempty(sig) , sig  = obj.sig;          end
+         if ~exist('sig' ,'var') || isempty(sig) , sig  = self.sig;         end
          if ~exist('LGND','var') || isempty(LGND), LGND = false;            end
+
+         if isempty(sig)
+            error('need to populate obj.sig(diff) first, e.g., obj.significance(points);');
+         end
 
          if numel(ax) == 2
             % if two axes given, plot sig in first, sigdiff in second
-            obj.showSig(ax(1),LGND);   % if legend requested, put here
-            obj.showSig(ax(2),'diff');
+            self.showSig(ax(1),LGND);   % if legend requested, put here
+            self.showSig(ax(2),'diff');
             return
          end
 
-         nSigLevs = obj.nSigLevs; % 3 means [0.95 0.99 0.999] levels
+         nSigLevs = self.nSigLevs; % 3 means [0.95 0.99 0.999] levels
 
          % Convert to sigmas significance, maxed to nSig(=3) and floored
          %sig = structfun(@(x) erfinv(x)*sqrt(2),sig,'UniformOutput',false);
@@ -472,16 +477,16 @@ classdef SetOfHyps < Hypersphere
          end
          sigThresh = structfun(@(x) max(0,x/nSigLevs-1e-5),sigThresh,'UniformOutput',false);
 
-         n = numel(obj.radii);
+         n = numel(self.radii);
          % Time to get a-plottin'
-         obj.shapesInABox(statsmat(sigThresh.ov-sigThresh.ma,sigThresh.di,sigThresh.ra),'color',ax)
+         self.shapesInABox(statsmat(sigThresh.ov-sigThresh.ma,sigThresh.di,sigThresh.ra),'color',ax)
          if ~isempty(sigThresh.ra), title('Significant differences')
          else                       title('Significant values')
          end
-         if LGND, obj.showSigLegend(ax); end
+         if LGND, self.showSigLegend(ax); end
       end
 
-      function showValues(obj,varargin)
+      function showValues(self,varargin)
          % Parse inputs
          for v = 1:nargin-1
             if isa(varargin{v},'SetOfHyps'), hi = varargin{v};
@@ -489,17 +494,17 @@ classdef SetOfHyps < Hypersphere
             end
          end
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
-         if ~exist('hi','var') || isempty(hi), hi = obj; obj = [];    end
+         if ~exist('hi','var') || isempty(hi), hi = self; self = [];  end
 
          himat = statsmat( -hi.margins, hi.dists, hi.radii);
 
-         if ~isempty(obj)
-         lomat = statsmat(-obj.margins,obj.dists,obj.radii);
+         if ~isempty(self)
+         lomat = statsmat(-self.margins,self.dists,self.radii);
          % Normalize both to same scale
          maxval = max(abs([himat(:);lomat(:)]));
 
-          hi.shapesInABox(himat/maxval,'left', ax)
-         obj.shapesInABox(lomat/maxval,'right',ax)
+           hi.shapesInABox(himat/maxval,'left', ax)
+         self.shapesInABox(lomat/maxval,'right',ax)
          title('Values comparison')
          else
           hi.shapesInABox(himat/max(abs(himat(:))),'size',ax)
@@ -543,7 +548,7 @@ classdef SetOfHyps < Hypersphere
          self.margins = margins(self);
       end
 
-      function stop = stressPlotFcn(obj,varargin)%x,optimValues,state)
+      function stop = stressPlotFcn(self,varargin)%x,optimValues,state)
          % unpack inputs
          x           = varargin{1};
          optimValues = varargin{2};
@@ -552,9 +557,9 @@ classdef SetOfHyps < Hypersphere
          n           = size(x,1);
          cols        = colormap('lines');
          % copy hi radii to lo SetOfHyps
-         lo          = SetOfHyps(x,obj.radii);
-         % Recalculate error from high dimensional SetOfHyps obj
-         lo          = lo.stressUpdate(obj);
+         lo          = SetOfHyps(x,self.radii);
+         % Recalculate error from high dimensional SetOfHyps self
+         lo          = lo.stressUpdate(self);
          loerr       = lo.error.^2;
 
          % Plot
@@ -636,30 +641,30 @@ classdef SetOfHyps < Hypersphere
    end
 
    methods(Hidden = true)
-      function camSettings = cameraCalc(obj)
-         if numel(obj)>1 % concatenate center & radii
-            obj(1).centers = vertcat(obj.centers);
-            obj(1).radii   = [obj.radii];
-            obj = obj(1);
+      function camSettings = cameraCalc(self)
+         if numel(self)>1 % concatenate center & radii
+            self(1).centers = vertcat(self.centers);
+            self(1).radii   = [self.radii];
+            self = self(1);
          end
          
          % set view angle orthogonal to the PC12 plane of the locations
-         eigenvecs = pca(obj.centers);
+         eigenvecs = pca(self.centers);
          if size(eigenvecs,2)<2, normal = [0 0 0]';
          else                    normal = null(eigenvecs(:,1:2)');
          end
          
-         if corr(obj.centers*normal,obj.radii')<0
+         if corr(self.centers*normal,self.radii')<0
             normal = -normal;
          end
          
-         objectsCentroid = mean(obj.centers,1);
-         camDist = 50*sqrt(sum(std(obj.centers).^2));
+         objectsCentroid = mean(self.centers,1);
+         camDist = 50*sqrt(sum(std(self.centers).^2));
          camSettings.CameraPosition = objectsCentroid'-normal*camDist;
          camSettings.CameraTarget   = objectsCentroid;
       end
 
-      function shapesInABox(obj,values,varargin)
+      function shapesInABox(self,values,varargin)
          % Parse inputs
          if ~exist('values','var'), values = []; end
          if ~any(values), return; end
@@ -679,9 +684,9 @@ classdef SetOfHyps < Hypersphere
          end
          % If whole matrix of values passed, recursively call on each matrix part, after normalizing by abs-max
          if size(values,1)==sqrt(N) && size(values,2)==sqrt(N)
-            obj.shapesInABox(values(triu(true(sqrt(N)), 1)),'uppert'  ,varargin{:})
-            obj.shapesInABox(diag(values)                  ,'diagonal',varargin{:})
-            obj.shapesInABox(values(tril(true(sqrt(N)),-1)),'lowert'  ,varargin{:})
+            self.shapesInABox(values(triu(true(sqrt(N)), 1)),'uppert'  ,varargin{:})
+            self.shapesInABox(diag(values)                  ,'diagonal',varargin{:})
+            self.shapesInABox(values(tril(true(sqrt(N)),-1)),'lowert'  ,varargin{:})
             return
          end
          % Continue input parsing
@@ -699,7 +704,7 @@ classdef SetOfHyps < Hypersphere
          set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
 
          % Determine size of matrix, save it in figure
-         nCats   = size(obj.categories.colors,1);
+         nCats   = size(self.categories.colors,1);
          nCatsc2 = nchoosek(nCats,2);
          if ~isempty(ax.UserData)
             SETUP = false;
@@ -719,8 +724,8 @@ classdef SetOfHyps < Hypersphere
          ix = nchoosek_ix(n,2);
 
          % Box parameters
-         boxPos = obj.boxPos;     % starting coordinates for box containing matrix
-         sqSz   = obj.boxSize/n;  % size of individual squares in matrix box
+         boxPos = self.boxPos;     % starting coordinates for box containing matrix
+         sqSz   = self.boxSize/n;  % size of individual squares in matrix box
          sqScl  = 0.97;%0.8;         % scale factor for squares
          csep   = -2*sqSz/3;      % separation between matrix box and circle key
 
@@ -744,17 +749,17 @@ classdef SetOfHyps < Hypersphere
                cix = nchoosek_ix(nCats,2);
                for i = 1:nCatsc2
                   rectangle('Position',[boxPos+[(i-0.5)*sqSz csep] 0.4*[sqSz sqSz]],...
-                            'FaceColor',obj.categories.colors(cix(1,i),:),'Curvature',1,...
-                            'EdgeColor',obj.categories.colors(cix(1,i),:))
+                            'FaceColor',self.categories.colors(cix(1,i),:),'Curvature',1,...
+                            'EdgeColor',self.categories.colors(cix(1,i),:))
                   rectangle('Position',[boxPos+[csep (i-0.5)*sqSz] 0.4*[sqSz sqSz]],...
-                            'FaceColor',obj.categories.colors(cix(1,i),:),'Curvature',1,...
-                            'EdgeColor',obj.categories.colors(cix(1,i),:))
+                            'FaceColor',self.categories.colors(cix(1,i),:),'Curvature',1,...
+                            'EdgeColor',self.categories.colors(cix(1,i),:))
                   rectangle('Position',[boxPos+[(i-0.9)*sqSz csep] 0.4*[sqSz sqSz]],...
-                            'FaceColor',obj.categories.colors(cix(2,i),:),'Curvature',1,...
-                            'EdgeColor',obj.categories.colors(cix(2,i),:))
+                            'FaceColor',self.categories.colors(cix(2,i),:),'Curvature',1,...
+                            'EdgeColor',self.categories.colors(cix(2,i),:))
                   rectangle('Position',[boxPos+[csep (i-0.9)*sqSz] 0.4*[sqSz sqSz]],...
-                            'FaceColor',obj.categories.colors(cix(2,i),:),'Curvature',1,...
-                            'EdgeColor',obj.categories.colors(cix(2,i),:))
+                            'FaceColor',self.categories.colors(cix(2,i),:),'Curvature',1,...
+                            'EdgeColor',self.categories.colors(cix(2,i),:))
                end
             end
          end
@@ -767,7 +772,7 @@ classdef SetOfHyps < Hypersphere
          if     strcmpi(boxpart,'lowert'), ix = flip(ix);
          elseif strcmpi(boxpart,'diagonal') % plot as circles!
             ix = repmat(1:nchoosek(n,2),[2 1]);
-            if FIRSTORDER, colors = mat2cell(obj.categories.colors,ones(n,1)); end
+            if FIRSTORDER, colors = mat2cell(self.categories.colors,ones(n,1)); end
          end
          for i = 1:N
             if ~all(colors{i}==1)
