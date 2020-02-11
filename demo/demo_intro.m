@@ -153,7 +153,7 @@ end
 low.stressUpdate(orig);
 new  = low.h2s(orig,2)%orig.h2s
 % Calculate significance
-orig.significance(points{itype+1},400);
+orig = orig.significance(points{itype+1},400);
 % Plot
 fh = newfigure([3 2],'compare'); low.show(fh.a.h(1));
                                  new.show(fh.a.h(2));

@@ -1,4 +1,4 @@
-classdef Hypersphere < handle
+classdef Hypersphere
    properties
       centers    % [n x d] matrix: n centers of d-dimensional hyperspheres
       radii      % [1 x n] vector: radii of each of n hyperspheres
@@ -58,6 +58,45 @@ classdef Hypersphere < handle
          end
       end
 
+      %% SET FUNCTION TO VALIDATE CENTERS
+      function self = set.centers(self,centers)
+         arguments
+            self
+            centers {mustBeNumeric, mustBeFinite, mustBeReal}
+         end
+         % Ensure consistent formatting
+         if isempty(self.radii)
+            self.centers = centers;
+         else
+            if     size(centers,1) == numel(self.radii)
+               self.centers = centers;
+            elseif size(centers,2) == numel(self.radii)
+               self.centers = centers';
+            else
+               error('size of radii and centers don''t match')
+            end
+         end
+      end
+      %% SET FUNCTION TO VALIDATE RADII
+      function self = set.radii(self,radii)
+         arguments
+            self
+            radii {mustBeNumeric, mustBeFinite, mustBeNonnegative}
+         end
+         if ~isempty(radii) && ~isempty(self.centers) ...
+            && numel(radii) ~= size(self.centers,1)
+            error('size of radii and centers don''t match')
+         end
+         self.radii = radii(:)';
+      end
+      function self = set.categories(self,categories)
+         arguments
+            self
+            categories {mustBeCategoriesClass}
+         end
+         self.categories = categories;
+      end
+
       function obj = select(obj,i)
          % Hypersphere.select: outputs a Hypersphere object that has been
          %    subsampled to have one or more hyperspheres, indexed by input i
@@ -76,23 +115,15 @@ classdef Hypersphere < handle
 
       %% SET FUNCTIONS TO COMPUTE AND STORE VOLUME, DISTS, MARGINS, OVERLAPS
       function V = volume(self)   % Compute volume of a single hypersphere
-         d = size(self.centers,2);
-         V = (self.radii.^d).*(pi.^(d/2))./gamma((d/2)+1);
+         V = self.calcVolume(self.centers,self.radii);
       end
-      
+
       function D = dists(self)    % Compute distance between two hyperspheres
          if numel(self) > 1
             D = cell2mat_concat(arrayfun(@dists,self,'UniformOutput',false));
             return
          end
-         n = numel(self.radii);
-         D = zeros(1,(n^2-n)/2);
-         i=0;
-         for a = 1:n-1
-            for b = a+1:n, i=i+1;
-               D(i) = sqrt(sum(diff(self.centers([a b],:)).^2));
-            end
-         end
+         D = self.calcDists(self.centers,self.radii);
       end
 
       function M = margins(self)
@@ -100,34 +131,67 @@ classdef Hypersphere < handle
             M = cell2mat_concat(arrayfun(@margins,self,'UniformOutput',false));
             return
          end
-         n = numel(self.radii);
-         d = self.dists;
-         M = zeros(1,(n^2-n)/2);
-         i=0;
-         for a = 1:n-1
-            for b = a+1:n, i=i+1;
-               M(i) = d(i) - self.radii(a) - self.radii(b);
-            end
-         end
+         M = self.calcMargins(self.radii,self.dists);
       end
 
       function ov = overlap(self)      % Compute overlap distance of two hyperspheres
          ov = -self.margins;
       end
 
-      function hyps = mergeToSetOfHyps(self)
+      function hyps = merge(self)
+         hyps = self.mergeToSetOfHyps(self);
+      end
+   end
+
+   methods(Static, Hidden = true)
+      % Made these functions static so SetOfHyps can use them (not sure why they won't 
+      %    inherit directly when SetOfHyps < Hypersphere) 
+      function V = calcVolume(centers,radii)   % Compute volume of a single hypersphere
+         d = size(centers,2);
+         V = (radii.^d).*(pi.^(d/2))./gamma((d/2)+1);
+      end
+
+      function D = calcDists(centers,radii)    % Compute distance between two hyperspheres
+         n = numel(radii);
+         D = zeros(1,(n^2-n)/2);
+         i=0;
+         for a = 1:n-1
+            for b = a+1:n, i=i+1;
+               D(i) = sqrt(sum(diff(centers([a b],:)).^2));
+            end
+         end
+      end
+
+      function M = calcMargins(radii,dists)
+         n = numel(radii);
+         d = dists;
+         M = zeros(1,(n^2-n)/2);
+         i=0;
+         for a = 1:n-1
+            for b = a+1:n, i=i+1;
+               M(i) = d(i) - radii(a) - radii(b);
+            end
+         end
+      end
+
+      function hyps = mergeToSetOfHyps(hyps)
          ci = [];
          % uses 1st object's categories
-         if numel(self)>1 % assumes Hypersphere was bootstrapped
-            ci.bootstraps = self;
-            ci.centers = prctile(cat(3,self.centers),[2.5 97.5],3);
-            ci.radii   = prctile(vertcat(self.radii),[2.5 97.5])';
-            self       = Hypersphere(mean(cat(3,self.centers),3),...
-                                     mean(cat(1,self.radii)),...
-                                     self(1).categories);
+         if numel(hyps)>1 % assumes Hypersphere was bootstrapped
+            ci.bootstraps = hyps;
+            ci.centers = prctile(cat(3,hyps.centers),[2.5 97.5],3);
+            ci.radii   = prctile(vertcat(hyps.radii),[2.5 97.5])';
+            hyps       = Hypersphere(mean(cat(3,hyps.centers),3),...
+                                     mean(cat(1,hyps.radii)),...
+                                     hyps(1).categories);
          end
-         hyps = SetOfHyps(self,ci);
+         hyps = SetOfHyps(hyps,ci);
       end
+   end
+end
+function mustBeCategoriesClass(c)
+   if ~isa(c,'Categories')
+      error('categories must be Categories class');
    end
 end
 

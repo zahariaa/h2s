@@ -1,8 +1,8 @@
-classdef SetOfHyps < handle
+classdef SetOfHyps < Hypersphere
    properties (SetObservable, GetObservable, AbortSet)
-      centers    % [n x d] matrix: n centers of d-dimensional hyperspheres
-      radii      % [1 x n] vector: radii of each of n hyperspheres
-      categories(1,1)   % Categories object
+      % centers    % [n x d] matrix: n centers of d-dimensional hyperspheres
+      % radii      % [1 x n] vector: radii of each of n hyperspheres
+      % categories(1,1)   % Categories object
    end
    properties (SetAccess = protected)
       volume     % volume of hypersphere(s) (auto-computed)
@@ -44,7 +44,7 @@ classdef SetOfHyps < handle
 
          if isa(centers,'SetOfHyps'), obj = centers; return;
          elseif ischar(centers) && strcmpi(centers,'estimate')
-            obj = Hypersphere('estimate',radii,varargin{:}).mergeToSetOfHyps;
+            obj = Hypersphere('estimate',radii,varargin{:}).merge;
             return
          elseif isstruct(centers) % Helper for older struct-based code
             obj = SetOfHyps(centers.centers,centers.radii,centers.categories);
@@ -64,7 +64,7 @@ classdef SetOfHyps < handle
             if numel(centers) == 1
                obj.centers = centers.centers;
                obj.radii = centers.radii;
-               if isstruct(radii) % assumes merged Hypersphere object
+               if exist('radii','var') && isstruct(radii) % assumes merged Hypersphere object
                   obj.ci = radii;
                end
                obj.categories = centers.categories;
@@ -75,7 +75,7 @@ classdef SetOfHyps < handle
             if size(centers,1) ~= numel(radii), obj.centers = centers';
             else                                obj.centers = centers;
             end
-            obj.radii = radii;
+            obj.radii = radii(:)';
          end
 
          for v = 1:numel(varargin)
@@ -89,102 +89,41 @@ classdef SetOfHyps < handle
 
          % Update dependent properties, but save them to reduce on-line compute
          obj.volume = obj.volume();
-         obj.setPostCenters();
+         obj = obj.setPostCenters();
 
          % Set up listeners to update dependent properties only on centers/radii set
-         addlistener(obj,'centers','PostSet',@obj.setPostCenters);
-         addlistener(obj,'radii'  ,'PostSet',@obj.setPostRadii);
+         % addlistener(obj,'centers','PostSet',@obj.setPostCenters);
+         % addlistener(obj,'radii'  ,'PostSet',@obj.setPostRadii);
       end
 
-      function obj = select(obj,i)
+      function self = concat(self)
+         self = SetOfHyps(cat(1,self.centers),[self.radii]);
+      end
+
+      function self = select(self,i)
          % SetOfHyps.select: outputs a SetOfHyps object that has been
          %    subsampled to have one or more hyperspheres, indexed by input i
          % e.g.:
          % fewerhyps = allhyps.select(i)
          %    where i can be a logical vector or list of indices
-         % 
-         obj.centers = obj.centers(i,:);
-         obj.radii   = obj.radii(i);
-         obj.categories = obj.categories.select(i);
+         %
+         self = Hypersphere.select(self,i);
       end
 
-      function obj = concat(self)
-         obj = SetOfHyps(cat(1,self.centers),[self.radii]);
-      end
-
-      function obj = merge(self)
-         ci = [];
-         % uses 1st object's categories
-         if numel(self)>1 % assumes Hypersphere was bootstrapped
-            ci.bootstraps = self;
-            ci.centers = prctile(cat(3,self.centers),[2.5 97.5],3);
-            ci.radii   = prctile(vertcat(self.radii),[2.5 97.5])';
-            self       = Hypersphere(mean(cat(3,self.centers),3),...
-                                     mean(cat(1,self.radii)),...
-                                     self(1).categories);
-         end
-         hyps = SetOfHyps(self,ci);
-      end
-
-
-      %% SET FUNCTION TO VALIDATE CENTERS
-      function self = set.centers(self,centers)
-         arguments
-            self
-            centers {mustBeNumeric}
-         end
-         % Ensure consistent formatting
-         if isempty(self.radii)
-            self.centers = centers;
-         else
-            if     size(centers,1) == numel(self.radii)
-               self.centers = centers;
-            elseif size(centers,2) == numel(self.radii)
-               self.centers = centers';
-            else
-               error('size of radii and centers don''t match')
-            end
-         end
-      end
-      %% SET FUNCTION TO VALIDATE RADII
-      function self = set.radii(self,radii)
-         arguments
-            self
-            radii {mustBeNonnegative}
-         end
-         if ~isempty(radii) && ~isempty(self.centers) ...
-            && numel(radii) ~= size(self.centers,1)
-            error('size of radii and centers don''t match')
-         end
-         self.radii = radii(:)';
+      function self = merge(self)
+         self = Hypersphere.mergeToSetOfHyps(self);
       end
 
 
       %% SET FUNCTIONS TO COMPUTE AND STORE VOLUME, DISTS, MARGINS, OVERLAPS
       function self = set.volume(self,~)   % Compute volume of a single hypersphere
-         d = size(self.centers,2);
-         self.volume = (self.radii.^d).*(pi.^(d/2))./gamma((d/2)+1);
+         self.volume = Hypersphere.calcVolume(self.centers,self.radii);
       end
       function self = set.dists(self,~)    % Compute distance between two hyperspheres
-         n = numel(self.radii);
-         self.dists = zeros(1,(n^2-n)/2);
-         i=0;
-         for a = 1:n-1
-            for b = a+1:n, i=i+1;
-               self.dists(i) = sqrt(sum(diff(self.centers([a b],:)).^2));
-            end
-         end
+         self.dists = Hypersphere.calcDists(self.centers,self.radii);
       end
       function self = set.margins(self,~)
-         n = numel(self.radii);
-         d = self.dists;
-         self.margins = zeros(1,(n^2-n)/2);
-         i=0;
-         for a = 1:n-1
-            for b = a+1:n, i=i+1;
-               self.margins(i) = d(i) - self.radii(a) - self.radii(b);
-            end
-         end
+         self.margins = Hypersphere.calcMargins(self.radii,self.dists);
       end
       function ov = get.overlap(self,~)      % Compute overlap distance of two hyperspheres
          ov = -self.margins;
@@ -198,10 +137,11 @@ classdef SetOfHyps < handle
          end
          if ~exist('N','var') || isempty(N), N=100; end
          % Compute confidence intervals on bootstrapped overlaps & radii for significance
-         boots = Hypersphere('estimate',points,self.categories,N,'stratified').mergeToSetOfHyps;
+         boots = Hypersphere('estimate',points,self.categories,N,'stratified').merge;
          dist_boot    =       boots.ci.bootstraps.dists;
          radii_boot   = cat(1,boots.ci.bootstraps.radii);
          margin_boot  =       boots.ci.bootstraps.margins;
+         self.ci      = boots.ci;
          %overlap_boot = cell2mat_concat(arrayfun(@overlap,boots.ci.bootstraps,'UniformOutput',false));
 %% compute significance
          ciprctileLtail = @(x)        mean(x>0);
@@ -525,8 +465,8 @@ classdef SetOfHyps < handle
          % copy hi radii to lo SetOfHyps
          lo          = SetOfHyps(x,obj.radii);
          % Recalculate error from high dimensional SetOfHyps obj
-         lo.error    = reshape(undeal(3,@() lo.stress(obj)),(n^2-n)/2,[])';
          lo.error    = lo.error.^2;
+         lo          = lo.stressUpdate(obj);
 
          % Plot
          figure(99);
@@ -789,20 +729,18 @@ classdef SetOfHyps < handle
          end
          axis equal ij off
       end
-   end
+   end % methods (public)
 
 
    methods(Access = 'private')
       %% UPDATE DISTS, MARGINS IF CENTERS CHANGED
-      function setPostCenters(self,src,event)
-         self.dists   = self.dists();
-         self.margins = self.margins();
-         % [~,~,self.error,self.msflips] = self.stress();
+      function self = setPostCenters(self,src,event)
+         self.dists   = dists(self);
+         self.margins = margins(self);
       end
-      function setPostRadii(self,src,event)
-         self.volume  = self.volume();
-         self.margins = self.margins();
-         % [~,~,self.error,self.msflips] = self.stress();
+      function self = setPostRadii(self,src,event)
+         self.volume  = volume(self);
+         self.margins = margins(self);
       end
    end
 

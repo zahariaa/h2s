@@ -47,14 +47,14 @@ for d = ds
    model.significance(points,1000);
    %keyboard
    testhi = SetOfHyps('estimate',points,categories,groundtruth);%,100).merge;
-   testhi.significance(points,1000);
+   testhi = testhi.significance(points,1000);
    axtivate(fh.a.h((i-1)*nconditions+j));  model.show;
 
    for MDS_INIT = true%[false true]
       for FIXRADII = false%[false true]
          j = j+1;
          testlo = testhi.h2s(dimLow,[FIXRADII MDS_INIT],groundtruth);
-         testlo.significance(points,1000);
+         testlo = testlo.significance(points,1000);
       
          testlo.show(      fh.a.h((i-1)*nconditions+j  ));
          testlo.showValues(fh.a.h((i-1)*nconditions+j+1));
