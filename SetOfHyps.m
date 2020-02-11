@@ -329,29 +329,6 @@ classdef SetOfHyps < Hypersphere
          end
       end
 
-      function camSettings = cameraCalc(obj)
-         if numel(obj)>1 % concatenate center & radii
-            obj(1).centers = vertcat(obj.centers);
-            obj(1).radii   = [obj.radii];
-            obj = obj(1);
-         end
-         
-         % set view angle orthogonal to the PC12 plane of the locations
-         eigenvecs = pca(obj.centers);
-         if size(eigenvecs,2)<2, normal = [0 0 0]';
-         else                    normal = null(eigenvecs(:,1:2)');
-         end
-         
-         if corr(obj.centers*normal,obj.radii')<0
-            normal = -normal;
-         end
-         
-         objectsCentroid = mean(obj.centers,1);
-         camDist = 50*sqrt(sum(std(obj.centers).^2));
-         camSettings.CameraPosition = objectsCentroid'-normal*camDist;
-         camSettings.CameraTarget   = objectsCentroid;
-      end
-
       function camera(obj,camSettings)
          if ~exist('camSettings','var') || isempty(camSettings)
             camSettings = obj.cameraCalc;
@@ -459,6 +436,113 @@ classdef SetOfHyps < Hypersphere
          xlim([min(times) max(times)]);
       end
 
+      function showSig(obj,varargin)
+         % Parse inputs
+         for v = 1:nargin-1
+            if   ishandle(varargin{v}),      ax  = varargin{v};
+            elseif ischar(varargin{v})
+               switch lower(varargin{v})
+                  case 'legend';            LGND = true;
+                  case 'sig';               sig  = obj.sig;
+                  case {'sigdiff', 'diff'}; sig  = obj.sigdiff;
+               end
+            elseif islogical(varargin{v}),  LGND = varargin{v};
+            end
+         end
+         if ~exist('ax'  ,'var') || isempty(ax ) , ax   = gca; axis ij off; end
+         if ~exist('sig' ,'var') || isempty(sig) , sig  = obj.sig;          end
+         if ~exist('LGND','var') || isempty(LGND), LGND = false;            end
+
+         if numel(ax) == 2
+            % if two axes given, plot sig in first, sigdiff in second
+            obj.showSig(ax(1),LGND);   % if legend requested, put here
+            obj.showSig(ax(2),'diff');
+            return
+         end
+
+         nSigLevs = obj.nSigLevs; % 3 means [0.95 0.99 0.999] levels
+
+         % Convert to sigmas significance, maxed to nSig(=3) and floored
+         %sig = structfun(@(x) erfinv(x)*sqrt(2),sig,'UniformOutput',false);
+         sigThresh = structfun(@(x) fdr_bh(1-x,1-0.95),sig,'UniformOutput',false);
+         for i = 2:nSigLevs
+            for f = fieldnames(sig)'; f=f{1};
+               sigThresh.(f) = sigThresh.(f) + double(fdr_bh(1-sig.(f),10^-i));
+            end
+         end
+         sigThresh = structfun(@(x) max(0,x/nSigLevs-1e-5),sigThresh,'UniformOutput',false);
+
+         n = numel(obj.radii);
+         % Time to get a-plottin'
+         obj.shapesInABox(statsmat(sigThresh.ov-sigThresh.ma,sigThresh.di,sigThresh.ra),'color',ax)
+         if ~isempty(sigThresh.ra), title('Significant differences')
+         else                       title('Significant values')
+         end
+         if LGND, obj.showSigLegend(ax); end
+      end
+
+      function showValues(obj,varargin)
+         % Parse inputs
+         for v = 1:nargin-1
+            if isa(varargin{v},'SetOfHyps'), hi = varargin{v};
+            elseif ishandle(varargin{v}),    ax = varargin{v};
+            end
+         end
+         if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
+         if ~exist('hi','var') || isempty(hi), hi = obj; obj = [];    end
+
+         himat = statsmat( -hi.margins, hi.dists, hi.radii);
+
+         if ~isempty(obj)
+         lomat = statsmat(-obj.margins,obj.dists,obj.radii);
+         % Normalize both to same scale
+         maxval = max(abs([himat(:);lomat(:)]));
+
+          hi.shapesInABox(himat/maxval,'left', ax)
+         obj.shapesInABox(lomat/maxval,'right',ax)
+         title('Values comparison')
+         else
+          hi.shapesInABox(himat/max(abs(himat(:))),'size',ax)
+         title('Values')
+         end
+      end
+
+      function showSigLegend(self,ax)
+         n        = numel(self.radii);
+         boxPos   = self.boxPos;
+         sqSz     = self.boxSize/n;
+         nSigLevs = self.nSigLevs; % 3 means [0.95 0.99 0.999] levels
+         if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
+         % Time to get a-plottin'
+         set(0,'CurrentFigure',get(ax,'Parent'))
+         set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
+%% Draw Legend
+         for i = 1:nSigLevs
+            rectangle('Position',[boxPos+[0.01+sqSz*(n+1/3) sqSz*(i-1)/3] sqSz/3 sqSz/3],...
+                      'FaceColor',[1 1 1]*(1-i/nSigLevs),'EdgeColor','none')
+         end
+         % Proability labels
+            text('Position',[boxPos+[0.01+sqSz*(n+0.7) sqSz/6]],'String','p<0.05')
+         for i = 2:nSigLevs
+            text('Position',[boxPos+[0.01+sqSz*(n+0.7) sqSz*(2*i-1)/6]],'String',...
+                 ['p<' num2str(10^-i)])
+         end
+         axis equal ij off
+      end
+   end % methods (public)
+
+
+   methods(Access = 'private')
+      %% UPDATE DISTS, MARGINS IF CENTERS CHANGED
+      function self = setPostCenters(self,src,event)
+         self.dists   = dists(self);
+         self.margins = margins(self);
+      end
+      function self = setPostRadii(self,src,event)
+         self.volume  = volume(self);
+         self.margins = margins(self);
+      end
+
       function stop = stressPlotFcn(obj,varargin)%x,optimValues,state)
          % unpack inputs
          x           = varargin{1};
@@ -506,6 +590,73 @@ classdef SetOfHyps < Hypersphere
          ylabel('Relative error')
 
          stop = false;
+      end
+   end
+
+   methods(Static)
+      function [errtotal,grad,err,msflips] = stress(centers_and_radii,hi)
+         if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
+         else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
+         end
+         alpha     = [1 1 1]; % for testing gradients with hyperparameters
+         [nc,dimLow]= size(lo.centers);
+         fudge     = 1e-8;
+         errd      = hi.dists   - lo.dists;
+         erro      = hi.margins - lo.margins;
+         erra      = hi.radii   - lo.radii;
+         err       = abs([errd erro erra]);
+         errtotal  = mean([alpha(1)*errd.^2 alpha(2)*erro.^2 alpha(3)*erra.^2]);
+         %errtotal  = mean( mean(errd.^2) + mean(erro.^2) + mean(erra.^2) );
+
+         msflips = ~(sign(hi.margins) == sign(lo.margins));
+         % Gradient: partial centers derivative of distances (should be size of centers)
+         % Gradient: partial derivatives of error, relative to distances and overlaps
+         ix = nchoosek_ix(nc);
+         nc2 = size(ix,2);
+         
+         % center gradients
+         dddc = zeros(nc2,nc,dimLow);% 1./lo.dists;
+         centersdiff = lo.centers(ix(2,:),:) - lo.centers(ix(1,:),:);
+         for i = 1:nc2
+            dddc(i,ix(:,i),:) = dddc(i,ix(:,i),:) ...
+                                + shiftdim([1;-1]*centersdiff(i,:),-1);
+         end
+         dddc = dddc./repmat(lo.dists',[1 nc dimLow]);
+         dEdd = 2*(alpha(1)*errd + alpha(2)*erro );
+         dEdc = reshape(dEdd*reshape(dddc,nc2,[]),[nc dimLow]);
+
+         % radius gradients
+         dEdr = -2*alpha(3)*erra';
+         for i = 1:nc
+            dEdr(i) =  dEdr(i) + 2*alpha(2)*sum(erro(~~sum(ix==i)));
+         end
+         % Gradient: put it all together
+         grad = [dEdr dEdc]/(2*nc2+nc);
+      end
+   end
+
+   methods(Hidden = true)
+      function camSettings = cameraCalc(obj)
+         if numel(obj)>1 % concatenate center & radii
+            obj(1).centers = vertcat(obj.centers);
+            obj(1).radii   = [obj.radii];
+            obj = obj(1);
+         end
+         
+         % set view angle orthogonal to the PC12 plane of the locations
+         eigenvecs = pca(obj.centers);
+         if size(eigenvecs,2)<2, normal = [0 0 0]';
+         else                    normal = null(eigenvecs(:,1:2)');
+         end
+         
+         if corr(obj.centers*normal,obj.radii')<0
+            normal = -normal;
+         end
+         
+         objectsCentroid = mean(obj.centers,1);
+         camDist = 50*sqrt(sum(std(obj.centers).^2));
+         camSettings.CameraPosition = objectsCentroid'-normal*camDist;
+         camSettings.CameraTarget   = objectsCentroid;
       end
 
       function shapesInABox(obj,values,varargin)
@@ -640,155 +791,6 @@ classdef SetOfHyps < Hypersphere
          end
          axis equal ij off
       end
-
-      function showSig(obj,varargin)
-         % Parse inputs
-         for v = 1:nargin-1
-            if   ishandle(varargin{v}),      ax  = varargin{v};
-            elseif ischar(varargin{v})
-               switch lower(varargin{v})
-                  case 'legend';            LGND = true;
-                  case 'sig';               sig  = obj.sig;
-                  case {'sigdiff', 'diff'}; sig  = obj.sigdiff;
-               end
-            elseif islogical(varargin{v}),  LGND = varargin{v};
-            end
-         end
-         if ~exist('ax'  ,'var') || isempty(ax ) , ax   = gca; axis ij off; end
-         if ~exist('sig' ,'var') || isempty(sig) , sig  = obj.sig;          end
-         if ~exist('LGND','var') || isempty(LGND), LGND = false;            end
-
-         if numel(ax) == 2
-            % if two axes given, plot sig in first, sigdiff in second
-            obj.showSig(ax(1),LGND);   % if legend requested, put here
-            obj.showSig(ax(2),'diff');
-            return
-         end
-
-         nSigLevs = obj.nSigLevs; % 3 means [0.95 0.99 0.999] levels
-
-         % Convert to sigmas significance, maxed to nSig(=3) and floored
-         %sig = structfun(@(x) erfinv(x)*sqrt(2),sig,'UniformOutput',false);
-         sigThresh = structfun(@(x) fdr_bh(1-x,1-0.95),sig,'UniformOutput',false);
-         for i = 2:nSigLevs
-            for f = fieldnames(sig)'; f=f{1};
-               sigThresh.(f) = sigThresh.(f) + double(fdr_bh(1-sig.(f),10^-i));
-            end
-         end
-         sigThresh = structfun(@(x) max(0,x/nSigLevs-1e-5),sigThresh,'UniformOutput',false);
-
-         n = numel(obj.radii);
-         % Time to get a-plottin'
-         obj.shapesInABox(statsmat(sigThresh.ov-sigThresh.ma,sigThresh.di,sigThresh.ra),'color',ax)
-         if ~isempty(sigThresh.ra), title('Significant differences')
-         else                       title('Significant values')
-         end
-         if LGND, obj.showSigLegend(ax); end
-      end
-
-      function showValues(obj,varargin)
-         % Parse inputs
-         for v = 1:nargin-1
-            if isa(varargin{v},'SetOfHyps'), hi = varargin{v};
-            elseif ishandle(varargin{v}),    ax = varargin{v};
-            end
-         end
-         if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
-         if ~exist('hi','var') || isempty(hi), hi = obj; obj = [];    end
-
-         himat = statsmat( -hi.margins, hi.dists, hi.radii);
-
-         if ~isempty(obj)
-         lomat = statsmat(-obj.margins,obj.dists,obj.radii);
-         % Normalize both to same scale
-         maxval = max(abs([himat(:);lomat(:)]));
-
-          hi.shapesInABox(himat/maxval,'left', ax)
-         obj.shapesInABox(lomat/maxval,'right',ax)
-         title('Values comparison')
-         else
-          hi.shapesInABox(himat/max(abs(himat(:))),'size',ax)
-         title('Values')
-         end
-      end
-
-      function showSigLegend(self,ax)
-         n        = numel(self.radii);
-         boxPos   = self.boxPos;
-         sqSz     = self.boxSize/n;
-         nSigLevs = self.nSigLevs; % 3 means [0.95 0.99 0.999] levels
-         if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
-         % Time to get a-plottin'
-         set(0,'CurrentFigure',get(ax,'Parent'))
-         set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
-%% Draw Legend
-         for i = 1:nSigLevs
-            rectangle('Position',[boxPos+[0.01+sqSz*(n+1/3) sqSz*(i-1)/3] sqSz/3 sqSz/3],...
-                      'FaceColor',[1 1 1]*(1-i/nSigLevs),'EdgeColor','none')
-         end
-         % Proability labels
-            text('Position',[boxPos+[0.01+sqSz*(n+0.7) sqSz/6]],'String','p<0.05')
-         for i = 2:nSigLevs
-            text('Position',[boxPos+[0.01+sqSz*(n+0.7) sqSz*(2*i-1)/6]],'String',...
-                 ['p<' num2str(10^-i)])
-         end
-         axis equal ij off
-      end
-   end % methods (public)
-
-
-   methods(Access = 'private')
-      %% UPDATE DISTS, MARGINS IF CENTERS CHANGED
-      function self = setPostCenters(self,src,event)
-         self.dists   = dists(self);
-         self.margins = margins(self);
-      end
-      function self = setPostRadii(self,src,event)
-         self.volume  = volume(self);
-         self.margins = margins(self);
-      end
-   end
-
-   methods(Static)
-      function [errtotal,grad,err,msflips] = stress(centers_and_radii,hi)
-         if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
-         else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
-         end
-         alpha     = [1 1 1]; % for testing gradients with hyperparameters
-         [nc,dimLow]= size(lo.centers);
-         fudge     = 1e-8;
-         errd      = hi.dists   - lo.dists;
-         erro      = hi.margins - lo.margins;
-         erra      = hi.radii   - lo.radii;
-         err       = abs([errd erro erra]);
-         errtotal  = mean([alpha(1)*errd.^2 alpha(2)*erro.^2 alpha(3)*erra.^2]);
-         %errtotal  = mean( mean(errd.^2) + mean(erro.^2) + mean(erra.^2) );
-
-         msflips = ~(sign(hi.margins) == sign(lo.margins));
-         % Gradient: partial centers derivative of distances (should be size of centers)
-         % Gradient: partial derivatives of error, relative to distances and overlaps
-         ix = nchoosek_ix(nc);
-         nc2 = size(ix,2);
-         
-         % center gradients
-         dddc = zeros(nc2,nc,dimLow);% 1./lo.dists;
-         centersdiff = lo.centers(ix(2,:),:) - lo.centers(ix(1,:),:);
-         for i = 1:nc2
-            dddc(i,ix(:,i),:) = dddc(i,ix(:,i),:) ...
-                                + shiftdim([1;-1]*centersdiff(i,:),-1);
-         end
-         dddc = dddc./repmat(lo.dists',[1 nc dimLow]);
-         dEdd = 2*(alpha(1)*errd + alpha(2)*erro );
-         dEdc = reshape(dEdd*reshape(dddc,nc2,[]),[nc dimLow]);
-
-         % radius gradients
-         dEdr = -2*alpha(3)*erra';
-         for i = 1:nc
-            dEdr(i) =  dEdr(i) + 2*alpha(2)*sum(erro(~~sum(ix==i)));
-         end
-         % Gradient: put it all together
-         grad = [dEdr dEdc]/(2*nc2+nc);
-      end
-   end
+   end % hidden methods
 end
 
