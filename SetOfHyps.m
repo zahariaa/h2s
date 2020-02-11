@@ -182,8 +182,8 @@ classdef SetOfHyps < Hypersphere
       % Takes as input: self.h2s(dimLow), self.h2s(hi), self.h2s(hi,dimLow)
       % dimLow defaluts to 2, hi defaults to self
       % also can do self.h2s(true) to fix radii to hi dimensional ones
-      % self.h2s([true true true]) fixes radii, constrains high positive
-      %    overlaps to be positive, and uses MDS for low centers initialization
+      % self.h2s([true true true]) fixes radii, uses MDS for low centers
+      % initialization, and displays the fit debugging plot
          for v = 2:nargin
             if isa(varargin{v-1},'SetOfHyps')
                hi = varargin{v-1};
@@ -197,8 +197,9 @@ classdef SetOfHyps < Hypersphere
                end
             elseif islogical(varargin{v-1})
                switch numel(varargin{v-1})
-                  case 1;    FIXRADII           =         varargin{v-1};
-                  case 2;   [FIXRADII,MDS_INIT] = dealvec(varargin{v-1});
+                  case 1;    FIXRADII                    =         varargin{v-1};
+                  case 2;   [FIXRADII,MDS_INIT]          = dealvec(varargin{v-1});
+                  case 3;   [FIXRADII,MDS_INIT,DBUGPLOT] = dealvec(varargin{v-1});
                end
             end
          end
@@ -210,6 +211,7 @@ classdef SetOfHyps < Hypersphere
          if ~exist('ninits','var'), ninits = 1;   end
          if ~exist('MDS_INIT','var'), MDS_INIT = true; end
          if ~exist('FIXRADII','var'), FIXRADII = true; end
+         if ~exist('DBUGPLOT','var'), DBUGPLOT = false; end
 
          % Recurse for multiple SetOfHyps objects
          if n > 1
@@ -234,6 +236,9 @@ classdef SetOfHyps < Hypersphere
    %          x0  = x0 - repmat(mean(x0),numel(hi.radii),1);
    %          x0  = x0*2;
             opts = optimoptions(@fminunc,'TolFun',1e-4,'TolX',1e-4,'Display','iter','SpecifyObjectiveGradient',true);%,'DerivativeCheck','on');%'Display','off');%,'OutputFcn',@obj.stressPlotFcn);
+            if DBUGPLOT
+               opts.OutputFcn = @self.stressPlotFcn;
+            end
             fit = fminunc(@(x) SetOfHyps.stress(x,hi),x0,opts);
          end
          % Output reduced SetOfHyps model
@@ -465,8 +470,8 @@ classdef SetOfHyps < Hypersphere
          % copy hi radii to lo SetOfHyps
          lo          = SetOfHyps(x,obj.radii);
          % Recalculate error from high dimensional SetOfHyps obj
-         lo.error    = lo.error.^2;
          lo          = lo.stressUpdate(obj);
+         loerr       = lo.error.^2;
 
          % Plot
          figure(99);
@@ -487,16 +492,16 @@ classdef SetOfHyps < Hypersphere
             plot(optimValues.iteration,lo.margins(i),'o','Color',cols(i,:));
             subplot(3,3,7); hold on;title('overlaps')
             plot(optimValues.iteration,lo.overlap(i),'o','Color',cols(i,:));
-            if size(lo.error,1)>2
+            if size(loerr,1)>2
             subplot(3,3,6); hold on;title('dists'  )
-            plot(optimValues.iteration,lo.error(3,i),'o','Color',cols(i,:));
+            plot(optimValues.iteration,loerr(3,i),'o','Color',cols(i,:));
             end
-            if size(lo.error,1)>1
+            if size(loerr,1)>1
             subplot(3,3,5); hold on;title('margins')
-            plot(optimValues.iteration,lo.error(2,i),'o','Color',cols(i,:));
+            plot(optimValues.iteration,loerr(2,i),'o','Color',cols(i,:));
             end
             subplot(3,3,4); hold on;title('overlaps')
-            plot(optimValues.iteration,lo.error(1,i),'o','Color',cols(i,:));
+            plot(optimValues.iteration,loerr(1,i),'o','Color',cols(i,:));
          end
          ylabel('Relative error')
 
