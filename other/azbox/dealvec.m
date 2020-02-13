@@ -4,8 +4,8 @@ function varargout = dealvec(v)
 % [orPref,sfPref,tfPref,orWidth,sfWidth,tfWidth] = dealvec([0 0.5 8 1 2 3]);
 
 nv        = numel(v);
-varargout = cell(1,nv);
+varargout = cell(1,nargout);
 
-for i = 1:nv
+for i = 1:min(nargout,nv)
    varargout{i} = v(i);
 end

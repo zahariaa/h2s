@@ -189,18 +189,12 @@ classdef SetOfHyps < Hypersphere
                hi = varargin{v-1};
                lo = self;
             elseif isnumeric(varargin{v-1})
-               switch numel(varargin{v-1})
-                  case 1;    dimLow                =         varargin{v-1};
-                  case 2;   [dimLow,nboots]        = dealvec(varargin{v-1});
-                  case 3;   [dimLow,nboots,ninits] = dealvec(varargin{v-1});
-                             varargin{v-1}(3) = 1; % change to 1 for recusive call below
+               [dimLow,nboots,ninits] = dealvec(varargin{v-1});
+               if numel(varargin{v-1})==3
+                  varargin{v-1}(3) = 1; % change to 1 for recusive call below
                end
             elseif islogical(varargin{v-1})
-               switch numel(varargin{v-1})
-                  case 1;    FIXRADII                    =         varargin{v-1};
-                  case 2;   [FIXRADII,MDS_INIT]          = dealvec(varargin{v-1});
-                  case 3;   [FIXRADII,MDS_INIT,DBUGPLOT] = dealvec(varargin{v-1});
-               end
+               [FIXRADII,MDS_INIT,DBUGPLOT] = dealvec(varargin{v-1});
             end
          end
          if ~exist('hi'    ,'var'), hi = self; lo = self; end
