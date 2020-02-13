@@ -661,7 +661,6 @@ classdef SetOfHyps < Hypersphere
       function shapesInABox(self,values,varargin)
          % Parse inputs
          if ~exist('values','var'), values = []; end
-         if ~any(values), return; end
          N = numel(values);
          side = '';
          for v = 1:nargin-2
@@ -676,6 +675,9 @@ classdef SetOfHyps < Hypersphere
             elseif  ishandle(varargin{v}), ax     = varargin{v};
             end
          end
+         if ~exist('ax','var') || isempty(ax), ax = gca; end
+         if ~any(values(:)), axtivate(ax); axis off; return; end
+
          % If whole matrix of values passed, recursively call on each matrix part, after normalizing by abs-max
          if size(values,1)==sqrt(N) && size(values,2)==sqrt(N)
             self.shapesInABox(values(triu(true(sqrt(N)), 1)),'uppert'  ,varargin{:})
@@ -685,7 +687,6 @@ classdef SetOfHyps < Hypersphere
          end
          % Continue input parsing
          if ~exist('sizes' ,'var'),  sizes = ones(N,1); end
-         if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
          if ~exist('colors','var') || isempty(colors)
             colors = mat2cell(zeros(N,3),ones(1,N));
          end
@@ -694,7 +695,7 @@ classdef SetOfHyps < Hypersphere
          if numel(colors)==1, colors = repmat(colors,[1 N]); end
          edgewidth = 1;
          % Set up axes
-         set(0,'CurrentFigure',get(ax,'Parent'))
+         axtivate(ax); axis ij off;
          set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
 
          % Determine size of matrix, save it in figure
