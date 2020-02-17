@@ -1,9 +1,4 @@
 classdef SetOfHyps < Hypersphere
-   properties (SetObservable, GetObservable, AbortSet)
-      % centers    % [n x d] matrix: n centers of d-dimensional hyperspheres
-      % radii      % [1 x n] vector: radii of each of n hyperspheres
-      % categories(1,1)   % Categories object
-   end
    properties (SetAccess = protected)
       volume     % volume of hypersphere(s) (auto-computed)
       dists      % distances between centers of hyperspheres (auto-computed)
@@ -89,11 +84,11 @@ classdef SetOfHyps < Hypersphere
 
          % Update dependent properties, but save them to reduce on-line compute
          obj.volume = obj.volume();
-         obj = obj.setPostCenters();
+         obj = setPostCenters(obj,[],[],true);
 
          % Set up listeners to update dependent properties only on centers/radii set
-         % addlistener(obj,'centers','PostSet',@obj.setPostCenters);
-         % addlistener(obj,'radii'  ,'PostSet',@obj.setPostRadii);
+         addlistener(obj,'centers','PostSet',@obj.setPostCenters);
+         addlistener(obj,'radii'  ,'PostSet',@obj.setPostRadii);
       end
 
       function self = concat(self)
@@ -533,15 +528,26 @@ classdef SetOfHyps < Hypersphere
 
    methods(Access = 'private')
       %% UPDATE DISTS, MARGINS IF CENTERS CHANGED
-      function self = setPostCenters(self,src,event)
+      function self = setPostCenters(self,src,event,FIRSTRUN)
+         if ~exist('FIRSTRUN','var') || isempty(FIRSTRUN)
+            FIRSTRUN = false;
+         end
          self.dists   = dists(self);
          self.margins = margins(self);
+         if ~FIRSTRUN && ~any(isnan(self.error))
+            warning('SetOfHyps object updated, but obj.errors/ci/sig/sigdiff are out of sync');
+         end
       end
-      function self = setPostRadii(self,src,event)
+      function self = setPostRadii(self,src,event,FIRSTRUN)
+         if ~exist('FIRSTRUN','var') || isempty(FIRSTRUN)
+            FIRSTRUN = false;
+         end
          self.volume  = volume(self);
          self.margins = margins(self);
+         if ~FIRSTRUN && ~any(isnan(self.error))
+            warning('SetOfHyps object updated, but obj.errors/ci/sig/sigdiff are out of sync');
+         end
       end
-
       function stop = stressPlotFcn(self,varargin)%x,optimValues,state)
          % unpack inputs
          x           = varargin{1};

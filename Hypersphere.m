@@ -1,5 +1,5 @@
-classdef Hypersphere
-   properties
+classdef Hypersphere < handle
+   properties (SetObservable, GetObservable, AbortSet)
       centers    % [n x d] matrix: n centers of d-dimensional hyperspheres
       radii      % [1 x n] vector: radii of each of n hyperspheres
       categories(1,1) % Categories object
@@ -33,19 +33,8 @@ classdef Hypersphere
             return
          end
 
-         % Recurse if multiple centers provided (e.g., bootstrapping)
-         if iscell(centers) 
-            obj = repmat(Hypersphere(),[numel(centers) 1]);
-            for i = 1:numel(centers)
-               obj(i) = Hypersphere(centers{i},radii(i));
-            end
-            return
-         end
-         % Ensure consistent formatting
-         if size(centers,1) ~= numel(radii), obj.centers = centers';
-         else                                obj.centers = centers;
-         end
-         obj.radii = radii(:)';
+         obj.centers = centers;
+         obj.radii = radii;
 
          for v = 1:numel(varargin)
             if isa(varargin{v},'Categories')
@@ -56,45 +45,6 @@ classdef Hypersphere
             % keyboard
             obj.categories = Categories(numel(obj.radii));
          end
-      end
-
-      %% SET FUNCTION TO VALIDATE CENTERS
-      function self = set.centers(self,centers)
-         arguments
-            self
-            centers {mustBeNumeric, mustBeFinite, mustBeReal}
-         end
-         % Ensure consistent formatting
-         if isempty(self.radii)
-            self.centers = centers;
-         else
-            if     size(centers,1) == numel(self.radii)
-               self.centers = centers;
-            elseif size(centers,2) == numel(self.radii)
-               self.centers = centers';
-            else
-               error('size of radii and centers don''t match')
-            end
-         end
-      end
-      %% SET FUNCTION TO VALIDATE RADII
-      function self = set.radii(self,radii)
-         arguments
-            self
-            radii {mustBeNumeric, mustBeFinite, mustBeNonnegative}
-         end
-         if ~isempty(radii) && ~isempty(self.centers) ...
-            && numel(radii) ~= size(self.centers,1)
-            error('size of radii and centers don''t match')
-         end
-         self.radii = radii(:)';
-      end
-      function self = set.categories(self,categories)
-         arguments
-            self
-            categories {mustBeCategoriesClass}
-         end
-         self.categories = categories;
       end
 
       function obj = select(obj,i)
@@ -140,6 +90,47 @@ classdef Hypersphere
 
       function hyps = merge(self)
          hyps = self.mergeToSetOfHyps(self);
+      end
+
+
+      %% SET FUNCTION TO VALIDATE CENTERS
+      function self = set.centers(self,centers)
+         arguments
+            self
+            centers {mustBeNumeric, mustBeFinite, mustBeReal}
+         end
+         % Ensure consistent formatting
+         if isempty(self.radii)
+            self.centers = centers;
+         else
+            if     size(centers,1) == numel(self.radii)
+               self.centers = centers;
+            elseif size(centers,2) == numel(self.radii)
+               self.centers = centers';
+            else
+               error('size of radii and centers don''t match')
+            end
+         end
+      end
+      %% SET FUNCTION TO VALIDATE RADII
+      function self = set.radii(self,radii)
+         arguments
+            self
+            radii {mustBeNumeric, mustBeFinite, mustBeNonnegative}
+         end
+         if ~isempty(radii) && ~isempty(self.centers) ...
+            && numel(radii) ~= size(self.centers,1)
+            error('size of radii and centers don''t match')
+         end
+         self.radii = radii(:)';
+      end
+      %% SET FUNCTION TO VALIDATE CATEGORIES
+      function self = set.categories(self,categories)
+         arguments
+            self
+            categories {mustBeCategoriesClass}
+         end
+         self.categories = categories;
       end
    end
 
