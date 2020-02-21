@@ -74,6 +74,10 @@ classdef Hypersphere < handle
       %% FUNCTIONS TO COMPUTE VOLUME, DISTS, MARGINS, OVERLAPS
       % (they call the hidden static functions below)
       function V = volume(self)   % Compute volume of a single hypersphere
+         if numel(self) > 1
+            V = cell2mat_concat(arrayfun(@volume,self,'UniformOutput',false));
+            return
+         end
          V = self.calcVolume(self.centers,self.radii);
       end
 
