@@ -21,6 +21,10 @@ classdef Hypersphere < handle
          % Hypersphere.select
          % Hypersphere.merge
          % Hypersphere.concat
+         % Hypersphere.volume
+         % Hypersphere.dists
+         % Hypersphere.margins
+         % Hypersphere.overlap
          % 
          % 2018-06-07 AZ Created
          % 
@@ -67,7 +71,8 @@ classdef Hypersphere < handle
          self = Hypersphere(cat(1,self.centers),[self.radii]);
       end
 
-      %% SET FUNCTIONS TO COMPUTE AND STORE VOLUME, DISTS, MARGINS, OVERLAPS
+      %% FUNCTIONS TO COMPUTE VOLUME, DISTS, MARGINS, OVERLAPS
+      % (they call the hidden static functions below)
       function V = volume(self)   % Compute volume of a single hypersphere
          V = self.calcVolume(self.centers,self.radii);
       end
@@ -159,12 +164,11 @@ classdef Hypersphere < handle
 
       function M = calcMargins(radii,dists)
          n = numel(radii);
-         d = dists;
          M = zeros(1,(n^2-n)/2);
          i=0;
          for a = 1:n-1
             for b = a+1:n, i=i+1;
-               M(i) = d(i) - radii(a) - radii(b);
+               M(i) = dists(i) - radii(a) - radii(b);
             end
          end
       end
@@ -194,9 +198,10 @@ classdef Hypersphere < handle
       end
    end
 end
+
+% Helper (validation) function
 function mustBeCategoriesClass(c)
    if ~isa(c,'Categories')
       error('categories must be Categories class');
    end
 end
-
