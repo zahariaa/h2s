@@ -176,30 +176,37 @@ classdef SetOfHyps < Hypersphere
       % Takes as input: self.h2s(dimLow), self.h2s(hi), self.h2s(hi,dimLow)
       % dimLow defaluts to 2, hi defaults to self
       % also can do self.h2s(true) to fix radii to hi dimensional ones
-      % self.h2s([true true true]) fixes radii, uses MDS for low centers
-      % initialization, and displays the fit debugging plot
+      % self.h2s([true true true true]) fixes radii, uses MDS for low centers
+      % initialization, displays the fit debugging plot, and 
+      % self.h2s([3 5]) sets dimLow to 3, and uses 4 random initializations
+      % (plus the 1 MDS initialization) for stress function optimization,
+      % keeping the best result
+      % self.h2s({[1 0 1]}) or self.h2s({1 0 1}) disables margins in error
+         lo = self;
          for v = 2:nargin
             if isa(varargin{v-1},'SetOfHyps')
                hi = varargin{v-1};
-               lo = self;
             elseif isnumeric(varargin{v-1})
-               [dimLow,nboots,ninits] = dealvec(varargin{v-1});
+               [dimLow,ninits] = dealvec(varargin{v-1});
                if numel(varargin{v-1})==3
                   varargin{v-1}(3) = 1; % change to 1 for recusive call below
                end
             elseif islogical(varargin{v-1})
-               [FIXRADII,MDS_INIT,DBUGPLOT] = dealvec(varargin{v-1});
+               [FIXRADII,MDS_INIT,DBUGPLOT,VERBOSE] = dealvec(varargin{v-1});
+            elseif iscell(varargin{v-1})
+               alpha = [varargin{v-1}{:}];
             end
          end
-         if ~exist('hi'    ,'var'), hi = self; lo = self; end
+         if ~exist('hi'      ,'var'),       hi = self;          end
          n  = numel(hi);
          [nr,d] = size(hi.centers);
-         if ~exist('nboots','var'), nboots = 0;   end
          if ~exist('dimLow'  ,'var'),   dimLow = min([3 nr d]); end
          if ~exist('ninits'  ,'var'),   ninits = 1;             end
          if ~exist('MDS_INIT','var'), MDS_INIT = true;          end
          if ~exist('FIXRADII','var'), FIXRADII = true;          end
          if ~exist('DBUGPLOT','var'), DBUGPLOT = false;         end
+         if ~exist('VERBOSE' ,'var'),  VERBOSE = false;         end
+         if ~exist('alpha'   ,'var'),    alpha = [1 1 1];       end
 
          % Recurse for multiple SetOfHyps objects
          if n > 1
@@ -221,12 +228,11 @@ classdef SetOfHyps < Hypersphere
          if FIXRADII
             fit = x0;
          else
-            opts = optimoptions(@fminunc,'TolFun',1e-4,'TolX',1e-4,'Display','iter',...
-                        'SpecifyObjectiveGradient',true);%,'DerivativeCheck','on');%'Display','off');
-            if DBUGPLOT
-               opts.OutputFcn = @self.stressPlotFcn;
-            end
-            fit = fminunc(@(x) SetOfHyps.stress(x,hi),x0,opts);
+            opts = optimoptions(@fminunc,'TolFun',1e-4,'TolX',1e-4,'Display','off',...
+                        'SpecifyObjectiveGradient',true);%,'DerivativeCheck','on');
+            if DBUGPLOT, opts.OutputFcn = @self.stressPlotFcn; end
+            if VERBOSE,  opts.Display   = 'iter';              end
+            fit = fminunc(@(x) SetOfHyps.stress(x,hi,alpha),x0,opts);
          end
          % Output reduced SetOfHyps model
          model = SetOfHyps(fit(:,2:end),fit(:,1),self.categories);
@@ -596,18 +602,19 @@ classdef SetOfHyps < Hypersphere
    end
 
    methods(Static)
-      function [errtotal,grad,err,msflips] = stress(centers_and_radii,hi)
+      function [errtotal,grad,err,msflips] = stress(centers_and_radii,hi,alpha)
          if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
          else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
          end
-         alpha     = [1 1 1]; % for testing gradients with hyperparameters
-         err       = abs([errd erro erra]);
-         errtotal  = mean([alpha(1)*errd.^2 alpha(2)*erro.^2 alpha(3)*erra.^2]);
-         %errtotal  = mean( mean(errd.^2) + mean(erro.^2) + mean(erra.^2) );
+         if ~exist('alpha','var') || isempty(alpha)
+            alpha  = [1 1 1]; % for testing gradients with hyperparameters
+         end
          [nc,dimLow] = size(lo.centers);
          errd        = hi.dists   - lo.dists;
          erro        = hi.margins - lo.margins;
          erra        = hi.radii   - lo.radii;
+         err         = abs([alpha(1)*errd alpha(2)*erro alpha(3)*erra]); % not exactly correct
+         errtotal    = mean([alpha(1)*errd.^2 alpha(2)*erro.^2 alpha(3)*erra.^2]);
 
          msflips = ~(sign(hi.margins) == sign(lo.margins));
          % Gradient: partial centers derivative of distances (should be size of centers)
