@@ -164,6 +164,7 @@ classdef SetOfHyps < Hypersphere
             self.sigdiff.ov(i) = ciprctile2tail(diff(-margin_boot(:,ixc2(:,i)),[],2));
             self.sigdiff.di(i) = ciprctile2tail(diff(   dist_boot(:,ixc2(:,i)),[],2));
          end
+         self.sigdiff.ma = 1-self.sigdiff.ov;
       end
 
       function self = stressUpdate(self,otherHyp)
