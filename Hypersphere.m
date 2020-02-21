@@ -10,6 +10,9 @@ classdef Hypersphere < handle
          % Contructor for Hypersphere object for hypersphere2sphere, SetOfHyps
          % e.g.:
          % hyp = Hypersphere(centers,radii)
+         % hyp = Hypersphere(centers,radii,categories)
+         % hyp = Hypersphere('estimate',points,categories)
+         % hyp = Hypersphere({hyps})
          % 
 
          % WRITE ACTUAL DOCUMENTATION HERE
@@ -17,6 +20,7 @@ classdef Hypersphere < handle
          % Methods:
          % Hypersphere.select
          % Hypersphere.merge
+         % Hypersphere.concat
          % 
          % 2018-06-07 AZ Created
          % 
@@ -59,8 +63,8 @@ classdef Hypersphere < handle
          obj.categories = obj.categories.select(i);
       end
 
-      function obj = concat(self)
-         obj = Hypersphere(cat(1,self.centers),[self.radii]);
+      function self = concat(self)
+         self = Hypersphere(cat(1,self.centers),[self.radii]);
       end
 
       %% SET FUNCTIONS TO COMPUTE AND STORE VOLUME, DISTS, MARGINS, OVERLAPS
