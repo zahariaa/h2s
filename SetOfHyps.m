@@ -645,11 +645,7 @@ classdef SetOfHyps < Hypersphere
 
    methods(Hidden = true)
       function camSettings = cameraCalc(self)
-         if numel(self)>1 % concatenate center & radii
-            self(1).centers = vertcat(self.centers);
-            self(1).radii   = [self.radii];
-            self = self(1);
-         end
+         self = self.concat;
          
          % set view angle orthogonal to the PC12 plane of the locations
          eigenvecs = pca(self.centers);
