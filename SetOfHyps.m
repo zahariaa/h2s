@@ -37,25 +37,19 @@ classdef SetOfHyps < Hypersphere
 
          if nargin==0; return; end
 
-         if isa(centers,'SetOfHyps'), obj = centers; return;
+         if isa(centers,'SetOfHyps'), obj = centers;
          elseif ischar(centers) && strcmpi(centers,'estimate')
             obj = Hypersphere('estimate',radii,varargin{:}).merge;
-            return
          elseif isstruct(centers) % Helper for older struct-based code
             obj = SetOfHyps(centers.centers,centers.radii,centers.categories);
-            return
-         end
-
-         % Recurse if multiple centers provided (e.g., bootstrapping)
-         if iscell(centers) 
+         elseif iscell(centers) 
+            % Recurse if multiple centers provided (e.g., bootstrapping)
             obj = repmat(SetOfHyps(),[numel(centers) 1]);
             for i = 1:numel(centers)
-               obj(i) = SetOfHyps(centers{i},radii(i));
+               obj(i) = SetOfHyps(centers{i},radii(i),varargin{:});
             end
             return
-         end
-         % Ensure consistent formatting
-         if isa(centers,'Hypersphere')
+         elseif isa(centers,'Hypersphere')
             if numel(centers) == 1
                obj.centers = centers.centers;
                obj.radii = centers.radii;
@@ -67,20 +61,22 @@ classdef SetOfHyps < Hypersphere
                obj = SetOfHyps(centers.merge,varargin{:});
             end
          else
-            if size(centers,1) ~= numel(radii), obj.centers = centers';
-            else                                obj.centers = centers;
-            end
-            obj.radii = radii(:)';
+            obj.centers = centers;
+            obj.radii = radii;
          end
 
+         % Update error if another SetOfHyps given
          for v = 1:numel(varargin)
-            if isa(varargin{v},'Categories')
+            if     isa(varargin{v},'SetOfHyps')
+               obj = obj.stressUpdate(varargin{v});
+            elseif isa(varargin{v},'Categories')
                obj.categories = varargin{v};
             end
          end
+
          if ~isa(obj.categories,'Categories')
             obj.categories = Categories(numel(obj.radii));
-         end
+         end         
 
          % Update dependent properties, but save them to reduce on-line compute
          obj.volume = obj.volume();
@@ -127,21 +123,23 @@ classdef SetOfHyps < Hypersphere
 
       %% HIGHER ORDER FUNCTIONS
       function self = significance(self,points,N)
-         if ~size(self.categories.vectors,1)==size(points,1)
-            error('self.categories.vectors needs to index points');
-         end
          if ~exist('N','var') || isempty(N), N=100; end
-         % Compute confidence intervals on bootstrapped overlaps & radii for significance
-         boots = Hypersphere('estimate',points,self.categories,N,'stratified').merge;
-         dist_boot    =       boots.ci.bootstraps.dists;
-         radii_boot   = cat(1,boots.ci.bootstraps.radii);
-         margin_boot  =       boots.ci.bootstraps.margins;
-         self.ci      = boots.ci;
-         %overlap_boot = cell2mat_concat(arrayfun(@overlap,boots.ci.bootstraps,'UniformOutput',false));
+         if isstruct(points) && ~isempty(points)
+            self.ci = points;
+         elseif ~size(self.categories.vectors,1)==size(points,1)
+            error('self.categories.vectors needs to index points');
+         else
+            % Compute confidence intervals on bootstrapped overlaps & radii for significance
+            boots   = Hypersphere('estimate',points,self.categories,N,'stratified').merge;
+            self.ci = boots.ci;
+         end
+
+         dist_boot    =       self.ci.bootstraps.dists;
+         radii_boot   = cat(1,self.ci.bootstraps.radii);
+         margin_boot  =       self.ci.bootstraps.margins;
 %% compute significance
          ciprctileLtail = @(x)        mean(x>0);
          ciprctile2tail = @(x) abs(2*(mean(x<0)-0.5));
-         %% TODO: DELETE margin_boot/sig.ma?
          % What percentile confidence interval of bootstrapped margins contains 0?
          self.sig.ma = ciprctileLtail(margin_boot);
          % What percentile confidence interval of bootstrapped overlap/margins contains 0?

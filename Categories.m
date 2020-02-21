@@ -171,6 +171,25 @@ classdef Categories
          end
       end
 
+      function itis = ispermuted(self)
+         % Categories.ispermuted: returns a logical, or vector of logicals,
+         %    for each Categories object this is run on, indicating whether
+         %    it has been permuted or not
+         % e.g.:
+         % if cats.ispermuted, disp('cats is permuted'); end
+         if numel(self) > 1 % recurse
+            itis = arrayfun(@ispermuted, self);
+            return
+         end
+
+         % actual function
+         if isnumeric(self.vectors)
+            itis = all(sum(self.vectors,2));
+         else
+            itis = numel(unique(self.vectors))==size(self.vectors,1);
+         end
+      end
+
       function varargout = legend(self,pos,extratxt)
          % Categories.legend: creates a text legend, in which the category
          %    labels are rendered in their respective colors.

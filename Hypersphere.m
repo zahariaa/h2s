@@ -169,14 +169,24 @@ classdef Hypersphere < handle
          ci = [];
          % uses 1st object's categories
          if numel(hyps)>1 % assumes Hypersphere was bootstrapped
-            ci.bootstraps = hyps;
-            ci.centers = prctile(cat(3,hyps.centers),[2.5 97.5],3);
+            cperms = ispermuted([hyps.categories]);
+            ci.bootstraps = hyps(cperms);
+            ci.centers = prctile(cat(3,hyps(cperms).centers),[2.5 97.5],3);
             ci.radii   = prctile(vertcat(hyps.radii),[2.5 97.5])';
-            hyps       = Hypersphere(mean(cat(3,hyps.centers),3),...
-                                     mean(cat(1,hyps.radii)),...
-                                     hyps(1).categories);
+            if all(cperms) % Do we always want this?
+               hyps = Hypersphere(mean(cat(3,hyps(cperms).centers),3),...
+                                  mean(cat(1,hyps(cperms).radii)),...
+                                  hyps(1).categories);
+            else % preserve best (unpermuted) estimate if exists (should be hyps(1))
+               hyps = hyps(find(~cperms,1,'first'));
+            end
          end
          hyps = SetOfHyps(hyps,ci);
+
+         % might as well populate significance fields if we have the bootstraps
+         if ~isempty(ci) && isempty(hyps.sig)
+            hyps = hyps.significance(ci);
+         end
       end
    end
 end
