@@ -24,7 +24,7 @@ else
    r = {1:4,ones(1,6)/sqrt(3/2)};
 
 %%TODO: generalize simplex scale factor to have 0 overlap
-   %d=3;hi = SetOfHyps(nsimplex(d)*sqrt(3/2),ones(d+1,1));hi.margins
+   %d=3;hi = Hypersphere(nsimplex(d)*sqrt(3/2),ones(d+1,1));hi.margins
    v{2} = nsimplex(3)';
    v{2} = v{2}([1:3 2:4],:) + [[3;3;3;-3;-3;-3] zeros(6,2)];
    
@@ -42,8 +42,7 @@ end
 %% PLOT
 for itype = 1;%0;%1:-1:0
 planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
-   orig = SetOfHyps(v{itype+1},r{itype+1});
-   orig.categories = Categories({n*ones(1,numel(r{itype+1}))});
+   orig = SetOfHyps(v{itype+1},r{itype+1},Categories({n*ones(1,numel(r{itype+1}))}));
    if ~INTROFIG  && itype==0
    orig.categories.colors = orig.categories.colors([1 4 3 2],:);
    end

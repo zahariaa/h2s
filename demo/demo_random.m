@@ -4,6 +4,7 @@
 SEED      = rng(1);
 SIMPLICES = true;
 ALLOW3D   = false;
+DBUGPLOT  = false;
 
 if SIMPLICES
    ds = [3 5 7 3];
@@ -44,22 +45,20 @@ for d = ds
                                                 groundtruth.radii);
    model = hypersphere2sphere(points,categories,[],dimLow);
    model = SetOfHyps(model).stressUpdate(groundtruth);
-   model.significance(points,1000);
+   % model = model.significance(points,1000);
    %keyboard
-   testhi = SetOfHyps('estimate',points,categories,groundtruth);%,100).merge;
-   testhi = testhi.significance(points,1000);
+   testhi = SetOfHyps('estimate',points,categories,groundtruth,1000);
    axtivate(fh.a.h((i-1)*nconditions+j));  model.show;
 
    for MDS_INIT = true%[false true]
       for FIXRADII = false%[false true]
          j = j+1;
-         testlo = testhi.h2s(dimLow,[FIXRADII MDS_INIT],groundtruth);
+         testlo = testhi.h2s(dimLow,[FIXRADII MDS_INIT DBUGPLOT],groundtruth);
          testlo = testlo.significance(points,1000);
       
          testlo.show(      fh.a.h((i-1)*nconditions+j  ));
-         testlo.showValues(fh.a.h((i-1)*nconditions+j+1));
-         testhi.showSig(   fh.a.h((i-1)*nconditions+j+2),'legend');
-         testhi.showSig(   fh.a.h((i-1)*nconditions+j+3),'sigdiff');
+         testlo.showValues(fh.a.h((i-1)*nconditions+j+1),testhi);
+         testhi.showSig(   fh.a.h((i-1)*nconditions+j+[2 3]),'legend');
          drawnow;
       end
    end
