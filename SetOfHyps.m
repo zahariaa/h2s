@@ -526,6 +526,29 @@ classdef SetOfHyps < Hypersphere
          end
          axis equal ij off
       end
+
+      function varargout = toJSON(self, saveFile)
+      % SetOfHyps.toJSON(<saveFile>): exports SetOfHyps object as an array of
+      %    Hypersphere objects in JSON format. Optional saveFile input argument
+      %    specifies where to save the JSON.
+      % e.g.:
+      % hyps.toJSON             % prints JSON in command line
+      % hyps.toJSON('hypsjson') % saves JSON in file named hypsjson.json
+         for i = 1:numel(self)
+            self.categories.vectors = [];
+         end
+         json = jsonencode(Hypersphere(self).unmerge);
+         % Saves JSON to file, if requested
+         if exist('saveFile','var') && ~isempty(saveFile) && any(saveFile)
+            fileID = fopen([saveFile '.json'],'w');
+            fprintf(fileID,'%s',json);
+            fclose(fileID);
+            fprintf('JSON saved to %s.json\n',saveFile);
+         end
+         if nargout || ~exist('fileID','var')
+            varargout = {json};
+         end
+      end
    end % methods (public)
 
 
