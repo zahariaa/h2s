@@ -109,6 +109,20 @@ classdef Hypersphere < handle
          hyps = self.mergeToSetOfHyps(self);
       end
 
+      function hyps = unmerge(self)
+      % Hypersphere.unmerge: takes a single Hypersphere object with multiple
+      %    centers/radii and breaks it out into an array of Hypersphere objects
+      %    with a single hypersphere in each. Useful for JSON export
+      % e.g.:
+      % arrayOfIndividualHyps = hypsallinone.unmerge;
+      % 
+      % SEE ALSO HYPERSPHERE.MERGE, SETOFHYPS.TOJSON
+         n = numel(self.radii);
+         for i = 1:n
+            hyps(i) = self.select(i);
+         end
+      end
+
 
       %% SET FUNCTION TO VALIDATE CENTERS
       function self = set.centers(self,centers)
