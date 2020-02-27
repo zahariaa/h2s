@@ -32,7 +32,11 @@ classdef Hypersphere < handle
 
          if nargin==0; return; end
 
-         if isa(centers,'Hypersphere'), obj = centers; return;
+         if isa(centers,'SetOfHyps')
+            obj = Hypersphere(centers.centers,centers.radii,...
+                              centers.categories);
+            return;
+         elseif isa(centers,'Hypersphere'), obj = centers; return;
          elseif ischar(centers) && strcmpi(centers,'estimate')
             obj = estimateHypersphere(radii,varargin{:});
             return
@@ -55,16 +59,16 @@ classdef Hypersphere < handle
          end
       end
 
-      function obj = select(obj,i)
+      function newobj = select(obj,i)
          % Hypersphere.select: outputs a Hypersphere object that has been
          %    subsampled to have one or more hyperspheres, indexed by input i
          % e.g.:
          % fewerhyps = allhyps.select(i)
          %    where i can be a logical vector or list of indices
          % 
-         obj.centers    = obj.centers(i,:);
-         obj.radii      = obj.radii(i);
-         obj.categories = obj.categories.select(i);
+         newobj = Hypersphere(obj.centers(i,:),...
+                              obj.radii(i),    ...
+                              obj.categories.select(i));
       end
 
       function self = concat(self)
