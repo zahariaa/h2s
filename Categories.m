@@ -122,7 +122,9 @@ classdef Categories
             self.labels  = self.labels(i);
          end
          self.colors  = self.colors(i,:);
-         self.vectors = self.vectors(:,i);
+         if ~isempty(self.vectors)
+            self.vectors = self.vectors(:,i);
+         end
       end
 
       function objs = permute(self,N,STRAT_BOOTSTRAP)
