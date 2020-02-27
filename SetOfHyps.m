@@ -25,20 +25,20 @@ classdef SetOfHyps < Hypersphere
 
    methods
       function obj = SetOfHyps(centers,radii,varargin)
-         % Contructor for SetOfHyps object for hypersphere2sphere, SetOfHyps
-         % e.g.:
-         % hyp = SetOfHyps(centers,radii)
-         % 
-
-         % WRITE ACTUAL DOCUMENTATION HERE
-
-         % Methods:
-         % SetOfHyps.select
-         % SetOfHyps.merge
-         % 
-         % 2018-06-07 AZ Created
-         % 
-         % See also SETOFHYPS, CATEGORIES
+      % Contructor for SetOfHyps object for hypersphere2sphere, SetOfHyps
+      % e.g.:
+      % hyp = SetOfHyps(centers,radii)
+      % 
+      % 
+      % WRITE ACTUAL DOCUMENTATION HERE
+      % 
+      % Methods:
+      % SetOfHyps.select
+      % SetOfHyps.merge
+      % 
+      % 2018-06-07 AZ Created
+      % 
+      % See also SETOFHYPS, CATEGORIES
 
          if nargin==0; return; end
 

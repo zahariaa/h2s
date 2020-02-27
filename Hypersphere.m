@@ -2,33 +2,35 @@ classdef Hypersphere < handle
    properties (SetObservable, GetObservable, AbortSet)
       centers    % [n x d] matrix: n centers of d-dimensional hyperspheres
       radii      % [1 x n] vector: radii of each of n hyperspheres
-      categories(1,1) % Categories object
+      categories(1,1) % a Categories object. (see help Categories)
    end
 
    methods
       function obj = Hypersphere(centers,radii,varargin)
-         % Contructor for Hypersphere object for hypersphere2sphere, SetOfHyps
-         % e.g.:
-         % hyp = Hypersphere(centers,radii)
-         % hyp = Hypersphere(centers,radii,categories)
-         % hyp = Hypersphere('estimate',points,categories)
-         % hyp = Hypersphere({hyps})
-         % 
-
-         % WRITE ACTUAL DOCUMENTATION HERE
-
-         % Methods:
-         % Hypersphere.select
-         % Hypersphere.merge
-         % Hypersphere.concat
-         % Hypersphere.volume
-         % Hypersphere.dists
-         % Hypersphere.margins
-         % Hypersphere.overlap
-         % 
-         % 2018-06-07 AZ Created
-         % 
-         % See also SETOFHYPS, CATEGORIES
+      % Contructor for Hypersphere object for hypersphere2sphere, SetOfHyps
+      % e.g.:
+      % hyp = Hypersphere(centers,radii)
+      % hyp = Hypersphere(centers,radii,categories)
+      % hyp = Hypersphere('estimate',points,categories)
+      % hyp = Hypersphere({hyps})
+      % hyp = Hypersphere(hypset)
+      % 
+      % 
+      % WRITE ACTUAL DOCUMENTATION HERE
+      % 
+      % Methods:
+      % Hypersphere.select
+      % Hypersphere.merge
+      % Hypersphere.unmerge
+      % Hypersphere.concat
+      % Hypersphere.volume
+      % Hypersphere.dists
+      % Hypersphere.margins
+      % Hypersphere.overlap
+      % 
+      % 2018-06-07 AZ Created
+      % 
+      % See also SETOFHYPS, CATEGORIES
 
          if nargin==0; return; end
 
@@ -72,12 +74,11 @@ classdef Hypersphere < handle
       end
 
       function newobj = select(obj,i)
-         % Hypersphere.select: outputs a Hypersphere object that has been
-         %    subsampled to have one or more hyperspheres, indexed by input i
-         % e.g.:
-         % fewerhyps = allhyps.select(i)
-         %    where i can be a logical vector or list of indices
-         % 
+      % Hypersphere.select: outputs a Hypersphere object that has been
+      %    subsampled to have one or more hyperspheres, indexed by input i
+      % e.g.:
+      % fewerhyps = allhyps.select(i)
+      %    where i can be a logical vector or list of indices
          newobj = Hypersphere(obj.centers(i,:),...
                               obj.radii(i),    ...
                               obj.categories.select(i));
