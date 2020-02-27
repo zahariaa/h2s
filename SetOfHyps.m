@@ -1,4 +1,9 @@
 classdef SetOfHyps < Hypersphere
+   % properties (SetObservable, GetObservable, AbortSet)
+   %    centers    % [n x d] matrix: n centers of d-dimensional hyperspheres
+   %    radii      % [1 x n] vector: radii of each of n hyperspheres
+   %    categories(1,1)   % Categories object
+   % end
    properties (SetAccess = protected)
       volume     % volume of hypersphere(s) (auto-computed)
       dists      % distances between centers of hyperspheres (auto-computed)
@@ -38,17 +43,6 @@ classdef SetOfHyps < Hypersphere
          if nargin==0; return; end
 
          if isa(centers,'SetOfHyps'), obj = centers;
-         elseif ischar(centers) && strcmpi(centers,'estimate')
-            obj = Hypersphere('estimate',radii,varargin{:}).merge;
-         elseif isstruct(centers) % Helper for older struct-based code
-            obj = SetOfHyps(centers.centers,centers.radii,centers.categories);
-         elseif iscell(centers) 
-            % Recurse if multiple centers provided (e.g., bootstrapping)
-            obj = repmat(SetOfHyps(),[numel(centers) 1]);
-            for i = 1:numel(centers)
-               obj(i) = SetOfHyps(centers{i},radii(i),varargin{:});
-            end
-            return
          elseif isa(centers,'Hypersphere')
             if numel(centers) == 1
                obj.centers = centers.centers;
@@ -60,9 +54,13 @@ classdef SetOfHyps < Hypersphere
             else
                obj = SetOfHyps(centers.merge,varargin{:});
             end
-         else
+         elseif isnumeric(centers)
             obj.centers = centers;
             obj.radii = radii;
+         else
+            % Use Hypersphere constructor to handle other possible inputs
+            if ~exist('radii','var'), radii = []; end
+            obj = Hypersphere(centers,radii,varargin{:}).merge;
          end
 
          % Update error if another SetOfHyps given

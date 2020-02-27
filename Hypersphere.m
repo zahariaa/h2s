@@ -41,7 +41,19 @@ classdef Hypersphere < handle
             obj = estimateHypersphere(radii,varargin{:});
             return
          elseif isstruct(centers) % Helper for older struct-based code
-            obj = Hypersphere(centers.centers,centers.radii);
+            if isfield('categories',centers)
+               obj = Hypersphere(centers.centers,centers.radii,...
+                                 centers.categories);
+            else
+               obj = Hypersphere(centers.centers,centers.radii);
+            end
+            return
+         elseif iscell(centers) 
+            % Recurse if multiple centers provided (e.g., bootstrapping)
+            obj = repmat(Hypersphere(),[numel(centers) 1]);
+            for i = 1:numel(centers)
+               obj(i) = Hypersphere(centers{i},radii(i),varargin{:});
+            end
             return
          end
 
