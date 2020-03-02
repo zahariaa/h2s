@@ -57,10 +57,10 @@ classdef Categories
       %    space)
       % 
       % Methods:
-      % Categories.select
-      % Categories.permute
-      % Categories.legend
-      % Categories.legendText
+      %    Categories.select
+      %    Categories.permute
+      %    Categories.legend
+      %    Categories.legendText
       % 
       % 2018-06-07 AZ Created
       % 

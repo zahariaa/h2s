@@ -52,7 +52,7 @@ classdef SetOfHyps < Hypersphere
                end
                obj.categories = centers.categories;
             else
-               obj = SetOfHyps(centers.merge,varargin{:});
+               obj = SetOfHyps(centers.meanAndMerge,varargin{:});
             end
          elseif isnumeric(centers)
             obj.centers = centers;
@@ -60,7 +60,7 @@ classdef SetOfHyps < Hypersphere
          else
             % Use Hypersphere constructor to handle other possible inputs
             if ~exist('radii','var'), radii = []; end
-            obj = Hypersphere(centers,radii,varargin{:}).merge;
+            obj = Hypersphere(centers,radii,varargin{:}).meanAndMerge;
          end
 
          % Update error if another SetOfHyps given
@@ -99,11 +99,6 @@ classdef SetOfHyps < Hypersphere
          self = Hypersphere.select(self,i);
       end
 
-      function self = merge(self)
-         self = Hypersphere.mergeToSetOfHyps(self);
-      end
-
-
       %% SET FUNCTIONS TO COMPUTE AND STORE VOLUME, DISTS, MARGINS, OVERLAPS
       function self = set.volume(self,~)   % Compute volume of a single hypersphere
          self.volume = Hypersphere.calcVolume(self.centers,self.radii);
@@ -128,7 +123,7 @@ classdef SetOfHyps < Hypersphere
             error('self.categories.vectors needs to index points');
          else
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
-            boots   = Hypersphere('estimate',points,self.categories,N,'stratified').merge;
+            boots   = Hypersphere('estimate',points,self.categories,N,'stratified').meanAndMerge;
             self.ci = boots.ci;
          end
 
@@ -532,10 +527,12 @@ classdef SetOfHyps < Hypersphere
       % e.g.:
       % hyps.toJSON             % prints JSON in command line
       % hyps.toJSON('hypsjson') % saves JSON in file named hypsjson.json
+      % 
+      % SEE ALSO HYPERSPHERE.UNCONCAT
          for i = 1:numel(self)
             self.categories.vectors = [];
          end
-         json = jsonencode(Hypersphere(self).unmerge);
+         json = jsonencode(Hypersphere(self).unconcat);
          % Saves JSON to file, if requested
          if exist('saveFile','var') && ~isempty(saveFile) && any(saveFile)
             fileID = fopen([saveFile '.json'],'w');
