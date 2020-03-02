@@ -32,9 +32,11 @@ classdef SetOfHyps < Hypersphere
       % 
       % WRITE ACTUAL DOCUMENTATION HERE
       % 
-      % Methods:
-      % SetOfHyps.select
-      % SetOfHyps.merge
+      % Inherited Methods (from Hypersphere):
+      %    SetOfHyps.select
+      %    SetOfHyps.concat
+      %    SetOfHyps.unconcat
+      %    SetOfHyps.meanAndMerge
       % 
       % 2018-06-07 AZ Created
       % 
@@ -83,20 +85,6 @@ classdef SetOfHyps < Hypersphere
          % Set up listeners to update dependent properties only on centers/radii set
          addlistener(obj,'centers','PostSet',@obj.setPostCenters);
          addlistener(obj,'radii'  ,'PostSet',@obj.setPostRadii);
-      end
-
-      function self = concat(self)
-         self = SetOfHyps(cat(1,self.centers),[self.radii]);
-      end
-
-      function self = select(self,i)
-         % SetOfHyps.select: outputs a SetOfHyps object that has been
-         %    subsampled to have one or more hyperspheres, indexed by input i
-         % e.g.:
-         % fewerhyps = allhyps.select(i)
-         %    where i can be a logical vector or list of indices
-         %
-         self = Hypersphere.select(self,i);
       end
 
       %% SET FUNCTIONS TO COMPUTE AND STORE VOLUME, DISTS, MARGINS, OVERLAPS

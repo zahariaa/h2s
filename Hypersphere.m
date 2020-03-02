@@ -103,25 +103,35 @@ classdef Hypersphere < handle
          end
       end
 
-      function newobj = select(obj,i)
+      function newobj = select(self,i)
       % Hypersphere.select: outputs a Hypersphere object that has been
       %    subsampled to have one or more hyperspheres, indexed by input i
       % e.g.:
       % fewerHyps = allHyps.select(i)
       %    where i can be a logical vector or list of indices
-         newobj = Hypersphere(obj.centers(i,:),...
-                              obj.radii(i),    ...
-                              obj.categories.select(i));
+         if isa(self,'SetOfHyps')
+            newobj =   SetOfHyps(self.centers(i,:),...
+                                 self.radii(i),    ...
+                                 self.categories.select(i));
+         else
+            newobj = Hypersphere(self.centers(i,:),...
+                                 self.radii(i),    ...
+                                 self.categories.select(i));
+         end
       end
 
       function self = concat(self)
-         self = Hypersphere(cat(1,self.centers),[self.radii]);
       % Hypersphere.concat: collapses an array of Hypersphere objects into
       %    a single Hypersphere object, with centers and radii concatenated,
       %    i.e., an [n x 1] array of Hypersphere objects with one hypersphere
       %.   each turns into one Hypersphere object that has n hyperspheres.
       % e.g.:
       % oneBigHyp = aFewHypsArray.concat
+         if isa(self,'SetOfHyps')
+            self =   SetOfHyps(cat(1,self.centers),[self.radii]);
+         else
+            self = Hypersphere(cat(1,self.centers),[self.radii]);
+         end
       end
 
       function hyps = unconcat(self)
