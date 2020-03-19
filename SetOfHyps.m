@@ -1,8 +1,9 @@
 classdef SetOfHyps < Hypersphere
+   % Inherited from Hypersphere:
    % properties (SetObservable, GetObservable, AbortSet)
    %    centers    % [n x d] matrix: n centers of d-dimensional hyperspheres
    %    radii      % [1 x n] vector: radii of each of n hyperspheres
-   %    categories(1,1)   % Categories object
+   %    categories(1,1) % a Categories object (see help Categories)
    % end
    properties (SetAccess = protected)
       volume     % volume of hypersphere(s) (auto-computed)
@@ -25,23 +26,76 @@ classdef SetOfHyps < Hypersphere
 
    methods
       function obj = SetOfHyps(centers,radii,varargin)
-      % Contructor for SetOfHyps object for hypersphere2sphere, SetOfHyps
+      % Constructor for SetOfHyps object for hypersphere2sphere, Hypersphere
       % e.g.:
-      % hyp = SetOfHyps(centers,radii)
+      % hypset = SetOfHyps(centers,radii,<categories>)               % (1)
+      % hypset = SetOfHyps('estimate',points,categories,<extraargs>) % (2)
+      % hypset = SetOfHyps(hyp,<ci>)                                 % (3)
+      % hypset = SetOfHyps(hypstruct)                                % (4)
+      % hypset = SetOfHyps({hyps},radii,<extraargs>)                 % (5)
+      % hypset = SetOfHyps(hypset,hypsetTarget)                      % (6)
       % 
+      % Constructor input options:
+      %    (1-2) Same as Hypersphere input options (1-2), but yields a SetOfHyps.
+      %    (3) Similar to Hypersphere input option (3), except this SetOfHyps
+      %       constructor: (a) converts a Hypersphere object to a SetOfHyps
+      %       object (instead of vice-versa), and (b) can take in an optional
+      %       ci argument, which is a structure containing the confidence
+      %       intervals and bootstrapped Hypersphere/SetOfHyps objects (computed
+      %       using SetOfHyps.significance), and saves it in the SetOfHyps object.
+      %    (4-5) Same as Hypersphere input options (4-5), but yields a SetOfHyps.
+      %    (6) Regardless of the preceding inputs, if a SetOfHyps object is
+      %       included as an additional (i.e., not the first) input argument, it
+      %       is treated as the "target" SetOfHyps from which errors of the
+      %       existing/first input/newly constructed SetOfHyps are computed.
+      %       This is equivalent to calling hypset.stressUpdate(hypsetTarget).
       % 
-      % WRITE ACTUAL DOCUMENTATION HERE
+      % N.B.: unlike Hypersphere, volume, dists, margins, and overlap are all
+      %    automatically computed once and stored as properties. These are
+      %    computed upon SetOfHyps object construction and re-computed if a
+      %    change was made to either centers or radii. The methods for
+      %    computing these quantities are inherited from Hypersphere.
+      % 
+      % Inherited Properties (from Hypersphere):
+      %    centers    - [n x d] matrix: n centers of d-dimensional hyperspheres
+      %    radii      - [1 x n] vector: radii of each of n hyperspheres
+      %    categories - a Categories object (see help Categories)
+      % Properties:
+      %    volume     - volume of hypersphere(s) (auto-computed)
+      %    dists      - distances between centers of hyperspheres (auto-computed)
+      %    margins    - margins between hyperspheres along center-connection
+      %                    lines (auto-computed)
+      %    ci         - confidence intervals, with raw bootstrap data
+      %    error      - [n-choose-2 x 1] vector of errors for each summary stat
+      %    sig        - significance tests results
+      %    sigdiff    - significant differences tests results
+      %    msflips    - margin sign flips
+      %    overlap    - overlaps (negative margins) between hyperspheres along
+      %                    center-connection lines (auto-computed)
       % 
       % Inherited Methods (from Hypersphere):
       %    SetOfHyps.select
       %    SetOfHyps.concat
       %    SetOfHyps.unconcat
       %    SetOfHyps.meanAndMerge
+      % Methods:
+      %    SetOfHyps.significance
+      %    SetOfHyps.h2s
+      %    SetOfHyps.show
+      %    SetOfHyps.plotOverlapErrors
+      %    SetOfHyps.camera
+      %    SetOfHyps.movie
+      %    SetOfHyps.plotComparisons
+      %    SetOfHyps.showSig
+      %    SetOfHyps.showValues
+      %    SetOfHyps.showSigLegend
+      %    SetOfHyps.toJSON
+      %    SetOfHyps.stressUpdate
+      %    stress (Static method: h2s objective function and gradients)
       % 
       % 2018-06-07 AZ Created
       % 
-      % See also SETOFHYPS, CATEGORIES
-
+      % See also HYPERSPHERE, CATEGORIES, ESTIMATEHYPERSPHERE, SHOWMODEL
          if nargin==0; return; end
 
          if isa(centers,'SetOfHyps'), obj = centers;
@@ -97,13 +151,36 @@ classdef SetOfHyps < Hypersphere
       function self = set.margins(self,~)
          self.margins = Hypersphere.calcMargins(self.radii,self.dists);
       end
-      function ov = get.overlap(self,~)      % Compute overlap distance of two hyperspheres
+      function ov = get.overlap(self,~)    % Compute overlap distance of two hyperspheres
          ov = -self.margins;
       end
 
 
       %% HIGHER ORDER FUNCTIONS
       function self = significance(self,points,N)
+      % SetOfHyps.significance: tests 'statistics of interest' (distances,
+      %    margins/overlaps, radii), and their pairwise differences, for
+      %    significance. It uses bootstrapped SetOfHyps or Hypersphere objects
+      %    found in self.ci.bootstraps, or if they don't exist, does the
+      %    bootstrapping on inputted points, and saves the bootstraps (and 95%
+      %    confidence intervals) in self.ci. Alternatively, the ci struct can be
+      %    passed as an input and embedded into the SetOfHyps object.
+      % 
+      %    Significance testing is based on the percentile confidence interval
+      %    that contains 0 (for primary significance tests)*. Significant
+      %    difference testing involves computing the percentile confidence
+      %    interval (two-tailed) of the difference of two of the same type of
+      %    statistics of interest from different hyperspheres.
+      %    *Radii are always significant by definition.
+      % 
+      % e.g.:
+      % hyps = hyps.significance(points)
+      % hyps = hyps.significance(points,N)
+      % hyps = hyps.significance([],N)
+      % hyps = hyps.significance(ci)
+      % hyps = hyps.significance           % works only if hyps.ci is populated
+      % 
+      % SEE ALSO ESTIMATEHYPERSPHERE, HYPERSPHERE.MEANANDMERGE
          if ~exist('N','var') || isempty(N), N=100; end
          if isstruct(points) && ~isempty(points)
             self.ci = points;
@@ -118,7 +195,9 @@ classdef SetOfHyps < Hypersphere
          dist_boot    =       self.ci.bootstraps.dists;
          radii_boot   = cat(1,self.ci.bootstraps.radii);
          margin_boot  =       self.ci.bootstraps.margins;
-%% compute significance
+
+         %% COMPUTE SIGNIFICANCE
+         % helper functions
          ciprctileLtail = @(x)        mean(x>0);
          ciprctile2tail = @(x) abs(2*(mean(x<0)-0.5));
          % What percentile confidence interval of bootstrapped margins contains 0?
@@ -129,7 +208,7 @@ classdef SetOfHyps < Hypersphere
          % What percentile confidence interval of bootstrapped distances contains 0?
          self.sig.di = ciprctileLtail(dist_boot);
 
-%% SECOND-ORDER COMPARISONS
+         %% SECOND-ORDER COMPARISONS
          % compute indices of radii corresponding to overlaps
          n     = numel(self.radii);
          nc2   = nchoosek(n,2);
@@ -150,19 +229,76 @@ classdef SetOfHyps < Hypersphere
 
       function self = stressUpdate(self,otherHyp)
          [~,~,self.error,self.msflips] = self.stress([self.radii(:) self.centers],otherHyp);
+      % SetOfHyps.stressUpdate: populates error and msflips properties, computed
+      %    by evaluating the error between the self SetOfHyps object and the
+      %    hypsTarget SetOfHyps input.
+      % 
+      % e.g.:
+      % hypset = hypset.stressUpdate(hypsTarget)
+      % 
+      % SEE ALSO SETOFHYPS.STRESS
       end
-         
+      
       function model = h2s(self,varargin)
-      % Optimizes stress of self.centers relative to hi
-      % Takes as input: self.h2s(dimLow), self.h2s(hi), self.h2s(hi,dimLow)
-      % dimLow defaluts to 2, hi defaults to self
-      % also can do self.h2s(true) to fix radii to hi dimensional ones
-      % self.h2s([true true true true]) fixes radii, uses MDS for low centers
-      % initialization, displays the fit debugging plot, and 
-      % self.h2s([3 5]) sets dimLow to 3, and uses 4 random initializations
-      % (plus the 1 MDS initialization) for stress function optimization,
-      % keeping the best result
-      % self.h2s({[1 0 1]}) or self.h2s({1 0 1}) disables margins in error
+      % SetOfHyps.h2s: optimizes the hypersphere2sphere algorithm, and outputs
+      %    a SetOfHyps object that has dimensionality reduced to dimLow (2 or 3).
+      %    If self is an array of SetOfHyps objects, self.h2s will be recursively
+      %    run on each element.
+      % 
+      % e.g.
+      % hypslo = hypshi.h2s
+      % hypslo = hypslo.h2s(hypsTarget)
+      % hypslo = hypshi.h2s([<dimLow> <ninits>]) % (numeric inputs)
+      % hypslo = hypshi.h2s({<alpha>})           % alpha values must be in a cell
+      % hypslo = hypshi.h2s([<MDS_INIT> <DBUGPLOT> <VERBOSE>])  % (logical inputs)
+      %    ... or any combination of the above, with the restriction that if any
+      %    logical inputs is specified, all logical inputs to its left must also
+      %    be specified (and the same applies for the numeric inputs). For
+      %    example, if DBUGPLOT is given, it must be in a logical array that at
+      %    least contains [FIXRADII MDS_INIT DBUGPLOT] (but may also include
+      %    VERBOSE).
+      % 
+      % Optional inputs:
+      %    hypsTarget (DEFAULT = self): a SetOfHyps object, which contains the
+      %       high-dimensional summary statistics of interest against which the
+      %       h2s stress function will measure errors and be optimized to match.
+      %    dimLow (DEFAULT = 3, or the number of hyperspheres, or the
+      %       dimensionality of the high-dimensional space, whichever is
+      %       smallest): a scalar numeric, either 2 or 3, that determines the
+      %       dimensionality of the visualization space.
+      %       N.B. providing a negative value tells h2s to use the default value,
+      %       so an ninits value can be provided.
+      %    ninits (DEFAULT = 0): the number of additional (random)
+      %       initializations (plus the 1 MDS/random initialization) for stress
+      %       function optimization, keeping the best result. Must be provided
+      %       as a second element in a numeric vector.
+      %       e.g.:
+      %          self.h2s([3 5])  sets dimLow to 3 and sets ninits to 5
+      %          self.h2s(3)      sets dimLow to 3
+      %          self.h2s([-1 5]) uses dimLow default and sets ninits to 5
+      %    {alpha} (DEFAULT = {1 1 1}): a numeric 3-element cell (or 3-vector
+      %       in a cell) specifying the regularization hyperparameters on the
+      %       3 components of the objective function: the elements weight the
+      %       distances, margins, and radii, in that order, in the error
+      %       (stress) function.
+      %       e.g. the following disables margins in error:
+      %          self.h2s({[1 0 1]}) or self.h2s({1 0 1})
+      %          self.h2s({1 1 0}) and self.h2s({1 0 0}) keep radii fixed, and
+      %                              are both equivalent to MDS on the centers
+      %    MDS_INIT (DEFAULT = true): use MDS for low centers initialization
+      %       (as opposed to random initialization(s)).
+      %    DBUGPLOT (DEFAULT = false): display the h2s optimization debugging
+      %       plot, which updates on each iteration. Must be second element in
+      %       logical vector.
+      %    VERBOSE (DEFAULT = false): prints fminunc optimization messages to
+      %       the command prompt on every iteration. Must be third element in
+      %       logical vector.
+      %       e.g.:
+      %          self.h2s([true true true]) uses MDS for low centers
+      %              initialization, displays the fit debugging plot, and
+      %              prints optimization messages to the command prompt.
+      % 
+      % SEE ALSO SETOFHYPS.STRESS
          lo = self;
          for v = 2:nargin
             if isa(varargin{v-1},'SetOfHyps')
@@ -170,7 +306,7 @@ classdef SetOfHyps < Hypersphere
             elseif isnumeric(varargin{v-1})
                [dimLow,ninits] = dealvec(varargin{v-1});
                if numel(varargin{v-1})==3
-                  varargin{v-1}(3) = 1; % change to 1 for recusive call below
+                  varargin{v-1}(3) = 1; % change to 1 for recursive call below
                end
             elseif islogical(varargin{v-1})
                [FIXRADII,MDS_INIT,DBUGPLOT,VERBOSE] = dealvec(varargin{v-1});
@@ -178,16 +314,16 @@ classdef SetOfHyps < Hypersphere
                alpha = [varargin{v-1}{:}];
             end
          end
-         if ~exist('hi'      ,'var'),       hi = self;          end
+         if ~exist('hi'      ,'var'),                 hi = self;          end
          n  = numel(hi);
          [nr,d] = size(hi.centers);
          if ~exist('dimLow'  ,'var'),   dimLow = min([3 nr d]); end
          if ~exist('ninits'  ,'var'),   ninits = 1;             end
-         if ~exist('MDS_INIT','var'), MDS_INIT = true;          end
          if ~exist('FIXRADII','var'), FIXRADII = true;          end
-         if ~exist('DBUGPLOT','var'), DBUGPLOT = false;         end
-         if ~exist('VERBOSE' ,'var'),  VERBOSE = false;         end
-         if ~exist('alpha'   ,'var'),    alpha = [1 1 1];       end
+         if ~exist('MDS_INIT','var'),           MDS_INIT = true;          end
+         if ~exist('DBUGPLOT','var'),           DBUGPLOT = false;         end
+         if ~exist('VERBOSE' ,'var'),            VERBOSE = false;         end
+         if ~exist('alpha'   ,'var'),              alpha = [1 1 1];       end
 
          % Recurse for multiple SetOfHyps objects
          if n > 1
@@ -230,6 +366,41 @@ classdef SetOfHyps < Hypersphere
 
 
       function varargout = show(self,varargin)
+      % SetOfHyps.show: visualizes a SetOfHyps object as a set of circles (for
+      %    a 2D input) or spheres (for 3D input). If the dimensionality of the
+      %    input is larger than 3, h2s is automatically run (with no arguments)
+      %    and the result visualized (though the h2s-reduced SetOfHyps object is
+      %    not saved).
+      % 
+      %    A line indicating the error of the largest single statistic of
+      %    interest is plotted to the side of the visualization. Additional lines
+      %    are plotted in the visualization that indicate when an overlap or
+      %    margin in the original (high-dimensional) space has been visualized as
+      %    the opposite (i.e., a margin or overlap, respectively). If requested,
+      %    the handle(s) for these maximum error and overlap error lines are
+      %    outputted.
+      % 
+      % IMPORTANT(!) N.B.: if a 3D (sphere) visualization figure is resized or
+      %    zoomed in matlab, the error line will not resize accordingly and thus
+      %    will be inaccurate.
+      % 
+      % e.g.:
+      %    hyps.show
+      %    hyps.show(<axhandle>, <SETCAMERA>, <titleString>, <patchDetail>)
+      % 
+      % Optional inputs:
+      %    axhandle (DEFAULT = gca): specifies the axis handle where the
+      %       visualization should be rendered
+      %    SETCAMERA (3D sphere visualization only, DEFAULT = true):
+      %       automatically calls self.camera to standardize 3D viewpoint.
+      %    titleString (DEFAULT = 'error <= [maxerror]'): specifies what to print
+      %       as the plot title. The default setting prints the actual maximum
+      %       error across all the individual statistics of interest.
+      %    patchDetail (DEFAULT = 100): determines how much detail the circle or
+      %       sphere has.
+      % 
+      % SEE ALSO SHOWMODEL, SETOFHYPS.CAMERA, SETOFHYPS.PLOTOVERLAPERRORS,
+      % SETOFHYPS.H2S
          maxerror = max(self.error);
          switch size(self.centers,2)
             case 2; [~,XY] = showCirclesModel(self,varargin{:});
@@ -258,6 +429,22 @@ classdef SetOfHyps < Hypersphere
       end
 
       function errlines = plotOverlapErrors(self,thresh)
+      % SetOfHyps.plotOverlapErrors: plots a line where a true overlap is
+      %    visualized as a margin, or a true margin is visualized as an
+      %    overlap, but *ONLY IF THE TRUE OVERLAP/MARGIN is SIGNIFICANT*. Uses
+      %    self.sig and self.msflips properties, populated by self.significance.
+      %    If no information about significance is available, then all overlap/
+      %    margins are considered significant and any flip is plotted.
+      % 
+      % e.g.:
+      %    hyps.plotOverlapErrors
+      %    hyps.plotOverlapErrors(<thresh>)
+      % 
+      % Optional input:
+      %    thresh (DEFAULT = 0.95): significance threshold for an error to be
+      %       plotted
+      % 
+      % SEE ALSO SETOFHYPS.SHOW, SETOFHYPS.SIGNIFICANCE
          if ~exist('thresh','var') || iesmpty(thresh)
             thresh = 0.95;
          end
@@ -304,6 +491,24 @@ classdef SetOfHyps < Hypersphere
       end
 
       function camera(self,camSettings)
+      % SetOfHyps.camera: Sets camera, lighting, and surface properties (for a 3D
+      %    h2s visualization). Settings can be passed in a struct, though if no
+      %    settings are explicitly passed to this, SetOfHyps.camera applies
+      %    standard settings.
+      % 
+      % e.g.:
+      %    self.camera
+      %    self.camera(<camSettings>)
+      % 
+      % Optional input:
+      %    camSettings: a struct with fields corresponding to standard matlab
+      %       axis camera properties, each containing the corresponding value
+      %       the setting should be set to.
+      %       e.g.:
+      %          camSettings.CameraPosition = [1 1 1];
+      %          camSettings.CameraTarget = [0 0 0];
+      % 
+      % SEE ALSO SHOWMODEL, SETOFHYPS.SHOW
          if ~exist('camSettings','var') || isempty(camSettings)
             camSettings = self.cameraCalc;
          end
@@ -319,6 +524,13 @@ classdef SetOfHyps < Hypersphere
       end
 
       function movie(self,times,timeLabel,varargin)
+      % SetOfHyps.movie: Makes a dynamic h2s visualization, and (optionally)
+      %    saves it to an .avi movie. SetOfHyps objects that can be dynamically
+      %    visualized can come in different forms, but this function assumes
+      %    you've run h2s on all time points simultaneously, so that when it
+      %    generates the frames, they are all in a common space.
+      %    estimateHypersphere will handle this 
+      %    
       % function SetOfHyps.movie(times,timeLabel,<SAVEflag> or <StaticFrameAxes>)
       % SetOfHyps.movie(times,timeLabel,SAVEflag) generates a movie, optionally saves
       % SetOfHyps.movie(times,timeLabel,StaticFrameAxes) plots static frames in axes given
@@ -623,6 +835,7 @@ classdef SetOfHyps < Hypersphere
          errtotal    = mean([alpha(1)*errd.^2 alpha(2)*erro.^2 alpha(3)*erra.^2]);
 
          msflips = ~(sign(hi.margins) == sign(lo.margins));
+         
          % Gradient: partial centers derivative of distances (should be size of centers)
          % Gradient: partial derivatives of error, relative to distances and overlaps
          ix = nchoosek_ix(nc);
@@ -642,9 +855,9 @@ classdef SetOfHyps < Hypersphere
          % radius gradients
          dEdr = -2*alpha(3)*erra';
          for i = 1:nc
-            dEdr(i) =  dEdr(i) + 2*alpha(2)*sum(erro(~~sum(ix==i)));
+            dEdr(i) = dEdr(i) + 2*alpha(2)*sum(erro(~~sum(ix==i)));
          end
-         % Gradient: put it all together
+         % Gradient: put it all together and normalize properly
          grad = [dEdr dEdc]/(2*nc2+nc);
       end
    end

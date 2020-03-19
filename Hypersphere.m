@@ -7,13 +7,13 @@ classdef Hypersphere < handle
 
    methods
       function obj = Hypersphere(centers,radii,varargin)
-      % Contructor for Hypersphere object for hypersphere2sphere, SetOfHyps
+      % Constructor for Hypersphere object for hypersphere2sphere, SetOfHyps
       % e.g.:
-      % hyp = Hypersphere(centers,radii,<categories>)               % (1)
-      % hyp = Hypersphere('estimate',points,categories,<extraargs>) % (2)
-      % hyp = Hypersphere(hypset)                                   % (3)
-      % hyp = Hypersphere(hypstruct)                                % (4)
-      % hyp = Hypersphere({hyps},radii,<extraargs>)                 % (5)
+      % hyp = Hypersphere(centers,radii,<categories>)                % (1)
+      % hyp = Hypersphere('estimate',points,categories,<extraargs>)  % (2)
+      % hyp = Hypersphere(hypset)                                    % (3)
+      % hyp = Hypersphere(hypstruct)                                 % (4)
+      % hyp = Hypersphere({hyps},radii,<extraargs>)                  % (5)
       % 
       % Constructor input options:
       %    (1) centers is an [n x d] numeric matrix, and radii is a [1 x n]
@@ -25,20 +25,25 @@ classdef Hypersphere < handle
       %    (2) If the first argument is 'estimate', then the following inputs
       %       (including the optional <extraargs>) are passed to
       %       estimateHypersphere. That function, as called here, outputs
-      %       Hyperpshere object(s). points and categories are required
+      %       Hypersphere object(s). points and categories are required
       %       inputs; other optional valid inputs are the number of bootstraps
       %       and the 'stratified' or 'permute' inputs to determine whether
       %       to sample with or without replacement during bootstrapping.
       %    (3) A SetOfHyps object input is stripped down to a Hypersphere
-      %       object.
-      %    (4) Mainly for compatibility with old code, this takes a struct
-      %       with the same fields as a Hypersphere object and converts it to
+      %       object output.
+      %    (4) Mainly for compatibility with old code, this takes a struct with
+      %       the same fields as a Hypersphere object and converts it to a
       %       Hypersphere object, creating a dummy Categories object if none
       %       exists.
       %    (5) centers is a cell of centers matrices, and radii is a vector
       %       of radii. This recursively calls Hypersphere on the individual
       %       centers cell elements and the corresponding radii vector
-      %       elements. This makes sense for bootstrapped center positions.
+      %       elements. This makes sense for bootstrapped estimates of
+      %       centers/radii.
+      % 
+      % N.B.: unlike SetOfHyps, volume, dists, margins, and overlap are all
+      %    computed on-demand, every time (and only when) those methods are
+      %    called.
       % 
       % Properties:
       %    centers    - [n x d] matrix: n centers of d-dimensional hyperspheres
@@ -83,7 +88,7 @@ classdef Hypersphere < handle
             % Recurse if multiple centers provided (e.g., bootstrapping)
             obj = repmat(Hypersphere(),[numel(centers) 1]);
             for i = 1:numel(centers)
-               obj(i) = Hypersphere(centers{i},radii(i),varargin{:});
+               obj(i) = Hypersphere(centers{i},radii{i},varargin{:});
             end
             return
          end
@@ -102,6 +107,8 @@ classdef Hypersphere < handle
             obj.categories = Categories(numel(obj.radii));
          end
       end
+
+%% TODO: add in input options to choose which estimator to use!!!!!!!!!!!
 
       function newobj = select(self,i)
       % Hypersphere.select: outputs a Hypersphere object that has been
