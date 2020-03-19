@@ -105,7 +105,7 @@ classdef Categories
             % duplicate colors if more requested than exist in c
             special = [2 5 7 10];
             if n<5;    obj.colors = obj.colors(special(1:n),:);
-            else       obj.colors = obj.colors(1:n,:);
+            else       obj.colors = obj.colors(mod((1:n)-1,10)+1,:);
             end
          else obj.colors = colors;
          end
@@ -182,6 +182,9 @@ classdef Categories
       % if cats.ispermuted, disp('cats is permuted'); end
          if numel(self) > 1 % recurse
             itis = arrayfun(@ispermuted, self);
+            return
+         elseif isempty(self.vectors)
+            itis = false;
             return
          end
 
