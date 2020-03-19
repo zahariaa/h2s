@@ -309,7 +309,7 @@ classdef SetOfHyps < Hypersphere
                   varargin{v-1}(3) = 1; % change to 1 for recursive call below
                end
             elseif islogical(varargin{v-1})
-               [FIXRADII,MDS_INIT,DBUGPLOT,VERBOSE] = dealvec(varargin{v-1});
+               [MDS_INIT,DBUGPLOT,VERBOSE] = dealvec(varargin{v-1});
             elseif iscell(varargin{v-1})
                alpha = [varargin{v-1}{:}];
             end
@@ -317,9 +317,8 @@ classdef SetOfHyps < Hypersphere
          if ~exist('hi'      ,'var'),                 hi = self;          end
          n  = numel(hi);
          [nr,d] = size(hi.centers);
-         if ~exist('dimLow'  ,'var'),   dimLow = min([3 nr d]); end
-         if ~exist('ninits'  ,'var'),   ninits = 1;             end
-         if ~exist('FIXRADII','var'), FIXRADII = true;          end
+         if ~exist('dimLow'  ,'var') || dimLow<0, dimLow = min([3 nr d]); end
+         if ~exist('ninits'  ,'var'),             ninits = 0;             end
          if ~exist('MDS_INIT','var'),           MDS_INIT = true;          end
          if ~exist('DBUGPLOT','var'),           DBUGPLOT = false;         end
          if ~exist('VERBOSE' ,'var'),            VERBOSE = false;         end
@@ -342,7 +341,8 @@ classdef SetOfHyps < Hypersphere
             %% initialization of centers: random noise added to projection onto first 2 dimensions
             x0  = [hi.radii(:) -0.1*diff(cminmax)*rand(nr,dimLow) + hi.centers(:,1:dimLow)];
          end
-         if FIXRADII
+         
+         if (all(alpha(1:2)==1) && alpha(3)==0)
             fit = x0;
          else
             opts = optimoptions(@fminunc,'TolFun',1e-4,'TolX',1e-4,'Display','off',...
@@ -356,10 +356,25 @@ classdef SetOfHyps < Hypersphere
          model.stressUpdate(hi);
 
          % Recurse for multiple random initializations
-         for iinit = 2:ninits
-            tmp = self.h2s(varargin);
-            if max(tmp.error) < max(model.error)
-               model = tmp;
+         if ninits > 0
+            % Make sure other initializations are random
+            if MDS_INIT
+               for v = 2:nargin
+                  if islogical(varargin{v-1})
+                     MDS_INIT = false;
+                     varargin{v-1}(2) = MDS_INIT;
+                  end
+               end
+            end
+            if MDS_INIT % if still true, append logical vector to varargin
+               varargin = {varargin{:} [false DBUGPLOT VERBOSE]};
+            end
+            % Loop through recursive function calls
+            for iinit = 1:ninits
+               tmp = self.h2s(varargin);
+               if max(cat(2,tmp.error)) < max(cat(2,model.error))
+                  model = tmp;   % keep lower error solutions
+               end
             end
          end
       end
