@@ -251,6 +251,8 @@ classdef SetOfHyps < Hypersphere
       % e.g.
       % hypslo = hypshi.h2s
       % hypslo = hypslo.h2s(hypsTarget)
+      % hypsjointlo = severalhypshi.h2s(hypsTarget,'joint') % jointly optimizes all 
+      %    SetOfHyps objects in severalhyps (useful for movies)
       % hypslo = hypshi.h2s([<dimLow> <ninits>]) % (numeric inputs)
       % hypslo = hypshi.h2s({<alpha>})           % alpha values must be in a cell
       % hypslo = hypshi.h2s([<MDS_INIT> <DBUGPLOT> <VERBOSE>])  % (logical inputs)
@@ -315,20 +317,26 @@ classdef SetOfHyps < Hypersphere
                [MDS_INIT,DBUGPLOT,VERBOSE] = dealvec(varargin{v-1});
             elseif iscell(varargin{v-1})
                alpha = [varargin{v-1}{:}];
+            else
+               switch lower(varargin{v-1})
+                  case 'joint';    JOINT = true;
+                  case 'separate'; JOINT = false;
+               end
             end
          end
          if ~exist('hi'      ,'var'),                 hi = self;          end
          n  = numel(hi);
-         [nr,d] = size(hi.centers);
+         [nr,d] = size(cat(1,hi.centers));
          if ~exist('dimLow'  ,'var') || dimLow<0, dimLow = min([3 nr d]); end
          if ~exist('ninits'  ,'var'),             ninits = 0;             end
          if ~exist('MDS_INIT','var'),           MDS_INIT = true;          end
          if ~exist('DBUGPLOT','var'),           DBUGPLOT = false;         end
          if ~exist('VERBOSE' ,'var'),            VERBOSE = false;         end
+         if ~exist('JOINT'   ,'var'),              JOINT = false;         end
          if ~exist('alpha'   ,'var'),              alpha = [1 1 1];       end
 
          % Recurse for multiple SetOfHyps objects
-         if n > 1
+         if ~JOINT && n > 1
             for i = 1:n
                stationarycounter(i,n);
                model(i) = lo(i).h2s(varargin);
@@ -338,11 +346,15 @@ classdef SetOfHyps < Hypersphere
 
          % Setup optimization and run
          if MDS_INIT
-            x0  = [hi.radii(:) mdscale(hi.dists,dimLow,'Criterion','metricstress')];
+            multimds = arrayfun(@(h) mdscale(h.dists,dimLow,'Criterion','metricstress'),...
+                                     hi,'UniformOutput',false);
+            x0  = [cat(2,hi.radii)' cell2mat_concat(multimds)];
          else
-            cminmax = [min(hi.centers(:)) max(hi.centers(:))];
+            allcentervals = cat(1,hi.centers);
+            cminmax = [min(allcentervals(:)) max(allcentervals(:))];
             %% initialization of centers: random noise added to projection onto first 2 dimensions
-            x0  = [hi.radii(:) -0.1*diff(cminmax)*rand(nr,dimLow) + hi.centers(:,1:dimLow)];
+            x0  = [cat(2,hi.radii)' ...
+                     -0.1*diff(cminmax)*rand(nr,dimLow) + allcentervals(:,1:dimLow)];
          end
          
          if (all(alpha(1:2)==1) && alpha(3)==0)
@@ -355,7 +367,9 @@ classdef SetOfHyps < Hypersphere
             fit = fminunc(@(x) SetOfHyps.stress(x,hi,alpha),x0,opts);
          end
          % Output reduced SetOfHyps model
-         model = SetOfHyps(fit(:,2:end),fit(:,1),self.categories);
+         nc = size(fit,1)/n;
+         model = SetOfHyps(mat2cell(fit(:,2:end),repmat(nc,[n 1])),...
+                           mat2cell(fit(:,1    ),repmat(nc,[n 1])),self.categories);
          model.stressUpdate(hi);
 
          % Recurse for multiple random initializations
