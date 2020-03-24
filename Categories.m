@@ -128,6 +128,22 @@ classdef Categories
          end
       end
 
+      function obj = internalrepmat(self,N)
+      % Categories.internalrepmat: outputs a Categories object that has all
+      %    its fields appended with N-1 copies of their contents.
+      %    categories.vector is appropriately extended. Useful for generating
+      %    multiple movie frames using the same categories object.
+      % e.g.:
+      % catWithStuffRepeatedNtimes = cat.internalrepmat(N)
+         obj.labels  = repmat(self.labels,[1 N]);
+         obj.colors  = repmat(self.colors,[N 1]);
+         % Replicate vectors on block diagonal
+         cmd = ['obj.vectors = blkdiag(' repmat('self.vectors,',1,N)];
+         eval([cmd(1:end-1) ');']);
+         % Put it all together
+         obj = Categories(obj);
+      end
+
       function objs = permute(self,N,STRAT_BOOTSTRAP)
       % Categories.permute: outputs a Categories object that has been
       %    subsampled to have one or more categories, indexed by input i
