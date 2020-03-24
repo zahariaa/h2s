@@ -227,8 +227,7 @@ classdef SetOfHyps < Hypersphere
          self.sigdiff.ma = 1-self.sigdiff.ov;
       end
 
-      function self = stressUpdate(self,otherHyp)
-         [~,~,self.error,self.msflips] = self.stress([self.radii(:) self.centers],otherHyp);
+      function self = stressUpdate(self,hypsTarget)
       % SetOfHyps.stressUpdate: populates error and msflips properties, computed
       %    by evaluating the error between the self SetOfHyps object and the
       %    hypsTarget SetOfHyps input.
@@ -237,6 +236,10 @@ classdef SetOfHyps < Hypersphere
       % hypset = hypset.stressUpdate(hypsTarget)
       % 
       % SEE ALSO SETOFHYPS.STRESS
+         for i = 1:numel(self)
+            [~,~,self(i).error,self(i).msflips] = self(i).stress( ...
+                              [self(i).radii(:) self(i).centers],hypsTarget(i) );
+         end
       end
       
       function model = h2s(self,varargin)
