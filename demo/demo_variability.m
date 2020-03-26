@@ -3,8 +3,6 @@
 seed = rng(0);
 SIMPLICES = true;
 another3  = false;
-CONSTRAINT= false;
-FIXRADII  = true;
 ninits    = 5;
 
 if SIMPLICES
@@ -44,12 +42,13 @@ for d = ds
       testhi.sig = testhi.significance(points);
    
       %axtivate(fh.a.h(i*2*nconditions+j));  model.show;
-      for MDS_INIT = [false true]
-         testlo = testhi.h2s([dimLow 0 ninits],[FIXRADII CONSTRAINT MDS_INIT]);
          [~,~,testlo.error,testlo.msflips] = testlo.stress(groundtruth);
          testlo.sig = testlo.significance(points);
+      for MDS_INIT = {'randinit' 'mdsinit'}
+         testlo = testhi.h2s([dimLow ninits],MDS_INIT{1});
       
-         axtivate(fh.a.h((i*2+double(MDS_INIT))*nconditions+j)); testlo.show;
+         axtivate(fh.a.h((i*2+double(strcmpi(MDS_INIT,'mdsinit')))*nconditions+j));
+         testlo.show;
          drawnow;
       end
    end

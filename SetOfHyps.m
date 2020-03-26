@@ -255,13 +255,12 @@ classdef SetOfHyps < Hypersphere
       %    SetOfHyps objects in severalhyps (useful for movies)
       % hypslo = hypshi.h2s([<dimLow> <ninits>]) % (numeric inputs)
       % hypslo = hypshi.h2s({<alpha>})           % alpha values must be in a cell
-      % hypslo = hypshi.h2s([<MDS_INIT> <DBUGPLOT> <VERBOSE>])  % (logical inputs)
-      %    ... or any combination of the above, with the restriction that if any
-      %    logical inputs is specified, all logical inputs to its left must also
-      %    be specified (and the same applies for the numeric inputs). For
-      %    example, if DBUGPLOT is given, it must be in a logical array that at
-      %    least contains [FIXRADII MDS_INIT DBUGPLOT] (but may also include
-      %    VERBOSE).
+      % hypslo = hypshi.h2s(<'mdsinit'>,<'debugplot'>,<'verbose'>)  % (string flags)
+      %    ... or any combination of the above, with the restriction that if ninits
+      %    is specified, dimLow must also be specified first in the array.
+      % hypslo = hypshi.h2s('mdsinit','debug') % equivalent to previous, if all
+      %                                          inputs in previous are provided
+      % hypslo = hypshi.h2s('randinit')        % (as opposed to 'mdsinit')
       % 
       % Optional inputs:
       %    hypsTarget (DEFAULT = self): a SetOfHyps object, which contains the
@@ -290,18 +289,21 @@ classdef SetOfHyps < Hypersphere
       %          self.h2s({[1 0 1]}) or self.h2s({1 0 1})
       %          self.h2s({1 1 0}) and self.h2s({1 0 0}) keep radii fixed, and
       %                              are both equivalent to MDS on the centers
-      %    MDS_INIT (DEFAULT = true): use MDS for low centers initialization
-      %       (as opposed to random initialization(s)).
-      %    DBUGPLOT (DEFAULT = false): display the h2s optimization debugging
-      %       plot, which updates on each iteration. Must be second element in
-      %       logical vector.
-      %    VERBOSE (DEFAULT = false): prints fminunc optimization messages to
-      %       the command prompt on every iteration. Must be third element in
-      %       logical vector.
-      %       e.g.:
-      %          self.h2s([true true true]) uses MDS for low centers
-      %              initialization, displays the fit debugging plot, and
-      %              prints optimization messages to the command prompt.
+      %    String input options:
+      %       'mdsinit'/'randinit' (DEFAULT = 'mdsinit'): use MDS for low centers
+      %          initialization (as opposed to random initialization(s)).
+      %       'debugplot' (DEFAULT = false): display the h2s optimization
+      %          debugging plot, which updates on each iteration. Must be second
+      %          element in logical vector.
+      %       'verbose' (DEFAULT = false): prints fminunc optimization messages
+      %          to the command prompt on every iteration. Must be third element
+      %          in logical vector.
+      %       'debug': equivalent to 'debugplot' and 'verbose'
+      %       'quiet' (DEFAULT): debug and verbose are off
+      %          e.g.:
+      %             self.h2s('debug') uses MDS for low centers
+      %                initialization, displays the fit debugging plot, and
+      %                prints optimization messages to the command prompt.
       % 
       % SEE ALSO SETOFHYPS.STRESS
          lo = self;
@@ -313,14 +315,18 @@ classdef SetOfHyps < Hypersphere
                if numel(varargin{v-1})==3
                   varargin{v-1}(3) = 1; % change to 1 for recursive call below
                end
-            elseif islogical(varargin{v-1})
-               [MDS_INIT,DBUGPLOT,VERBOSE] = dealvec(varargin{v-1});
             elseif iscell(varargin{v-1})
                alpha = [varargin{v-1}{:}];
             else
                switch lower(varargin{v-1})
-                  case 'joint';    JOINT = true;
-                  case 'separate'; JOINT = false;
+                  case 'joint';     JOINT    = true;
+                  case 'separate';  JOINT    = false;
+                  case 'mdsinit';   MDS_INIT = true;
+                  case 'randinit';  MDS_INIT = false;
+                  case 'debugplot'; DBUGPLOT = true;
+                  case 'verbose';   VERBOSE  = true;
+                  case 'debug';     DBUGPLOT = true;   VERBOSE  = true;
+                  case 'quiet';     DBUGPLOT = false;  VERBOSE  = false;
                end
             end
          end
@@ -383,8 +389,10 @@ classdef SetOfHyps < Hypersphere
                   end
                end
             end
-            if MDS_INIT % if still true, append logical vector to varargin
-               varargin = {varargin{:} [false DBUGPLOT VERBOSE]};
+            % force randinit if mdsinit is specified
+            tochange = strcmpi(varargin,'mdsinit');
+            if any(tochange)
+               varargin{tochange} = 'randinit';
             end
             % Loop through recursive function calls
             for iinit = 1:ninits

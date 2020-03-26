@@ -4,7 +4,7 @@
 SEED      = rng(1);
 SIMPLICES = true;
 ALLOW3D   = false;
-DBUGPLOT  = false;
+DBUGPLOT  = 'quiet'; %'verbose' %'debug' %'quiet'
 
 if SIMPLICES
    ds = [3 5 7 3];
@@ -50,10 +50,10 @@ for d = ds
    testhi = SetOfHyps('estimate',points,categories,groundtruth,1000);
    axtivate(fh.a.h((i-1)*nconditions+j));  model.show;
 
-   for MDS_INIT = true%[false true]
-      for FIXRADII = false%[false true]
+   for MDS_INIT = {'mdsinit'} %{'mdsinit' 'randinit'}
+      for alpha = {[1 1 1]} %{[1 1 1],[1 1 0]} %fix radii or not
          j = j+1;
-         testlo = testhi.h2s(dimLow,[FIXRADII MDS_INIT DBUGPLOT],groundtruth);
+         testlo = testhi.h2s(dimLow,MDS_INIT{1},DBUGPLOT,groundtruth,alpha);
          testlo = testlo.significance(points,1000);
       
          testlo.show(      fh.a.h((i-1)*nconditions+j  ));
