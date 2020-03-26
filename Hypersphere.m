@@ -77,9 +77,11 @@ classdef Hypersphere < handle
             return
          elseif isstruct(centers)                              % input option (4)
             % Helper for older struct-based code
-            if isfield('categories',centers)
+            if isfield(centers,'categories')
                obj = Hypersphere(centers.centers,centers.radii,...
                                  centers.categories);
+            elseif isa(radii,'Categories')
+               obj = Hypersphere(centers.centers,centers.radii,radii);
             else
                obj = Hypersphere(centers.centers,centers.radii);
             end
