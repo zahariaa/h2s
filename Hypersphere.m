@@ -129,17 +129,23 @@ classdef Hypersphere < handle
          end
       end
 
-      function self = concat(self)
+      function self = concat(self,cats)
       % Hypersphere.concat: collapses an array of Hypersphere objects into
       %    a single Hypersphere object, with centers and radii concatenated,
       %    i.e., an [n x 1] array of Hypersphere objects with one hypersphere
       %.   each turns into one Hypersphere object that has n hyperspheres.
+      % 
+      % Optional input argument:
+      %    cats: a categories object to embed in the concatenated object
+      % 
       % e.g.:
       % oneBigHyp = aFewHypsArray.concat
+      % oneBigHyp = aFewHypsArray.concat(categoriesForUnifiedHyp)
+         if ~exist('cats','var'),   cats = [];   end
          if isa(self,'SetOfHyps')
-            self =   SetOfHyps(cat(1,self.centers),[self.radii]);
+            self =   SetOfHyps(cat(1,self.centers),[self.radii],cats);
          else
-            self = Hypersphere(cat(1,self.centers),[self.radii]);
+            self = Hypersphere(cat(1,self.centers),[self.radii],cats);
          end
       end
 
