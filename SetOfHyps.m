@@ -861,12 +861,27 @@ classdef SetOfHyps < Hypersphere
 
    methods(Static)
       function [errtotal,grad,err,msflips] = stress(centers_and_radii,hi,alpha)
-         if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
-         else lo = SetOfHyps(centers_and_radii(:,2:end),centers_and_radii(:,1));
-         end
+         n = numel(hi);
          if ~exist('alpha','var') || isempty(alpha)
             alpha  = [1 1 1]; % for testing gradients with hyperparameters
          end
+         if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
+         else % recurse and combine
+            nc = size(centers_and_radii,1)/n;
+            lo = SetOfHyps(mat2cell(centers_and_radii(:,2:end),repmat(nc,[n 1])),...
+                           mat2cell(centers_and_radii(:,1    ),repmat(nc,[n 1])));
+            % separately optimize each SetOfHyps (recursively)...
+            [errtotal,grad,err,msflips] = arrayfun(@(l,h) ...
+                  SetOfHyps.stress(l,h,alpha),lo(:),hi(:),'UniformOutput',false);
+            % ...then combine the outputs
+            % (to avoid additional/incorrect pairwise comparisons being included)
+            errtotal = mean([errtotal{:}]);
+            grad     = cat(1,grad{:});
+            err      = [err{:}];
+            msflips  = [msflips{:}];
+            return
+         end
+
          [nc,dimLow] = size(lo.centers);
          errd        = hi.dists   - lo.dists;
          erro        = hi.margins - lo.margins;
