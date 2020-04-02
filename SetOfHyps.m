@@ -116,7 +116,15 @@ classdef SetOfHyps < Hypersphere
          else
             % Use Hypersphere constructor to handle other possible inputs
             if ~exist('radii','var'), radii = []; end
-            obj = Hypersphere(centers,radii,varargin{:}).meanAndMerge;
+            obj = Hypersphere(centers,radii,varargin{:});
+            if obj(end).categories.ispermuted
+               obj = obj.meanAndMerge;
+            else
+               % assume multiple objects are not bootstraps, but different
+               % frames etc, leave them as multiple objects
+               obj = arrayfun(@(x) SetOfHyps(x,[],varargin{:}),obj);
+               return
+            end
          end
 
          % Update error if another SetOfHyps given
@@ -182,7 +190,9 @@ classdef SetOfHyps < Hypersphere
       % 
       % SEE ALSO ESTIMATEHYPERSPHERE, HYPERSPHERE.MEANANDMERGE
          if ~exist('N','var') || isempty(N), N=100; end
-         if isstruct(points) && ~isempty(points)
+         if ~exist('points','var') && isstruct(self.ci) && ...
+            ~isempty(self.ci.bootstraps)  % then use self.ci.bootstraps
+         elseif isstruct(points) && ~isempty(points)
             self.ci = points;
          elseif ~size(self.categories.vectors,1)==size(points,1)
             error('self.categories.vectors needs to index points');
