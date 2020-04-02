@@ -585,45 +585,87 @@ classdef SetOfHyps < Hypersphere
                                            'DiffuseStrength',  1);
       end
 
-      function movie(self,times,timeLabel,varargin)
+      function movie(self,varargin)
       % SetOfHyps.movie: Makes a dynamic h2s visualization, and (optionally)
       %    saves it to an .avi movie. SetOfHyps objects that can be dynamically
       %    visualized can come in different forms, but this function assumes
       %    you've run h2s on all time points simultaneously, so that when it
       %    generates the frames, they are all in a common space.
-      %    estimateHypersphere will handle this 
-      %    
-      % function SetOfHyps.movie(times,timeLabel,<SAVEflag> or <StaticFrameAxes>)
-      % SetOfHyps.movie(times,timeLabel,SAVEflag) generates a movie, optionally saves
-      % SetOfHyps.movie(times,timeLabel,StaticFrameAxes) plots static frames in axes given
-         nh     = numel(self);
-         STATIC = false;
-         if nargin > 3
-            if        islogical(varargin{1}) , SAVE = varargin{1};
-            elseif all(ishandle(varargin{1})), SAVE = false; STATIC = true;
-                                               ax   = varargin{1};
-            end
-         else                                  SAVE = false;
-         end
-         if ~exist('ax'       ,'var'), ax        = repmat(gca,[1 nh]);   end
-         if ~exist('timeLabel','var'), timeLabel = [];    end
-         % Calculate frame times
-         if exist('times','var') && ~isempty(times)
-            if isempty(timeLabel), timeLabel = 'ms'; end
-         else
-            times = 1:nh;
-         end
+      %    estimateHypersphere handles this automatically; so does h2s with the
+      %    'joint' option.
+      % 
+      %    N.B.: if objects in self are high dimensional, h2s is automatically
+      %       run with no arguments first, then SetOfHyps.movie continues on
+      %       that. Output of h2s is not saved.
+      % 
+      % Optional inputs:
+      %   times (DEFAULT = 1:nframes): Numeric labels for each frame, e.g., the
+      %      time of that frame.
+      %   timeUnits (DEFAULT = 'ms' if times given, [] otherwise): A string
+      %      representing the units of the time labels above. This one string is
+      %      appended to the time labels above in every frame, e.g., 1 ms, 2 ms...
+      %   saveFilename (DEFAULT = []): If given, must end with '.avi'. A 20fps,
+      %      uncompressed .avi movie will be saved to the path given.
+      %   staticFrameAxes (DEFAULT: gca): Axes handle(s) can specify where the
+      %      movie is rendered (if one handle is given), or where static frames
+      %      are rendered (if multiple frames are given). In the latter case, the
+      %      number of frames and axes handles should match.
+      % 
+      % e.g.:
+      %   bunchohyps = SetOfHyps('estimate',X(:,:,1:end),cats); % use 3D tensor
+      %   bunchohyps.movie
+      %   bunchohyps.movie(times)
+      %   bunchohyps.movie(-100:10:700,'ms','dyn.avi') % saves movie to dyn.avi
+      %   bunchohyps.movie(times,'ms',staticFrameAxes) % plots static frames
+      %                                                % in axes given
+      % 
+      % SEE ALSO ESTIMATEHYPERSPHERE, SETOFHYPS.CAMERA, CATEGORIES.LEGEND
          dimLow = size(self(1).centers,2);
+         if dimLow > 3
+            self   = self.h2s;
+            dimLow = size(self(1).centers,2);
+         end
+
+         nframes   = numel(self);
+         STATIC    = false;
+         SAVE      = false;
+         timeUnits = [];
+         for v = 2:nargin
+            if all(ishandle(varargin{v-1})), SAVE  = false; STATIC = true;
+                                             ax    = varargin{v-1};
+            elseif isnumeric(varargin{v-1}), times = varargin{v-1};
+            else
+               if ~isempty(strfind(varargin{v-1},'.avi'))
+                  SAVE = varargin{v-1};
+               else
+                  timeUnits = varargin{v-1};
+               end
+            end
+         end
+         
+         if ~exist('ax'  ,'var') || numel(ax)==1
+            ax = repmat(gca,[1 nframes]);
+         elseif numel(ax) ~= nframes
+            warning('Mismatch between number of frames and axes handles provided.')
+         end
+         % Default frame times and label
+         if exist('times','var') && ~isempty(times)
+            if isempty(timeUnits), timeUnits = 'ms'; end
+         else
+            times = 1:nframes;
+         end
+
          % Calculate axis bounds
          axbounds = NaN(1,dimLow*2);
-         for i = 1:nh
+         for i = 1:nframes
             for j = 1:dimLow
                axbounds(1+(j-1)*2) = min([axbounds(1+(j-1)*2);
-                                    self(i).centers(:,j)-self(i).radii']);
+                                          self(i).centers(:,j)-self(i).radii']);
                axbounds(   j   *2) = max([axbounds(   j   *2);
-                                    self(i).centers(:,j)+self(i).radii']);
+                                          self(i).centers(:,j)+self(i).radii']);
             end
          end
+
          % Calculate camera view
          if dimLow == 3, camSettings = self.cameraCalc; end
          % Legend text position
@@ -631,24 +673,25 @@ classdef SetOfHyps < Hypersphere
 
          if SAVE
             fps = 20;
-            vidObj           = VideoWriter([SAVE '.avi']);
+            vidObj           = VideoWriter(SAVE);
             vidObj.FrameRate = fps;
             vidObj.Quality   = 100;
             open(vidObj);
          end
-         %% Do stuff
+
+         %% Do stuff for every frame
          ann = [];
-         for i = 1:nh
-            axtivate(ax(i));
+         for i = 1:nframes
+            axtivate(ax(i)); cla;
             % DRAW PLOT
-            self(i).show(false,[]);
+            self(i).show(false,[],'');
             if dimLow == 3,   self.camera(camSettings);   end
             axis(axbounds)
          
             %% Generate title string
-            extratxt = sprintf('} %g %s',times(i),timeLabel);
+            extratxt = sprintf('\\color{black}%g %s',times(i),timeUnits);
             if STATIC
-               title(extratxt(3:end));
+               title(extratxt,'Units','normalized','Position',[0.5 0.2 0]);
                extratxt = [];
             end
             if i==1 || ~STATIC
