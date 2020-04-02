@@ -7,11 +7,11 @@ dimLow = 3;
 %% LOAD DATA
 datafile = 'RDMs_srd_weighted_S2';
 X = load(['data' filesep datafile '.mat']);
-X = X.(cellify(fields(X)));
+X = X.(cellify(fields(X))); % de-struct
 
 %% Define categories
 labels = {'faces','fruits','places','bodyparts','objects'};
-cats = Categories([20 20 20 20 20],labels);
+cats = Categories({20 20 20 20 20},labels,lines(numel(labels)));
 times = -100:700;
 
 %% Compute!
@@ -20,27 +20,21 @@ if exist(h2ssavefile,'file'), load(h2ssavefile);
 else
    hi = SetOfHyps('estimate',X(:,:,1:end),cats,1);
    lo = hi.h2s(dimLow);
-%% SAVE
+   %% SAVE
    save(h2ssavefile,'hi','lo');
 end
 
 %% Run movie
-figure; lo.movie(times,'ms',datafile)
+figure; lo.movie(times,'ms',[datafile '.avi'])
 
 %% Generate plots
-figure;
-subplot(3,1,2); hi.plotComparisons('margins',times);
-ylabel('separations')
-subplot(3,1,3); hi.plotComparisons('dists',times);
-ylabel('distances')
+fh = newfigure([3 1],'comparisons');
+hi.plotDynamics('all',times,fh.a.h,true);
 xlabel('time (ms)');
-subplot(3,1,1); plot(times,reshape([hi.radii],5,[])','LineWidth',1);
-ylabel('spreads')
-box off; xlim([min(times) max(times)]);
+axtivate(fh.a.h(1));
 title(datafile,'Interpreter','none')
 
-cats.legend([0.01 0.9 1 0.1])
 %% Print
-set(gcf,'Name','comparisons','Renderer','painters');
-printFig([],[],'eps')
+set(gcf,'Renderer','painters');
+printFig(fh,[],'eps')
 
