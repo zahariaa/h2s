@@ -444,8 +444,9 @@ classdef SetOfHyps < Hypersphere
       % e.g.:
       %    hyps.show
       %    hyps.show(<axhandle>, <SETCAMERA>, <titleString>, <patchDetail>)
+      %    hyps.show([],'')  % uses current axes (gca), with no title
       % 
-      % Optional inputs:
+      % Optional inputs (argument order doesn't matter):
       %    axhandle (DEFAULT = gca): specifies the axis handle where the
       %       visualization should be rendered
       %    SETCAMERA (3D sphere visualization only, DEFAULT = true):
@@ -459,26 +460,30 @@ classdef SetOfHyps < Hypersphere
       % SEE ALSO SHOWMODEL, SETOFHYPS.CAMERA, SETOFHYPS.PLOTOVERLAPERRORS,
       % SETOFHYPS.H2S
          maxerror = max(self.error);
+
+         [~,XY] = showModel(self,varargin{:});
+
          switch size(self.centers,2)
-            case 2; [~,XY] = showCirclesModel(self,varargin{:});
+            case 2;
                %% Draw max error bar
-               maxXY = max(XY);
                if ~isnan(maxerror)
-               maxline = plot(maxXY([1 1]) - [0 maxerror],...
-                              maxXY([2 2]),'k-','LineWidth',4);
+                  maxXY = max(XY);
+                  maxline = plot(maxXY([1 1]) - [0 maxerror],...
+                                 maxXY([2 2]),'k-','LineWidth',4);
                end
-               axis ij tight equal vis3d off % puts error bar at bottom right
-            case 3; [~,XY] = showSpheresModel(self,varargin{:});
+            case 3;
                %% Draw max error bar
-               axis ij tight equal vis3d off % puts error bar at bottom right
                ax = gca;
                ax.Units = 'normalized';
+
                maxline = annotation('line',[1-maxerror/diff(ax.XLim) 1]*ax.Position(3)+ax.Position(1),...
-                                           ax.Position([2 2]),'LineWidth',4);
+                                           ax.Position([2 2]),'LineWidth',4,'Tag','maxline');
             otherwise
                varargout = self.h2s.show(varargin);
                return
          end
+         axis ij tight equal vis3d off % puts error bar at bottom right
+
          %% DRAW SIGN FLIP ERROR LINES
          ovlines = self.plotOverlapErrors;
 
