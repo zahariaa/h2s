@@ -85,7 +85,7 @@ classdef SetOfHyps < Hypersphere
       %    SetOfHyps.plotOverlapErrors
       %    SetOfHyps.camera
       %    SetOfHyps.movie
-      %    SetOfHyps.plotComparisons
+      %    SetOfHyps.plotDynamics
       %    SetOfHyps.showSig
       %    SetOfHyps.showValues
       %    SetOfHyps.showSigLegend
@@ -713,18 +713,80 @@ classdef SetOfHyps < Hypersphere
          end
       end
 
-      function plotComparisons(self,type,times,ax)
-         if ~exist('ax','var') || isempty(ax), ax = gca; end 
+      function plotDynamics(self,prop,varargin)
+      % SetOfHyps.plotDynamics: Plots the progression of specified SetOfHyps
+      %    object properties ('prop' string input argument) through the array
+      %    of SetOfHyps objects this is called on. Can optionally add a legend,
+      %    plot multiple properties, and specify the x-axis values each object
+      %    corresponds to (e.g., the times of the frames each object represents).
+      % 
+      % Required input argument:
+      %    prop (string or cell of strings): The summary stat(s) to plot. Can be:
+      %       'radii'
+      %       'margins'
+      %       'dists'
+      %       'volume'
+      %       'error'
+      %       'all': equivalent to {'radii','margins','dists'}
+      %       Or a cell of any combination of the above
+      % 
+      % Optional inputs:
+      %    ax (DEFAULT = gca): Axes handle(s) where the plots will be placed.
+      %    times (DEFAULT = 1:nframes): x-axis values for each frame, e.g., the
+      %       time of that frame.
+      %    LEGEND (DEFAULT = false): If true, places a categories.legend at the
+      %       top left.
+      % 
+      % e.g.:
+      %    bunchohyps.plotDynamics('dists')     % plots all distance comparisons
+      %    bunchohyps.plotDynamics({'radii','margins','dists'})
+      %    bunchohyps.plotDynamics('all')       % equivalent to line above
+      %    bunchohyps.plotDynamics('all',times) % specifies x-axis values
+      % 
+      % SEE ALSO CATEGORIES.LEGEND
+         for v = 3:nargin
+            if      ishandle(varargin{v-2}), ax     = varargin{v-2};
+            elseif islogical(varargin{v-2}), LEGEND = varargin{v-2};
+            elseif isnumeric(varargin{v-2}), times  = varargin{v-2};
+         end
+         if ~exist('LEGEND','var') || isempty(LEGEND), LEGEND = false; end
+         if ~exist('ax'    ,'var') || isempty(ax),     ax     = gca;  end
+         if ~exist('times' ,'var') || isempty(times),  times  = 1:numel(self); end
+         if ischar(prop) && strcmpi(prop,'all')
+            prop = {'radii','margins','dists'};
+         end
+         if iscell(prop)
+            for i = 1:numel(prop)
+               self.plotDynamics(prop{i},times,ax(i));
+            end
+            matchy(ax,'XLim')
+            if LEGEND, self(1).categories.legend; end
+            return
+         end
+
          n  = numel(self(1).radii);
          nk = nchoosek(n,2);
          ix = nchoosek_ix(n)';
 
          axtivate(ax);
          set(ax,'ColorOrder',self(1).categories.colors(ix(:),:))
-         plot(times,reshape([self.(type)],nk,[])','LineWidth',1)
-         plot(times,reshape([self.(type)],nk,[])','--','LineWidth',1)
-         ylabel(type)
+         if strcmpi(prop,'radii') || strcmpi(prop,'volume')
+            plot(times,reshape([self.(prop)],n ,[])','LineWidth',1)
+         else
+            plot(times,reshape([self.(prop)],nk,[])','LineWidth',1)
+            plot(times,reshape([self.(prop)],nk,[])','--','LineWidth',1)
+         end
+         switch prop
+            case 'dists',   prop = 'distances';
+            case 'margins' % do nothing
+            case 'radii',   prop = 'sizes';
+            case 'volume',  prop = 'volumes';
+            case 'error',   prop = 'errors';
+         end
+         ylabel(prop)
          xlim([min(times) max(times)]);
+
+         if LEGEND, self(1).categories.legend; end
       end
 
       function showSig(self,varargin)
