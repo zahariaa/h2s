@@ -251,7 +251,7 @@ classdef SetOfHyps < Hypersphere
       % e.g.
       % hypslo = hypshi.h2s
       % hypslo = hypslo.h2s(hypsTarget)
-      % hypsjointlo = severalhypshi.h2s(hypsTarget,'joint') % jointly optimizes all 
+      % hypsjointlo = severalhyps.h2s(hypsTargets,'joint') % jointly optimizes all 
       %    SetOfHyps objects in severalhyps (useful for movies)
       % hypslo = hypshi.h2s([<dimLow> <ninits>]) % (numeric inputs)
       % hypslo = hypshi.h2s({<alpha>})           % alpha values must be in a cell
@@ -290,6 +290,10 @@ classdef SetOfHyps < Hypersphere
       %          self.h2s({1 1 0}) and self.h2s({1 0 0}) keep radii fixed, and
       %                              are both equivalent to MDS on the centers
       %    String input options:
+      %       'joint'/'separate' (DEFAULT = 'joint'): if an array of multiple
+      %          SetOfHyps objects are provided, h2s jointly optimizes them. If
+      %          'separate' option provided, recursive calls to h2s optimize them
+      %          separately.
       %       'mdsinit'/'randinit' (DEFAULT = 'mdsinit'): use MDS for low centers
       %          initialization (as opposed to random initialization(s)).
       %       'debugplot' (DEFAULT = false): display the h2s optimization
@@ -338,7 +342,7 @@ classdef SetOfHyps < Hypersphere
          if ~exist('MDS_INIT','var'),           MDS_INIT = true;          end
          if ~exist('DBUGPLOT','var'),           DBUGPLOT = false;         end
          if ~exist('VERBOSE' ,'var'),            VERBOSE = false;         end
-         if ~exist('JOINT'   ,'var'),              JOINT = false;         end
+         if ~exist('JOINT'   ,'var'),              JOINT = true;          end
          if ~exist('alpha'   ,'var'),              alpha = [1 1 1];       end
 
          % Recurse for multiple SetOfHyps objects
@@ -366,11 +370,14 @@ classdef SetOfHyps < Hypersphere
          if (all(alpha(1:2)==1) && alpha(3)==0)
             fit = x0;
          else
-            opts = optimoptions(@fminunc,'TolFun',1e-4,'TolX',1e-4,'Display','off',...
+            opts = optimoptions(@fmincon,'TolFun',1e-4,'TolX',1e-4,'Display','off',...
                         'SpecifyObjectiveGradient',true);%,'DerivativeCheck','on');
             if DBUGPLOT, opts.OutputFcn = @self.stressPlotFcn; end
             if VERBOSE,  opts.Display   = 'iter';              end
-            fit = fminunc(@(x) SetOfHyps.stress(x,hi,alpha),x0,opts);
+            lb = [zeros(nr,1) -Inf(nr,dimLow)];
+            ub = Inf(nr,1+dimLow);
+            fit = fmincon(@(x) SetOfHyps.stress(x,hi,alpha),x0,...
+                          [],[],[],[],lb,ub,[],opts);
          end
          % Output reduced SetOfHyps model
          nc = size(fit,1)/n;
