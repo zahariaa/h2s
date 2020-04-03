@@ -796,16 +796,15 @@ classdef SetOfHyps < Hypersphere
             if   ishandle(varargin{v}),      ax  = varargin{v};
             elseif ischar(varargin{v})
                switch lower(varargin{v})
-                  case 'legend';            LGND = true;
+                  case 'legend';            LGND = varargin{v};
                   case 'sig';               sig  = self.sig;
                   case {'sigdiff', 'diff'}; sig  = self.sigdiff;
                end
-            elseif islogical(varargin{v}),  LGND = varargin{v};
             end
          end
          if ~exist('ax'  ,'var') || isempty(ax ) , ax   = gca;      end
          if ~exist('sig' ,'var') || isempty(sig) , sig  = self.sig; end
-         if ~exist('LGND','var') || isempty(LGND), LGND = false;    end
+         if ~exist('LGND','var') || isempty(LGND), LGND = 'nolegend'; end
 
          if isempty(sig)
             error('need to populate obj.sig(diff) first, e.g., obj.significance(points);');
@@ -836,7 +835,7 @@ classdef SetOfHyps < Hypersphere
          if ~isempty(sigThresh.ra), title('Significant differences')
          else                       title('Significant values')
          end
-         if LGND, self.showSigLegend(ax); end
+         if strcmpi(LGND,'legend'), self.showSigLegend(ax); end
       end
 
       function showValues(self,varargin)
