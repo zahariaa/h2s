@@ -99,7 +99,7 @@ switch estimator
             [estLocs(catI,:),locCI,estRadii(catI),radCI] = estimateHypersphere(points(logical(categories.vectors(:,catI)),:),nBootstrapSamples);
         end
 end
-high = SetOfHyps(estLocs, estRadii,categories);
+high = Hypersphere(estLocs, estRadii,categories);
 
 %% compute posteriors for distances and margins
 % margin = distance - r1 - r2
