@@ -19,13 +19,16 @@ function varargout = estimateHypersphere(points,varargin)
 
 %% preparation
 [n,d,f] = size(points);
-STRATIFIED = false;     % stratified bootstrap
+STRATIFIED = true;     % stratified bootstrap (default)
 
 for v = 2:nargin
    if isa(varargin{v-1},'Categories'), categories = varargin{v-1};
    elseif  isnumeric(varargin{v-1}),   nBootstrapSamples = varargin{v-1};
-   elseif  ischar(   varargin{v-1}) && strcmpi(varargin{v-1},'stratified')
-      STRATIFIED = true;
+   elseif  ischar(   varargin{v-1})
+      switch(lower(varargin{v-1}))
+         case 'permute';     STRATIFIED = false;
+         case 'stratified';  STRATIFIED = true;
+      end
    end
 end
 if ~exist('nBootstrapSamples','var'),  nBootstrapSamples = 1; end
@@ -47,8 +50,8 @@ if exist('categories','var')
    end
 %% permutation or stratified bootstrap test
    if nBootstrapSamples > 1
-      catperm = categories.permute(nBootstrapSamples,STRATIFIED);
-      for i = 1:nBootstrapSamples
+      catperm = [categories; categories.permute(nBootstrapSamples,STRATIFIED)];
+      for i = 1:nBootstrapSamples+1
          hyp(i) = estimateHypersphere(points,catperm(i));
       end
    else 
