@@ -103,7 +103,11 @@ else             % Assume Uniform
    rad = stdPer(d)*std(radii) + median(radii);
 end
 
-if nargout==1, varargout = {Hypersphere(loc,rad)};
+if ~exist('categories','var')
+   categories = Categories(numel(rad));
+end
+
+if nargout==1, varargout = {Hypersphere(loc,rad,categories)};
 else           varargout = {loc,locCI,rad,radCI};
                varargout = varargout(1:nargout);
 end
