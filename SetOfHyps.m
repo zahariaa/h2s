@@ -748,6 +748,7 @@ classdef SetOfHyps < Hypersphere
             if      ishandle(varargin{v-2}), ax     = varargin{v-2};
             elseif islogical(varargin{v-2}), LEGEND = varargin{v-2};
             elseif isnumeric(varargin{v-2}), times  = varargin{v-2};
+            end
          end
          if ~exist('LEGEND','var') || isempty(LEGEND), LEGEND = false; end
          if ~exist('ax'    ,'var') || isempty(ax),     ax     = gca;  end
