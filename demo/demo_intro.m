@@ -1,7 +1,8 @@
-% demo_intro: generates introductory explanation figure
+% demo_intro: generates introductory explanation figure and hinton diagram
+%    explantatory figure (#6)
 
-INTROFIG = true;
-n        = 50;
+INTROFIG = true; % true = fig 1, false = fig 6
+n        = 50;   % points per category
 nCats    = 4;
 dotsz    = 6;
 

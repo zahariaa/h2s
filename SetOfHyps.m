@@ -442,9 +442,9 @@ classdef SetOfHyps < Hypersphere
       %    will be inaccurate.
       % 
       % e.g.:
-      %    hyps.show
-      %    hyps.show(<axhandle>, <SETCAMERA>, <titleString>, <patchDetail>)
-      %    hyps.show([],'')  % uses current axes (gca), with no title
+      % hyps.show
+      % hyps.show(<axhandle>, <SETCAMERA>, <titleString>, <patchDetail>)
+      % hyps.show([],'')  % uses current axes (gca), with no title
       % 
       % Optional inputs (argument order doesn't matter):
       %    axhandle (DEFAULT = gca): specifies the axis handle where the
@@ -499,8 +499,8 @@ classdef SetOfHyps < Hypersphere
       %    margins are considered significant and any flip is plotted.
       % 
       % e.g.:
-      %    hyps.plotOverlapErrors
-      %    hyps.plotOverlapErrors(<thresh>)
+      % hyps.plotOverlapErrors
+      % hyps.plotOverlapErrors(<thresh>)
       % 
       % Optional input:
       %    thresh (DEFAULT = 0.95): significance threshold for an error to be
@@ -559,8 +559,8 @@ classdef SetOfHyps < Hypersphere
       %    standard settings.
       % 
       % e.g.:
-      %    self.camera
-      %    self.camera(<camSettings>)
+      % self.camera
+      % self.camera(<camSettings>)
       % 
       % Optional input:
       %    camSettings: a struct with fields corresponding to standard matlab
@@ -598,6 +598,14 @@ classdef SetOfHyps < Hypersphere
       %       run with no arguments first, then SetOfHyps.movie continues on
       %       that. Output of h2s is not saved.
       % 
+      % e.g.:
+      % bunchohyps = SetOfHyps('estimate',X(:,:,1:end),cats); % use 3D tensor
+      % bunchohyps.movie
+      % bunchohyps.movie(times)
+      % bunchohyps.movie(-100:10:700,'ms','dyn.avi') % saves movie to dyn.avi
+      % bunchohyps.movie(times,'ms',staticFrameAxes) % plots static frames
+      %                                              % in axes given
+      % 
       % Optional inputs:
       %   times (DEFAULT = 1:nframes): Numeric labels for each frame, e.g., the
       %      time of that frame.
@@ -610,14 +618,6 @@ classdef SetOfHyps < Hypersphere
       %      movie is rendered (if one handle is given), or where static frames
       %      are rendered (if multiple frames are given). In the latter case, the
       %      number of frames and axes handles should match.
-      % 
-      % e.g.:
-      %   bunchohyps = SetOfHyps('estimate',X(:,:,1:end),cats); % use 3D tensor
-      %   bunchohyps.movie
-      %   bunchohyps.movie(times)
-      %   bunchohyps.movie(-100:10:700,'ms','dyn.avi') % saves movie to dyn.avi
-      %   bunchohyps.movie(times,'ms',staticFrameAxes) % plots static frames
-      %                                                % in axes given
       % 
       % SEE ALSO ESTIMATEHYPERSPHERE, SETOFHYPS.CAMERA, CATEGORIES.LEGEND
          dimLow = size(self(1).centers,2);
@@ -720,6 +720,12 @@ classdef SetOfHyps < Hypersphere
       %    plot multiple properties, and specify the x-axis values each object
       %    corresponds to (e.g., the times of the frames each object represents).
       % 
+      % e.g.:
+      % bunchohyps.plotDynamics('dists')     % plots all distance comparisons
+      % bunchohyps.plotDynamics({'radii','margins','dists'})
+      % bunchohyps.plotDynamics('all')       % equivalent to line above
+      % bunchohyps.plotDynamics('all',times) % specifies x-axis values
+      % 
       % Required input argument:
       %    prop (string or cell of strings): The summary stat(s) to plot. Can be:
       %       'radii'
@@ -736,12 +742,6 @@ classdef SetOfHyps < Hypersphere
       %       time of that frame.
       %    LEGEND (DEFAULT = false): If true, places a categories.legend at the
       %       top left.
-      % 
-      % e.g.:
-      %    bunchohyps.plotDynamics('dists')     % plots all distance comparisons
-      %    bunchohyps.plotDynamics({'radii','margins','dists'})
-      %    bunchohyps.plotDynamics('all')       % equivalent to line above
-      %    bunchohyps.plotDynamics('all',times) % specifies x-axis values
       % 
       % SEE ALSO CATEGORIES.LEGEND
          for v = 3:nargin
@@ -791,7 +791,34 @@ classdef SetOfHyps < Hypersphere
       end
 
       function showSig(self,varargin)
-         % Parse inputs
+      % SetOfHyps.showSig: Visualizes significant summary statistics (radii,
+      %    distances, and overlaps/margins), and/or the significances of their
+      %    differences, in an elaborated Hinton diagram.
+      % 
+      %    The diagonal corresponds to radii, the upper triangle the overlaps/
+      %    margins, and the lower triangle the distances. Of if differences are
+      %    being plotted, these respective pairwise differences. The grayscale
+      %    value corresponds to the level of significance. Circle means positive
+      %    value, square means negative value (relevant for overlaps/margins).
+      % 
+      % e.g.:
+      %    hyps.showSig
+      %    hyps.showSig('legend')           % shows significances with legend
+      %    hyps.showSig(true)               % shows significances with legend
+      %    hyps.showSig('sigdiff',axHandle) % significant differences in axHandle
+      %    hyps.showSig(twoAxHandles)       % sig & sigdiff in each axes handles
+      % 
+      % Optional inputs:
+      %    ax (DEFAULT = gca): Axes handle where the visualization(s) should be
+      %       plotted. If two axes are given, showSig automatically plots both
+      %       significances and significant differences.
+      %    'sig' (DEFAULT): plots significances.
+      %    'sigdiff'/'diff': plots significant differences.
+      %    'legend': plots a legend explaining the grayscale values and their
+      %       corresponding significance levels.
+      % 
+      % SEE ALSO SETOFHYPS.SIGNIFICANCE, STATSMAT, SETOFHYPS.SHOWSIGLEGEND,
+      %    SETOFHYPS.SHAPESINABOX
          for v = 1:nargin-1
             if   ishandle(varargin{v}),      ax  = varargin{v};
             elseif ischar(varargin{v})
@@ -802,12 +829,13 @@ classdef SetOfHyps < Hypersphere
                end
             end
          end
-         if ~exist('ax'  ,'var') || isempty(ax ) , ax   = gca;      end
-         if ~exist('sig' ,'var') || isempty(sig) , sig  = self.sig; end
+         if ~exist('ax'  ,'var') || isempty(ax)  , ax   = gca;        end
+         if ~exist('sig' ,'var') || isempty(sig) , sig  = self.sig;   end
          if ~exist('LGND','var') || isempty(LGND), LGND = 'nolegend'; end
 
          if isempty(sig)
-            error('need to populate obj.sig(diff) first, e.g., obj.significance(points);');
+            error(['need to populate obj.sig/sigdiff first,'...
+                   ' e.g., obj.significance(points);']);
          end
 
          if numel(ax) == 2
@@ -820,8 +848,9 @@ classdef SetOfHyps < Hypersphere
          nSigLevs = self.nSigLevs; % 3 means [0.95 0.99 0.999] levels
 
          % Convert to sigmas significance, maxed to nSig(=3) and floored
-         %sig = structfun(@(x) erfinv(x)*sqrt(2),sig,'UniformOutput',false);
+         % Use False Discovery Rate correction for significance computation
          sigThresh = structfun(@(x) fdr_bh(1-x,1-0.95),sig,'UniformOutput',false);
+         % Compute increasing levels of significance
          for i = 2:nSigLevs
             for f = fieldnames(sig)'; f=f{1};
                sigThresh.(f) = sigThresh.(f) + double(fdr_bh(1-sig.(f),10^-i));
@@ -839,6 +868,8 @@ classdef SetOfHyps < Hypersphere
       end
 
       function showValues(self,varargin)
+      %    Each shape is split into left/right sides; their radii corresponding
+      %    to the high/low estimated/visualized values.
          % Parse inputs
          for v = 1:nargin-1
             if isa(varargin{v},'SetOfHyps'), hi = varargin{v};
@@ -1017,7 +1048,7 @@ classdef SetOfHyps < Hypersphere
          errtotal    = mean([alpha(1)*errd.^2 alpha(2)*erro.^2 alpha(3)*erra.^2]);
 
          msflips = ~(sign(hi.margins) == sign(lo.margins));
-         
+
          % Gradient: partial centers derivative of distances (should be size of centers)
          % Gradient: partial derivatives of error, relative to distances and overlaps
          ix = nchoosek_ix(nc);
