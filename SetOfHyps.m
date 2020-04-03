@@ -28,11 +28,11 @@ classdef SetOfHyps < Hypersphere
       function obj = SetOfHyps(centers,radii,varargin)
       % Constructor for SetOfHyps object for hypersphere2sphere, Hypersphere
       % e.g.:
-      % hypset = SetOfHyps(centers,radii,<categories>)               % (1)
-      % hypset = SetOfHyps('estimate',points,categories,<extraargs>) % (2)
-      % hypset = SetOfHyps(hyp,<ci>)                                 % (3)
+      % hypset = SetOfHyps(centers,radii,categories)                 % (1)
+      % hypset = SetOfHyps('estimate',points,categories,extraargs)   % (2)
+      % hypset = SetOfHyps(hyp,ci)                                   % (3)
       % hypset = SetOfHyps(hypstruct)                                % (4)
-      % hypset = SetOfHyps({hyps},radii,<extraargs>)                 % (5)
+      % hypset = SetOfHyps({hyps},radii,extraargs)                   % (5)
       % hypset = SetOfHyps(hypset,hypsetTarget)                      % (6)
       % 
       % Constructor input options:
@@ -263,9 +263,9 @@ classdef SetOfHyps < Hypersphere
       % hypslo = hypslo.h2s(hypsTarget)
       % hypsjointlo = severalhyps.h2s(hypsTargets,'joint') % jointly optimizes all 
       %    SetOfHyps objects in severalhyps (useful for movies)
-      % hypslo = hypshi.h2s([<dimLow> <ninits>]) % (numeric inputs)
-      % hypslo = hypshi.h2s({<alpha>})           % alpha values must be in a cell
-      % hypslo = hypshi.h2s(<'mdsinit'>,<'debugplot'>,<'verbose'>)  % (string flags)
+      % hypslo = hypshi.h2s([dimLow ninits]).  % (optional numeric inputs)
+      % hypslo = hypshi.h2s({alpha})           % alpha values must be in a cell
+      % hypslo = hypshi.h2s('mdsinit','debugplot','verbose')  % (string flags)
       %    ... or any combination of the above, with the restriction that if ninits
       %    is specified, dimLow must also be specified first in the array.
       % hypslo = hypshi.h2s('mdsinit','debug') % equivalent to previous, if all
@@ -443,7 +443,7 @@ classdef SetOfHyps < Hypersphere
       % 
       % e.g.:
       % hyps.show
-      % hyps.show(<axhandle>, <SETCAMERA>, <titleString>, <patchDetail>)
+      % hyps.show(axhandle, SETCAMERA, titleString, patchDetail)
       % hyps.show([],'')  % uses current axes (gca), with no title
       % 
       % Optional inputs (argument order doesn't matter):
@@ -500,7 +500,7 @@ classdef SetOfHyps < Hypersphere
       % 
       % e.g.:
       % hyps.plotOverlapErrors
-      % hyps.plotOverlapErrors(<thresh>)
+      % hyps.plotOverlapErrors(thresh)
       % 
       % Optional input:
       %    thresh (DEFAULT = 0.95): significance threshold for an error to be
@@ -559,8 +559,8 @@ classdef SetOfHyps < Hypersphere
       %    standard settings.
       % 
       % e.g.:
-      % self.camera
-      % self.camera(<camSettings>)
+      % hyps.camera
+      % hyps.camera(camSettings)
       % 
       % Optional input:
       %    camSettings: a struct with fields corresponding to standard matlab
@@ -570,7 +570,7 @@ classdef SetOfHyps < Hypersphere
       %          camSettings.CameraPosition = [1 1 1];
       %          camSettings.CameraTarget = [0 0 0];
       % 
-      % SEE ALSO SHOWMODEL, SETOFHYPS.SHOW
+      % SEE ALSO SHOWMODEL, SETOFHYPS.SHOW, SETOFHYPS.CAMERACALC
          if ~exist('camSettings','var') || isempty(camSettings)
             camSettings = self.cameraCalc;
          end
@@ -791,15 +791,18 @@ classdef SetOfHyps < Hypersphere
       end
 
       function showSig(self,varargin)
-      % SetOfHyps.showSig: Visualizes significant summary statistics (radii,
+      % SetOfHyps.showSig: Visualizes SIGNIFICANT summary statistics (radii,
       %    distances, and overlaps/margins), and/or the significances of their
-      %    differences, in an elaborated Hinton diagram.
+      %    DIFFERENCES, in an elaborated Hinton diagram.
       % 
-      %    The diagonal corresponds to radii, the upper triangle the overlaps/
-      %    margins, and the lower triangle the distances. Of if differences are
-      %    being plotted, these respective pairwise differences. The grayscale
-      %    value corresponds to the level of significance. Circle means positive
-      %    value, square means negative value (relevant for overlaps/margins).
+      %    As in SetOfHyps.showValues, the diagonal corresponds to radii, the
+      %    upper triangle the overlaps/margins, and the lower triangle the
+      %    distances. If differences are being plotted, these respective pairwise
+      %    differences. Circle means positive value, square means negative value
+      %    (relevant for overlaps/margins).
+      % 
+      %    N.B. As opposed to SetOfHyps.showValues, each shape's grayscale value
+      %    corresponds to the level of significance. 
       % 
       % e.g.:
       %    hyps.showSig
@@ -817,8 +820,8 @@ classdef SetOfHyps < Hypersphere
       %    'legend': plots a legend explaining the grayscale values and their
       %       corresponding significance levels.
       % 
-      % SEE ALSO SETOFHYPS.SIGNIFICANCE, STATSMAT, SETOFHYPS.SHOWSIGLEGEND,
-      %    SETOFHYPS.SHAPESINABOX
+      % SEE ALSO SETOFHYPS.SHOWVALUES, SETOFHYPS.SIGNIFICANCE, STATSMAT,
+      %    SETOFHYPS.SHOWSIGLEGEND, SETOFHYPS.SHAPESINABOX
          for v = 1:nargin-1
             if   ishandle(varargin{v}),      ax  = varargin{v};
             elseif ischar(varargin{v})
@@ -868,8 +871,39 @@ classdef SetOfHyps < Hypersphere
       end
 
       function showValues(self,varargin)
-      %    Each shape is split into left/right sides; their radii corresponding
-      %    to the high/low estimated/visualized values.
+      % SetOfHyps.showValues: Visualizes significant summary statistic (radii,
+      %    distances, and overlaps/margins) VALUES in an elaborated Hinton
+      %    diagram. A reference SetOfHyps object can be additionally provided to
+      %    compare estimated vs visualized values.
+      % 
+      %    As in SetOfHyps.showSig, the diagonal corresponds to radii, the upper
+      %    triangle the overlaps/margins, and the lower triangle the distances.
+      %    Circle means positive value, square means negative value (relevant for
+      %    overlaps/margins).
+      % 
+      %    N.B. As opposed to SetOfHyps.showSig, the radii of each shape
+      %    represents the corresponding summary statistic's value. These radii
+      %    are normalized to the maximum of the absolute value of ALL summary
+      %    statistics provided.
+      % 
+      %    Furthermore, each shape can be split into left/right sides, their
+      %    radii corresponding to the high/low, estimated/visualized values. This
+      %    happens only when an additional SetOfHyps object is provided as input.
+      % 
+      % e.g.:
+      %    hyps.showValues
+      %    hyps.showValues(hypsTarget) % splits shapes left/right hypsTarget/hyps
+      %    hyps.showValues(axHandle)   % puts diagram in axHandle
+      % 
+      % Optional inputs:
+      %    hypsTarget (DEFAULT = self): reference (high-dimensional) SetOfHyps
+      %       object containing summary statistics to be rendered on left half of
+      %       each shape.
+      %    axHandle (DEFAULT = gca): Axes handle where the visualization should
+      %       be plotted.
+      % 
+      % SEE ALSO SETOFHYPS.SHOWSIG, SETOFHYPS.SIGNIFICANCE, STATSMAT,
+      %    SETOFHYPS.SHOWSIGLEGEND, SETOFHYPS.SHAPESINABOX
          % Parse inputs
          for v = 1:nargin-1
             if isa(varargin{v},'SetOfHyps'), hi = varargin{v};
@@ -882,34 +916,51 @@ classdef SetOfHyps < Hypersphere
          himat = statsmat( -hi.margins, hi.dists, hi.radii);
 
          if ~isempty(self)
-         lomat = statsmat(-self.margins,self.dists,self.radii);
-         % Normalize both to same scale
-         maxval = max(abs([himat(:);lomat(:)]));
+            lomat = statsmat(-self.margins,self.dists,self.radii);
+            % Normalize both to same scale
+            maxval = max(abs([himat(:);lomat(:)]));
 
-           hi.shapesInABox(himat/maxval,'left', ax)
-         self.shapesInABox(lomat/maxval,'right',ax)
-         title('Values comparison')
+              hi.shapesInABox(himat/maxval,'left', ax)
+            self.shapesInABox(lomat/maxval,'right',ax)
+            title('Values comparison')
          else
-          hi.shapesInABox(himat/max(abs(himat(:))),'size',ax)
-         title('Values')
+              hi.shapesInABox(himat/max(abs(himat(:))),'size',ax)
+            title('Values')
          end
       end
 
       function showSigLegend(self,ax)
+      % SetOfHyps.showSigLegend: Renders legend for a significance/significant
+      %    differences elaborated Hinton diagram. Indicates the correspondence
+      %    between color and significance level.
+      % 
+      % e.g.:
+      %    hyps.showSigLegend
+      %    hyps.showSigLegend(axHandle)
+      % 
+      % Optional input:
+      %    axHandle (DEFAULT = gca): Axes handle where the legend should be
+      %       rendered. Should be the same one where SetOfHyps.showSig was/will
+      %       be.
+      % 
+      % SEE ALSO SETOFHYPS.SHOWSIG
          n        = numel(self.radii);
          boxPos   = self.boxPos;
          sqSz     = self.boxSize/n;
          nSigLevs = self.nSigLevs; % 3 means [0.95 0.99 0.999] levels
+         
          if ~exist('ax','var') || isempty(ax), ax = gca; axis ij off; end
+         
          % Time to get a-plottin'
          set(0,'CurrentFigure',get(ax,'Parent'))
          set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
+         
          %% Draw Legend
          for i = 1:nSigLevs
             rectangle('Position',[boxPos+[0.01+sqSz*(n+1/3) sqSz*(i-1)/3] sqSz/3 sqSz/3],...
                       'FaceColor',[1 1 1]*(1-i/nSigLevs),'EdgeColor','none')
          end
-         % Proability labels
+         % Probability labels
             text('Position',[boxPos+[0.01+sqSz*(n+0.7) sqSz/6]],'String','p<0.05')
          for i = 2:nSigLevs
             text('Position',[boxPos+[0.01+sqSz*(n+0.7) sqSz*(2*i-1)/6]],'String',...
@@ -1018,7 +1069,39 @@ classdef SetOfHyps < Hypersphere
    end
 
    methods(Static)
-      function [errtotal,grad,err,msflips] = stress(centers_and_radii,hi,alpha)
+      function [err2mean,grad,err,msflips] = stress(radii_and_centers,hi,alpha)
+      % SetOfHyps.stress: Stress/objective function that is optimized for h2s.
+      %    Computes analytic gradients, margin/overlap sign flips between high
+      %    and low-dimensional summary stats, and can output individual errors.
+      % 
+      % e.g.:
+      %    [err2mean,grad,err,msflips] = stress([radii(:) centers],hi)
+      %    err2mean = stress(lo,hi)
+      %    err2mean = stress(lo,hi,alpha)
+      %    [~,~,hyps.error,hyps.msflips] = hyps.stress(hyps,hypsTarget); %stressUpdate
+      %    fit = fmincon(@(x) SetOfHyps.stress(x,hi,alpha),x0,[],[],[],[],lb,ub,[],opts);
+      % 
+      % Requires at least two inputs:
+      %    radii_and_centers: Can be either: (1) a SetOfHyps object, or
+      %       (2) a numeric matrix with the form [radii(:) centers].
+      %    hi: The 'target' high dimensional SetOfHyps object, relative to which
+      %       the stress function computes its errors.
+      % Optional input:
+      %    alpha (DEFAULT = [1 1 1]): a numeric 3-vector that contains the
+      %       regularization hyperparameters, such that the first element is the
+      %       weight on the distance errors, the second is on the overlap errors,
+      %       and the third is on the radius errors.
+      % 
+      % Outputs:
+      %    err2mean: Total of all error terms, with regularization (alpha)
+      %       hyperparameters applied. If alpha=[1 1 1], err2mean = mean(err.^2)
+      %    grad: Computed analytic gradients wrt radii_and_centers.
+      %    err: Vector containing each individual error term, with regularization
+      %       (alpha) hyperparameters applied.
+      %    msflips: Logical vector representing whether a high-dimensional margin
+      %       flipped sign and became an overlap, or vice-versa.
+      % 
+      % SEE ALSO SETOFHYPS.H2S, SETOFHYPS.STRESSUPDATE, SETOFHYPS.SHOW
          n = numel(hi);
          if ~exist('alpha','var') || isempty(alpha)
             alpha  = [1 1 1]; % for testing gradients with hyperparameters
@@ -1077,6 +1160,14 @@ classdef SetOfHyps < Hypersphere
 
    methods(Hidden = true)
       function camSettings = cameraCalc(self)
+      % SetOfHyps.cameraCalc: Calculates a "consistent" camera position (for a
+      %    3D h2s visualization) by rotating everything so first 2 PC's are in
+      %    view and centering the camera on the centroid.
+      % 
+      % e.g.:
+      % hyps.cameraCalc
+      % 
+      % SEE ALSO SETOFHYPS.CAMERA, SETOFHYPS.SHOW, SHOWMODEL
          self = self.concat;
          
          % set view angle orthogonal to the PC12 plane of the locations
@@ -1162,9 +1253,6 @@ classdef SetOfHyps < Hypersphere
          csep   = -2*sqSz/3;      % separation between matrix box and circle key
 
          if SETUP
-%          %% DRAW UNDER-BOX OVERLAP/MARGIN SIGNIFIER AREAS
-%          upperX = [vectify(repmat(1:n,[2 1]));1]*sqSz;
-%          plot(boxPos(1)+upperX,boxPos(2)+shift(upperX-sqSz,-1),'k-' )
             %% LABELS
             if FIRSTORDER
                   text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.5)]],'HorizontalAlignment','center','String','Separation','FontSize',12)
