@@ -33,11 +33,11 @@ for v = 2:nargin
 end
 if ~exist('nBootstrapSamples','var'),  nBootstrapSamples = 1; end
 %% recurse cell array of points
-if exist('categories','var')
+if exist('categories','var') && numel(categories.labels)>1
 
 %% EVALUATE ALL FRAMES IN SAME SPACE
    if f > 1
-      points       = reshape(points,size(points,1),[])';
+      points       = reshape(permute(points,[1 3 2]),n*f,d);
       nCats        = numel(categories.labels);
 
       % EVALUATE ALL TOGETHER!
@@ -56,12 +56,7 @@ if exist('categories','var')
       end
    else 
       for i = 1:numel(categories.labels)
-         if islogical(categories.vectors)
-            p{i} = points(~~categories.vectors(:,i),:);
-         else
-            valid = find(categories.vectors(:,i));
-            p{i} = points(categories.vectors(valid,i),:);
-         end
+         p{i} = points(~~categories.select(i).vectors,:);
       end
       hyp = cell2mat_concat(cellfun(@estimateHypersphere,p,'UniformOutput',false));
       hyp = hyp.merge;
