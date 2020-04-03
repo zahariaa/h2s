@@ -41,11 +41,11 @@ if exist('categories','var') && numel(categories.labels)>1
       nCats        = numel(categories.labels);
 
       % EVALUATE ALL TOGETHER!
-      hyp          = estimateHypersphere(points,categories.repmat(f));
+      hyp          = estimateHypersphere(points,categories.internalrepmat(f));
       % SEPARATE COMBINED HYP
       centers      = mat2cell(hyp.centers,nCats*ones(f,1));
       radii        = num2cell(reshape(hyp.radii,[nCats f]),1)';
-      varargout{1} = cellfun(@(c,r) Hypersphere(c,r),centers,radii);
+      varargout{1} = Hypersphere(centers,radii,categories);
       return
    end
 %% permutation or stratified bootstrap test
@@ -54,12 +54,12 @@ if exist('categories','var') && numel(categories.labels)>1
       for i = 1:nBootstrapSamples+1
          hyp(i) = estimateHypersphere(points,catperm(i));
       end
-   else 
+   else
       for i = 1:numel(categories.labels)
          p{i} = points(~~categories.select(i).vectors,:);
       end
       hyp = cell2mat_concat(cellfun(@estimateHypersphere,p,'UniformOutput',false));
-      hyp = hyp.merge;
+      hyp = hyp.concat(categories);
    end
    varargout{1} = hyp;
    return
