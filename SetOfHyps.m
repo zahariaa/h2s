@@ -1106,17 +1106,17 @@ classdef SetOfHyps < Hypersphere
          if ~exist('alpha','var') || isempty(alpha)
             alpha  = [1 1 1]; % for testing gradients with hyperparameters
          end
-         if isa(centers_and_radii,'SetOfHyps'), lo = centers_and_radii;
+         if isa(radii_and_centers,'SetOfHyps'), lo = radii_and_centers;
          else % recurse and combine
-            nc = size(centers_and_radii,1)/n;
-            lo = SetOfHyps(mat2cell(centers_and_radii(:,2:end),repmat(nc,[n 1])),...
-                           mat2cell(centers_and_radii(:,1    ),repmat(nc,[n 1])));
+            nc = size(radii_and_centers,1)/n;
+            lo = SetOfHyps(mat2cell(radii_and_centers(:,2:end),repmat(nc,[n 1])),...
+                           mat2cell(radii_and_centers(:,1    ),repmat(nc,[n 1])));
             % separately optimize each SetOfHyps (recursively)...
-            [errtotal,grad,err,msflips] = arrayfun(@(l,h) ...
+            [err2mean,grad,err,msflips] = arrayfun(@(l,h) ...
                   SetOfHyps.stress(l,h,alpha),lo(:),hi(:),'UniformOutput',false);
             % ...then combine the outputs
             % (to avoid additional/incorrect pairwise comparisons being included)
-            errtotal = mean([errtotal{:}]);
+            err2mean = mean([err2mean{:}]);
             grad     = cat(1,grad{:});
             err      = [err{:}];
             msflips  = [msflips{:}];
@@ -1128,7 +1128,7 @@ classdef SetOfHyps < Hypersphere
          erro        = hi.margins - lo.margins;
          erra        = hi.radii   - lo.radii;
          err         = abs([alpha(1)*errd alpha(2)*erro alpha(3)*erra]); % not exactly correct
-         errtotal    = mean([alpha(1)*errd.^2 alpha(2)*erro.^2 alpha(3)*erra.^2]);
+         err2mean    = mean([alpha(1)*errd.^2 alpha(2)*erro.^2 alpha(3)*erra.^2]);
 
          msflips = ~(sign(hi.margins) == sign(lo.margins));
 
