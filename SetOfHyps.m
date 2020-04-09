@@ -828,12 +828,15 @@ classdef SetOfHyps < Hypersphere
                switch lower(varargin{v})
                   case 'legend';            LGND = varargin{v};
                   case 'sig';               sig  = self.sig;
+                                            DIFF = lower(varargin{v});
                   case {'sigdiff', 'diff'}; sig  = self.sigdiff;
+                                            DIFF = lower(varargin{v});
                end
             end
          end
          if ~exist('ax'  ,'var') || isempty(ax)  , ax   = gca;        end
-         if ~exist('sig' ,'var') || isempty(sig) , sig  = self.sig;   end
+         if ~exist('sig' ,'var') || isempty(sig) , sig  = self.sig;
+                                                   DIFF = 'sig';      end
          if ~exist('LGND','var') || isempty(LGND), LGND = 'nolegend'; end
 
          if isempty(sig)
@@ -863,9 +866,10 @@ classdef SetOfHyps < Hypersphere
 
          n = numel(self.radii);
          % Time to get a-plottin'
-         self.shapesInABox(statsmat(sigThresh.ov-sigThresh.ma,sigThresh.di,sigThresh.ra),'color',ax)
-         if ~isempty(sigThresh.ra), title('Significant differences')
-         else                       title('Significant values')
+         self.elaborateHinton(statsmat(sigThresh.ov-sigThresh.ma,sigThresh.di,sigThresh.ra),...
+                              'color',ax,DIFF)
+         if strcmpi(DIFF,'sig'), title('Significant values')
+         else                    title('Significant differences')
          end
          if strcmpi(LGND,'legend'), self.showSigLegend(ax); end
       end
@@ -920,11 +924,11 @@ classdef SetOfHyps < Hypersphere
             % Normalize both to same scale
             maxval = max(abs([himat(:);lomat(:)]));
 
-              hi.shapesInABox(himat/maxval,'left', ax)
-            self.shapesInABox(lomat/maxval,'right',ax)
+              hi.elaborateHinton(himat/maxval,'left', ax)
+            self.elaborateHinton(lomat/maxval,'right',ax)
             title('Values comparison')
          else
-              hi.shapesInABox(himat/max(abs(himat(:))),'size',ax)
+              hi.elaborateHinton(himat/max(abs(himat(:))),'size',ax)
             title('Values')
          end
       end
@@ -1186,7 +1190,7 @@ classdef SetOfHyps < Hypersphere
          camSettings.CameraTarget   = objectsCentroid;
       end
 
-      function shapesInABox(self,values,varargin)
+      function elaborateHinton(self,values,varargin)
          % Parse inputs
          if ~exist('values','var'), values = []; end
          N = numel(values);
@@ -1195,6 +1199,8 @@ classdef SetOfHyps < Hypersphere
             if        ischar(varargin{v})
                switch lower(varargin{v})
                   case {'size','left','right'}; side = varargin{v}; sizes = abs(values);
+                  case 'sig';             FIRSTORDER = true;
+                  case {'sigdiff','diff'};FIRSTORDER = false;
                   case 'color';               colors = mat2cell(1-abs(values(:))*[1 1 1],ones(1,N));
                   otherwise                  boxpart = varargin{v};
                end
@@ -1208,9 +1214,9 @@ classdef SetOfHyps < Hypersphere
 
          % If whole matrix of values passed, recursively call on each matrix part, after normalizing by abs-max
          if size(values,1)==sqrt(N) && size(values,2)==sqrt(N)
-            self.shapesInABox(values(triu(true(sqrt(N)), 1)),'uppert'  ,varargin{:})
-            self.shapesInABox(diag(values)                  ,'diagonal',varargin{:})
-            self.shapesInABox(values(tril(true(sqrt(N)),-1)),'lowert'  ,varargin{:})
+            self.elaborateHinton(values(triu(true(sqrt(N)), 1)),'uppert'  ,varargin{:})
+            self.elaborateHinton(diag(values)                  ,'diagonal',varargin{:})
+            self.elaborateHinton(values(tril(true(sqrt(N)),-1)),'lowert'  ,varargin{:})
             return
          end
          % Continue input parsing
@@ -1229,11 +1235,15 @@ classdef SetOfHyps < Hypersphere
          % Determine size of matrix, save it in figure
          nCats   = size(self.categories.colors,1);
          nCatsc2 = nchoosek(nCats,2);
-         if ~isempty(ax.UserData)
-            SETUP = false;
+         SETUP   = isempty(ax.UserData);
+         if exist('FIRSTORDER','var')
+            if FIRSTORDER, n = nCats;
+            else           n = nCatsc2;
+            end
+            ax.UserData = [n FIRSTORDER];
+         elseif ~isempty(ax.UserData)
             [n,FIRSTORDER] = dealvec(ax.UserData);
          else
-            SETUP = true;
             switch N
                case nCatsc2;             FIRSTORDER = true;  n = nCats;  % margins 1st order
                case nchoosek(nCatsc2,2); FIRSTORDER = false; n = nCatsc2;% ma/ov diff 2nd order
