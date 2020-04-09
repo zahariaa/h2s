@@ -247,8 +247,7 @@ classdef SetOfHyps < Hypersphere
       % 
       % SEE ALSO SETOFHYPS.STRESS
          for i = 1:numel(self)
-            [~,~,self(i).error,self(i).msflips] = self(i).stress( ...
-                              [self(i).radii(:) self(i).centers],hypsTarget(i) );
+            [~,~,self(i).error,self(i).msflips] = self(i).stress(self(i),hypsTarget(i));
          end
       end
       
