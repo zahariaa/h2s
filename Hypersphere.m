@@ -55,13 +55,13 @@ classdef Hypersphere < handle
       %   Hypersphere.concat
       %   Hypersphere.unconcat
       %   Hypersphere.meanAndMerge
+      %   Hypersphere.show
+      %   Hypersphere.camera
+      %   Hypersphere.movie
       %   Hypersphere.volume
       %   Hypersphere.dists
       %   Hypersphere.margins
       %   Hypersphere.overlap
-      %   Hypersphere.show
-      %   Hypersphere.camera
-      %   Hypersphere.movie
       % 
       % 2018-06-07 AZ Created
       % 
@@ -200,55 +200,6 @@ classdef Hypersphere < handle
          if ~isempty(ci) && isempty(self.sig)
             self = self.significance(ci);
          end
-      end
-
-      %% FUNCTIONS TO COMPUTE VOLUME, DISTS, MARGINS, OVERLAPS
-      % (they call the hidden static functions below)
-      function V = volume(self)
-      % Hypersphere.volume: Compute volume(s) of hypersphere(s)
-      % e.g.:
-      % V = hyp.volume
-         if numel(self) > 1
-            V = cell2mat_concat(arrayfun(@volume,self,'UniformOutput',false));
-            return
-         end
-         V = self.calcVolume(self.centers,self.radii);
-      end
-
-      function D = dists(self)
-      % Hypersphere.dists: Compute distance(s) between pair(s) of hyperspheres
-      %    along their center-connection lines.
-      % e.g.:
-      % D = hyp.dists
-         if numel(self) > 1
-            D = cell2mat_concat(arrayfun(@dists,self,'UniformOutput',false));
-            return
-         end
-         D = self.calcDists(self.centers,self.radii);
-      end
-
-      function M = margins(self)
-      % Hypersphere.margins: Compute margin(s) between pair(s) of hyperspheres.
-      %    Margins are defined as the distance along the center-connection line
-      %    between two hyperspheres, minus the radii. Margins are exactly the 
-      %    same as negative overlaps.
-      % e.g.:
-      % M = hyp.margins
-         if numel(self) > 1
-            M = cell2mat_concat(arrayfun(@margins,self,'UniformOutput',false));
-            return
-         end
-         M = self.calcMargins(self.radii,self.dists);
-      end
-
-      function ov = overlap(self)
-      % Hypersphere.overlap: Compute overlap(s) between pair(s) of hyperspheres.
-      %    Overlaps are defined as the distance along the center-connection line
-      %    between two hyperspheres, minus the radii. Overlaps are exactly the 
-      %    same as negative margins.
-      % e.g.:
-      % OV = hyp.overlap
-         ov = -self.margins;
       end
 
       function varargout = show(self,varargin)
@@ -483,6 +434,55 @@ classdef Hypersphere < handle
             close(vidObj)
             fprintf('\nVideo written to %s\n',SAVE)
          end
+      end
+
+      %% FUNCTIONS TO COMPUTE VOLUME, DISTS, MARGINS, OVERLAPS
+      % (they call the hidden static functions below)
+      function V = volume(self)
+      % Hypersphere.volume: Compute volume(s) of hypersphere(s)
+      % e.g.:
+      % V = hyp.volume
+         if numel(self) > 1
+            V = cell2mat_concat(arrayfun(@volume,self,'UniformOutput',false));
+            return
+         end
+         V = self.calcVolume(self.centers,self.radii);
+      end
+
+      function D = dists(self)
+      % Hypersphere.dists: Compute distance(s) between pair(s) of hyperspheres
+      %    along their center-connection lines.
+      % e.g.:
+      % D = hyp.dists
+         if numel(self) > 1
+            D = cell2mat_concat(arrayfun(@dists,self,'UniformOutput',false));
+            return
+         end
+         D = self.calcDists(self.centers,self.radii);
+      end
+
+      function M = margins(self)
+      % Hypersphere.margins: Compute margin(s) between pair(s) of hyperspheres.
+      %    Margins are defined as the distance along the center-connection line
+      %    between two hyperspheres, minus the radii. Margins are exactly the 
+      %    same as negative overlaps.
+      % e.g.:
+      % M = hyp.margins
+         if numel(self) > 1
+            M = cell2mat_concat(arrayfun(@margins,self,'UniformOutput',false));
+            return
+         end
+         M = self.calcMargins(self.radii,self.dists);
+      end
+
+      function ov = overlap(self)
+      % Hypersphere.overlap: Compute overlap(s) between pair(s) of hyperspheres.
+      %    Overlaps are defined as the distance along the center-connection line
+      %    between two hyperspheres, minus the radii. Overlaps are exactly the 
+      %    same as negative margins.
+      % e.g.:
+      % OV = hyp.overlap
+         ov = -self.margins;
       end
 
       %% SET FUNCTION TO VALIDATE CENTERS (they must be numeric, real, and finite)
