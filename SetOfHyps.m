@@ -319,7 +319,7 @@ classdef SetOfHyps < Hypersphere
       %                initialization, displays the fit debugging plot, and
       %                prints optimization messages to the command prompt.
       % 
-      % SEE ALSO SETOFHYPS.STRESS
+      % SEE ALSO SETOFHYPS.STRESS, SETOFHYPS.STRESSUPDATE, SETOFHYPS.STRESSPLOTFCN
          lo = self;
          for v = 2:nargin
             if isa(varargin{v-1},'SetOfHyps')
@@ -805,11 +805,11 @@ classdef SetOfHyps < Hypersphere
       %    corresponds to the level of significance. 
       % 
       % e.g.:
-      %    hyps.showSig
-      %    hyps.showSig('legend')           % shows significances with legend
-      %    hyps.showSig(true)               % shows significances with legend
-      %    hyps.showSig('sigdiff',axHandle) % significant differences in axHandle
-      %    hyps.showSig(twoAxHandles)       % sig & sigdiff in each axes handles
+      % hyps.showSig
+      % hyps.showSig('legend')           % shows significances with legend
+      % hyps.showSig(true)               % shows significances with legend
+      % hyps.showSig('sigdiff',axHandle) % significant differences in axHandle
+      % hyps.showSig(twoAxHandles)       % sig & sigdiff in each axes handles
       % 
       % Optional inputs:
       %    ax (DEFAULT = gca): Axes handle where the visualization(s) should be
@@ -895,9 +895,9 @@ classdef SetOfHyps < Hypersphere
       %    happens only when an additional SetOfHyps object is provided as input.
       % 
       % e.g.:
-      %    hyps.showValues
-      %    hyps.showValues(hypsTarget) % splits shapes left/right hypsTarget/hyps
-      %    hyps.showValues(axHandle)   % puts diagram in axHandle
+      % hyps.showValues
+      % hyps.showValues(hypsTarget) % splits shapes left/right hypsTarget/hyps
+      % hyps.showValues(axHandle)   % puts diagram in axHandle
       % 
       % Optional inputs:
       %    hypsTarget (DEFAULT = self): reference (high-dimensional) SetOfHyps
@@ -939,8 +939,8 @@ classdef SetOfHyps < Hypersphere
       %    between color and significance level.
       % 
       % e.g.:
-      %    hyps.showSigLegend
-      %    hyps.showSigLegend(axHandle)
+      % hyps.showSigLegend
+      % hyps.showSigLegend(axHandle)
       % 
       % Optional input:
       %    axHandle (DEFAULT = gca): Axes handle where the legend should be
@@ -1023,6 +1023,14 @@ classdef SetOfHyps < Hypersphere
          end
       end
       function stop = stressPlotFcn(self,varargin)%x,optimValues,state)
+      % stressPlotFcn: private function that plots errors and summary statistics
+      %    as a function of optimization iteration. This is only relevant as a
+      %    debugging plot for h2s.
+      % 
+      % e.g.
+      % hypslo = hypshi.h2s('debugplot')
+      % 
+      % SEE ALSO SETOFHYPS.H2S, SETOFHYPS.STRESS, SETOFHYPS.STRESSUPDATE
          % unpack inputs
          x           = varargin{1};
          optimValues = varargin{2};
@@ -1079,11 +1087,11 @@ classdef SetOfHyps < Hypersphere
       %    and low-dimensional summary stats, and can output individual errors.
       % 
       % e.g.:
-      %    [err2mean,grad,err,msflips] = stress([radii(:) centers],hi)
-      %    err2mean = stress(lo,hi)
-      %    err2mean = stress(lo,hi,alpha)
-      %    [~,~,hyps.error,hyps.msflips] = hyps.stress(hyps,hypsTarget); %stressUpdate
-      %    fit = fmincon(@(x) SetOfHyps.stress(x,hi,alpha),x0,[],[],[],[],lb,ub,[],opts);
+      % [err2mean,grad,err,msflips] = stress([radii(:) centers],hi)
+      % err2mean = stress(lo,hi)
+      % err2mean = stress(lo,hi,alpha)
+      % [~,~,hyps.error,hyps.msflips] = hyps.stress(hyps,hypsTarget); %stressUpdate
+      % fit = fmincon(@(x) SetOfHyps.stress(x,hi,alpha),x0,[],[],[],[],lb,ub,[],opts);
       % 
       % Requires at least two inputs:
       %    radii_and_centers: Can be either: (1) a SetOfHyps object, or
@@ -1191,6 +1199,49 @@ classdef SetOfHyps < Hypersphere
       end
 
       function elaborateHinton(self,values,varargin)
+      % SetOfHyps.elaborateHinton: Generates elaborated Hinton diagrams as
+      %    alternative visualizations of the summary statistic values,
+      %    significances, and significant differences. Includes color keys
+      %    indicating which diagram entry corresponds to which category.
+      % 
+      % e.g.:
+      % hyps.elaborateHinton(hyps.overlaps,'uppert',ax);
+      % hyps.elaborateHinton(hyps.dists,'lowert',ax);
+      % hyps.elaborateHinton(hyps.radii,'diagonal',ax);
+      % hyps.elaborateHinton(statsmat(overlaps,distances,radii)) % ~equivalent to 3 lines above
+      % hi.elaborateHinton(hivals,'left',ax);lo.elaborateHinton(lovals,'right',ax);
+      % hyps.elaborateHinton(values,'size')  % values-based shape sizing 
+      % hyps.elaborateHinton(values,'color') % values-based shape coloring (grayscale)
+      % hyps.elaborateHinton(values,'diff')  % forces second-order comparison diagram
+      % 
+      % Required input:
+      %    values: Must be numeric. Can be a vector or matrix. If it's a matrix,
+      %       it's assumed to be arranged in the same way as the diagram itself.
+      %       If it's a vector, it should be accompanied with a 'boxpart' string
+      %       input.
+      % 
+      % Optional inputs:
+      %    colors (DEFAULT: mat2cell(zeros(N,3),ones(1,N)) => all black): A cell
+      %       containing the colors of the shapes. The colors can either be
+      %       based on the value for the shape, or the identity the shape
+      %       corresponds to (as in the case of the radii in a second-order
+      %       comparison diagram).
+      %    boxpart ('uppert'/'diagonal'/'lowert'): The part of the matrix the
+      %       values are meant to populate (upper triangle / diagonal / lower
+      %       triangle). DEFAULT is 'uppert' or none (the whole matrix),
+      %       depending on the size of the values provided.
+      %    side ('left'/'right'): The side of the shapes the values correspond to
+      %       (both in terms of square vs circle, the radius, and the color [this
+      %       particular scenario is not a default one]). DEFAULT is none (which 
+      %       really means both).
+      %    FIRSTORDER ('sig'/sigdiff'/'diff'): Forces the diagram to be either
+      %       first-order (values or significance) or second-order (significant
+      %       differences). The color key is either on the inside (diagonal) or
+      %       the outside. The only time this is necessary is when nCategories<4.
+      %       DEFAULT is 'sig'.
+      % 
+      % SEE ALSO SETOFHYPS.SHOWVALUES, SETOFHYPS.SHOWSIG,
+      %    SETOFHYPS.SHOWSIGLEGEND, STATSMAT
          % Parse inputs
          if ~exist('values','var'), values = []; end
          N = numel(values);
@@ -1212,7 +1263,8 @@ classdef SetOfHyps < Hypersphere
          if ~exist('ax','var') || isempty(ax), ax = gca; end
          if ~any(values(:)), axtivate(ax); axis off; return; end
 
-         % If whole matrix of values passed, recursively call on each matrix part, after normalizing by abs-max
+         % If whole matrix of values passed, recursively call on each matrix
+         % part, after normalizing by abs-max
          if size(values,1)==sqrt(N) && size(values,2)==sqrt(N)
             self.elaborateHinton(values(triu(true(sqrt(N)), 1)),'uppert'  ,varargin{:})
             self.elaborateHinton(diag(values)                  ,'diagonal',varargin{:})
@@ -1245,56 +1297,57 @@ classdef SetOfHyps < Hypersphere
             [n,FIRSTORDER] = dealvec(ax.UserData);
          else
             switch N
-               case nCatsc2;             FIRSTORDER = true;  n = nCats;  % margins 1st order
-               case nchoosek(nCatsc2,2); FIRSTORDER = false; n = nCatsc2;% ma/ov diff 2nd order
-               case nCatsc2^2;           FIRSTORDER = false; n = nCatsc2;% full matrix 2nd order
-               case 0;                   FIRSTORDER = true;  n = nCats;  % (empty) radii 1st order
-               case nCats;               FIRSTORDER = true;  n = nCats;  % radii diff 2nd order
-               case nCats^2;             FIRSTORDER = true;  n = nCats;  % full matrix 1st order
+               case nCatsc2;             FIRSTORDER = true;  n = nCats;   % margins 1st order
+               case nchoosek(nCatsc2,2); FIRSTORDER = false; n = nCatsc2; % ma/ov diff 2nd order
+               case nCatsc2^2;           FIRSTORDER = false; n = nCatsc2; % full matrix 2nd order
+               case 0;                   FIRSTORDER = true;  n = nCats;   % (empty) radii 1st order
+               case nCats;               FIRSTORDER = true;  n = nCats;   % radii diff 2nd order
+               case nCats^2;             FIRSTORDER = true;  n = nCats;   % full matrix 1st order
             end
             ax.UserData = [n FIRSTORDER];
          end
          ix = nchoosek_ix(n,2);
 
          % Box parameters
-         boxPos = self.boxPos;     % starting coordinates for box containing matrix
-         sqSz   = self.boxSize/n;  % size of individual squares in matrix box
-         sqScl  = 0.97;%0.8;         % scale factor for squares
-         csep   = -2*sqSz/3;      % separation between matrix box and circle key
+         b     = self.boxPos;     % starting coordinates for box containing matrix
+         z     = self.boxSize/n;  % size of individual squares in matrix box
+         sqScl = 0.97;%0.8;       % scale factor for squares
+         csep  = -2*z/3;          % separation between matrix box and circle key
 
          if SETUP
-            %% LABELS
+            %% TEXT LABELS
             if FIRSTORDER
-                  text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.5)]],'HorizontalAlignment','center','String','Separation','FontSize',12)
-                  text('Position',[boxPos+[sqSz*(n+0.5) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Overlap','Rotation',90,'FontSize',12)
-                  text('Position',[boxPos+sqSz*n],'String','Radius','Rotation',-45,'FontSize',12)
+               text('Position',[b+[z*(n-1)/2 z*(n+0.5)]],'HorizontalAlignment','center','String',...
+                                                         'Separation','FontSize',12)
+               text('Position',[b+[z*(n+0.5) z*(n-1)/2]],'HorizontalAlignment','center','String',...
+                                                         'Overlap','Rotation',90,'FontSize',12)
+               text('Position',[b+z*n],'String','Radius','Rotation',-45,'FontSize',12)
             else
-                  text('Position',[boxPos+[sqSz*(n-1)/2 sqSz*(n+0.5)]],'HorizontalAlignment','center','String','Separation difference','FontSize',12)
-                  text('Position',[boxPos+[sqSz*(n+0.5) sqSz*(n-1)/2]],'HorizontalAlignment','center','String','Overlap difference','Rotation',90,'FontSize',12)
-                  text('Position',[boxPos+sqSz*n],'String','Radius difference','Rotation',-45,'FontSize',12)
+               text('Position',[b+[z*(n-1)/2 z*(n+0.5)]],'HorizontalAlignment','center','String',...
+                                                         'Separation difference','FontSize',12)
+               text('Position',[b+[z*(n+0.5) z*(n-1)/2]],'HorizontalAlignment','center','String',...
+                                                         'Overlap difference','Rotation',90,'FontSize',12)
+               text('Position',[b+z*n],'String','Radius difference','Rotation',-45,'FontSize',12)
             end
 
-            %% COLOR KEY: circles (only for second-order/difference comparisons)
+            %% COLOR KEY: circles on sides (only for second-order/difference comparisons)
             if ~FIRSTORDER
                cix = nchoosek_ix(nCats,2);
                for i = 1:nCatsc2
-                  rectangle('Position',[boxPos+[(i-0.5)*sqSz csep] 0.4*[sqSz sqSz]],...
-                            'FaceColor',self.categories.colors(cix(1,i),:),'Curvature',1,...
-                            'EdgeColor',self.categories.colors(cix(1,i),:))
-                  rectangle('Position',[boxPos+[csep (i-0.5)*sqSz] 0.4*[sqSz sqSz]],...
-                            'FaceColor',self.categories.colors(cix(1,i),:),'Curvature',1,...
-                            'EdgeColor',self.categories.colors(cix(1,i),:))
-                  rectangle('Position',[boxPos+[(i-0.9)*sqSz csep] 0.4*[sqSz sqSz]],...
-                            'FaceColor',self.categories.colors(cix(2,i),:),'Curvature',1,...
-                            'EdgeColor',self.categories.colors(cix(2,i),:))
-                  rectangle('Position',[boxPos+[csep (i-0.9)*sqSz] 0.4*[sqSz sqSz]],...
-                            'FaceColor',self.categories.colors(cix(2,i),:),'Curvature',1,...
-                            'EdgeColor',self.categories.colors(cix(2,i),:))
+                  selfcolors = self.categories.colors(cix(:,i),:);
+                  rectangle('Position',[b+[(i-0.5)*z csep] 0.4*[z z]],...
+                            'FaceColor',selfcolors(1,:),'Curvature',1,'EdgeColor',selfcolors(1,:))
+                  rectangle('Position',[b+[csep (i-0.5)*z] 0.4*[z z]],...
+                            'FaceColor',selfcolors(1,:),'Curvature',1,'EdgeColor',selfcolors(1,:))
+                  rectangle('Position',[b+[(i-0.9)*z csep] 0.4*[z z]],...
+                            'FaceColor',selfcolors(2,:),'Curvature',1,'EdgeColor',selfcolors(2,:))
+                  rectangle('Position',[b+[csep (i-0.9)*z] 0.4*[z z]],...
+                            'FaceColor',selfcolors(2,:),'Curvature',1,'EdgeColor',selfcolors(2,:))
                end
             end
          end
 
-         %% DRAW ACTUAL BOXES
+         %% DRAW ACTUAL CIRCLES/SQUARES
          tt = linspace(-pi/2,pi/2,50)+pi;
          if     strcmpi(side,'left'),   lside =  1;
          elseif strcmpi(side,'right'),  lside = -1;
@@ -1315,11 +1368,11 @@ classdef SetOfHyps < Hypersphere
                         patchx = -0.5 + ix(1,i) + [0 -lside -lside 0]*sizes(i)*sqScl/2;
                         patchy = -0.5 + ix(2,i) + [1 1 -1 -1]*sizes(i)*sqScl/2;
                      end
-                     patch(boxPos(1)+sqSz*patchx,boxPos(2)+sqSz*patchy,colors{i},...
+                     patch(b(1)+z*patchx,b(2)+z*patchy,colors{i},...
                            'EdgeColor','None','LineWidth',edgewidth);
-                  otherwise
-                     rectangle('Position',[boxPos+sqSz*(ix(:,i)'-(1+sqScl*sizes(i))/2) ...
-                                           sizes(i)*sqScl*[sqSz sqSz]],'Curvature',circleNotSquare(i),...
+                  otherwise % both sides
+                     rectangle('Position',[b+z*(ix(:,i)'-(1+sqScl*sizes(i))/2) ...
+                                           sizes(i)*sqScl*[z z]],'Curvature',circleNotSquare(i),...
                                'FaceColor',colors{i},'EdgeColor','None','LineWidth',edgewidth)
                end
             end
