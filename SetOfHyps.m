@@ -78,13 +78,13 @@ classdef SetOfHyps < Hypersphere
       %    SetOfHyps.concat
       %    SetOfHyps.unconcat
       %    SetOfHyps.meanAndMerge
+      %    SetOfHyps.show
+      %    SetOfHyps.camera
+      %    SetOfHyps.movie
       % Methods:
       %    SetOfHyps.significance
       %    SetOfHyps.h2s
-      %    SetOfHyps.show
       %    SetOfHyps.plotOverlapErrors
-      %    SetOfHyps.camera
-      %    SetOfHyps.movie
       %    SetOfHyps.plotDynamics
       %    SetOfHyps.showSig
       %    SetOfHyps.showValues
@@ -422,74 +422,6 @@ classdef SetOfHyps < Hypersphere
       end
 
 
-      function varargout = show(self,varargin)
-      % SetOfHyps.show: visualizes a SetOfHyps object as a set of circles (for
-      %    a 2D input) or spheres (for 3D input). If the dimensionality of the
-      %    input is larger than 3, h2s is automatically run (with no arguments)
-      %    and the result visualized (though the h2s-reduced SetOfHyps object is
-      %    not saved).
-      % 
-      %    A line indicating the error of the largest single statistic of
-      %    interest is plotted to the side of the visualization. Additional lines
-      %    are plotted in the visualization that indicate when an overlap or
-      %    margin in the original (high-dimensional) space has been visualized as
-      %    the opposite (i.e., a margin or overlap, respectively). If requested,
-      %    the handle(s) for these maximum error and overlap error lines are
-      %    outputted.
-      % 
-      % IMPORTANT(!) N.B.: if a 3D (sphere) visualization figure is resized or
-      %    zoomed in matlab, the error line will not resize accordingly and thus
-      %    will be inaccurate.
-      % 
-      % e.g.:
-      % hyps.show
-      % hyps.show(axhandle, SETCAMERA, titleString, patchDetail)
-      % hyps.show([],'')  % uses current axes (gca), with no title
-      % 
-      % Optional inputs (argument order doesn't matter):
-      %    axhandle (DEFAULT = gca): specifies the axis handle where the
-      %       visualization should be rendered
-      %    SETCAMERA (3D sphere visualization only, DEFAULT = true):
-      %       automatically calls self.camera to standardize 3D viewpoint.
-      %    titleString (DEFAULT = 'error <= [maxerror]'): specifies what to print
-      %       as the plot title. The default setting prints the actual maximum
-      %       error across all the individual statistics of interest.
-      %    patchDetail (DEFAULT = 100): determines how much detail the circle or
-      %       sphere has.
-      % 
-      % SEE ALSO SHOWMODEL, SETOFHYPS.CAMERA, SETOFHYPS.PLOTOVERLAPERRORS,
-      % SETOFHYPS.H2S
-         maxerror = max(self.error);
-
-         [~,XY] = showModel(self,varargin{:});
-
-         switch size(self.centers,2)
-            case 2;
-               %% Draw max error bar
-               if ~isnan(maxerror)
-                  maxXY = max(XY);
-                  maxline = plot(maxXY([1 1]) - [0 maxerror],...
-                                 maxXY([2 2]),'k-','LineWidth',4);
-               end
-            case 3;
-               %% Draw max error bar
-               ax = gca;
-               ax.Units = 'normalized';
-
-               maxline = annotation('line',[1-maxerror/diff(ax.XLim) 1]*ax.Position(3)+ax.Position(1),...
-                                           ax.Position([2 2]),'LineWidth',4,'Tag','maxline');
-            otherwise
-               varargout = self.h2s.show(varargin);
-               return
-         end
-         axis ij tight equal vis3d off % puts error bar at bottom right
-
-         %% DRAW SIGN FLIP ERROR LINES
-         ovlines = self.plotOverlapErrors;
-
-         if nargout > 0,   varargout = {maxline,ovlines};   end
-      end
-
       function errlines = plotOverlapErrors(self,thresh)
       % SetOfHyps.plotOverlapErrors: plots a line where a true overlap is
       %    visualized as a margin, or a true margin is visualized as an
@@ -506,7 +438,7 @@ classdef SetOfHyps < Hypersphere
       %    thresh (DEFAULT = 0.95): significance threshold for an error to be
       %       plotted
       % 
-      % SEE ALSO SETOFHYPS.SHOW, SETOFHYPS.SIGNIFICANCE
+      % SEE ALSO HYPERSPHERE.SHOW, SETOFHYPS.SIGNIFICANCE
          if ~exist('thresh','var') || iesmpty(thresh)
             thresh = 0.95;
          end
@@ -549,167 +481,6 @@ classdef SetOfHyps < Hypersphere
                                    ov_midpoint(2) + [-1 1]*dxy(2)*err/2,...
                                    ov_midpoint(3) + [-1 1]*dxy(3)*err/2,'k-','LineWidth',2);
             end
-         end
-      end
-
-      function camera(self,camSettings)
-      % SetOfHyps.camera: Sets camera, lighting, and surface properties (for a 3D
-      %    h2s visualization). Settings can be passed in a struct, though if no
-      %    settings are explicitly passed to this, SetOfHyps.camera applies
-      %    standard settings.
-      % 
-      % e.g.:
-      % hyps.camera
-      % hyps.camera(camSettings)
-      % 
-      % Optional input:
-      %    camSettings: a struct with fields corresponding to standard matlab
-      %       axis camera properties, each containing the corresponding value
-      %       the setting should be set to.
-      %       e.g.:
-      %          camSettings.CameraPosition = [1 1 1];
-      %          camSettings.CameraTarget = [0 0 0];
-      % 
-      % SEE ALSO SHOWMODEL, SETOFHYPS.SHOW, SETOFHYPS.CAMERACALC
-         if ~exist('camSettings','var') || isempty(camSettings)
-            camSettings = self.cameraCalc;
-         end
-         for f = fields(camSettings)'
-            set(gca,f{1},camSettings.(f{1}));
-         end
-         % Force lighting to camlight headlight
-         delete(findall(gca,'type','light'));
-         camlight
-         set(findobj(gca,'Type','Surface'),'AmbientStrength',  0,...
-                                           'SpecularStrength', 1,...
-                                           'DiffuseStrength',  1);
-      end
-
-      function movie(self,varargin)
-      % SetOfHyps.movie: Makes a dynamic h2s visualization, and (optionally)
-      %    saves it to an .avi movie. SetOfHyps objects that can be dynamically
-      %    visualized can come in different forms, but this function assumes
-      %    you've run h2s on all time points simultaneously, so that when it
-      %    generates the frames, they are all in a common space.
-      %    estimateHypersphere handles this automatically; so does h2s with the
-      %    'joint' option.
-      % 
-      %    N.B.: if objects in self are high dimensional, h2s is automatically
-      %       run with no arguments first, then SetOfHyps.movie continues on
-      %       that. Output of h2s is not saved.
-      % 
-      % e.g.:
-      % bunchohyps = SetOfHyps('estimate',X(:,:,1:end),cats); % use 3D tensor
-      % bunchohyps.movie
-      % bunchohyps.movie(times)
-      % bunchohyps.movie(-100:10:700,'ms','dyn.avi') % saves movie to dyn.avi
-      % bunchohyps.movie(times,'ms',staticFrameAxes) % plots static frames
-      %                                              % in axes given
-      % 
-      % Optional inputs:
-      %   times (DEFAULT = 1:nframes): Numeric labels for each frame, e.g., the
-      %      time of that frame.
-      %   timeUnits (DEFAULT = 'ms' if times given, [] otherwise): A string
-      %      representing the units of the time labels above. This one string is
-      %      appended to the time labels above in every frame, e.g., 1 ms, 2 ms...
-      %   saveFilename (DEFAULT = []): If given, must end with '.avi'. A 20fps,
-      %      uncompressed .avi movie will be saved to the path given.
-      %   staticFrameAxes (DEFAULT: gca): Axes handle(s) can specify where the
-      %      movie is rendered (if one handle is given), or where static frames
-      %      are rendered (if multiple frames are given). In the latter case, the
-      %      number of frames and axes handles should match.
-      % 
-      % SEE ALSO ESTIMATEHYPERSPHERE, SETOFHYPS.CAMERA, CATEGORIES.LEGEND
-         dimLow = size(self(1).centers,2);
-         if dimLow > 3
-            self   = self.h2s;
-            dimLow = size(self(1).centers,2);
-         end
-
-         nframes   = numel(self);
-         STATIC    = false;
-         SAVE      = false;
-         timeUnits = [];
-         for v = 2:nargin
-            if all(ishandle(varargin{v-1})), SAVE  = false; STATIC = true;
-                                             ax    = varargin{v-1};
-            elseif isnumeric(varargin{v-1}), times = varargin{v-1};
-            else
-               if ~isempty(strfind(varargin{v-1},'.avi'))
-                  SAVE = varargin{v-1};
-               else
-                  timeUnits = varargin{v-1};
-               end
-            end
-         end
-         
-         if ~exist('ax'  ,'var') || numel(ax)==1
-            ax = repmat(gca,[1 nframes]);
-         elseif numel(ax) ~= nframes
-            warning('Mismatch between number of frames and axes handles provided.')
-         end
-         % Default frame times and label
-         if exist('times','var') && ~isempty(times)
-            if isempty(timeUnits), timeUnits = 'ms'; end
-         else
-            times = 1:nframes;
-         end
-
-         % Calculate axis bounds
-         axbounds = NaN(1,dimLow*2);
-         for i = 1:nframes
-            for j = 1:dimLow
-               axbounds(1+(j-1)*2) = min([axbounds(1+(j-1)*2);
-                                          self(i).centers(:,j)-self(i).radii']);
-               axbounds(   j   *2) = max([axbounds(   j   *2);
-                                          self(i).centers(:,j)+self(i).radii']);
-            end
-         end
-
-         % Calculate camera view
-         if dimLow == 3, camSettings = self.cameraCalc; end
-         % Legend text position
-         txtY = [NaN;1.075;0.89];
-
-         if SAVE
-            fps = 20;
-            vidObj           = VideoWriter(SAVE);
-            vidObj.FrameRate = fps;
-            vidObj.Quality   = 100;
-            open(vidObj);
-         end
-
-         %% Do stuff for every frame
-         ann = [];
-         for i = 1:nframes
-            axtivate(ax(i)); cla;
-            % DRAW PLOT
-            self(i).show(false,[],'');
-            if dimLow == 3,   self.camera(camSettings);   end
-            axis(axbounds)
-         
-            %% Generate title string
-            extratxt = sprintf('\\color{black}%g %s',times(i),timeUnits);
-            if STATIC
-               title(extratxt,'Units','normalized','Position',[0.5 0.2 0]);
-               extratxt = [];
-            end
-            if i==1 || ~STATIC
-               delete(ann);
-               ann = self(1).categories.legend([0.01 txtY(dimLow) 1 0.1],extratxt);
-            end
-            if ~SAVE
-               drawnow
-               pause(0.1)
-            else
-               writeVideo(vidObj,getframe(gcf));
-            end
-         end
-         if STATIC
-            subplotResize([],[],0.01)
-         elseif SAVE
-            close(vidObj)
-            fprintf('\nVideo written to %s\n',SAVE)
          end
       end
 
@@ -1113,7 +884,7 @@ classdef SetOfHyps < Hypersphere
       %    msflips: Logical vector representing whether a high-dimensional margin
       %       flipped sign and became an overlap, or vice-versa.
       % 
-      % SEE ALSO SETOFHYPS.H2S, SETOFHYPS.STRESSUPDATE, SETOFHYPS.SHOW
+      % SEE ALSO SETOFHYPS.H2S, SETOFHYPS.STRESSUPDATE, HYPERSPHERE.SHOW
          n = numel(hi);
          if ~exist('alpha','var') || isempty(alpha)
             alpha  = [1 1 1]; % for testing gradients with hyperparameters
@@ -1171,33 +942,6 @@ classdef SetOfHyps < Hypersphere
    end
 
    methods(Hidden = true)
-      function camSettings = cameraCalc(self)
-      % SetOfHyps.cameraCalc: Calculates a "consistent" camera position (for a
-      %    3D h2s visualization) by rotating everything so first 2 PC's are in
-      %    view and centering the camera on the centroid.
-      % 
-      % e.g.:
-      % hyps.cameraCalc
-      % 
-      % SEE ALSO SETOFHYPS.CAMERA, SETOFHYPS.SHOW, SHOWMODEL
-         self = self.concat;
-         
-         % set view angle orthogonal to the PC12 plane of the locations
-         eigenvecs = pca(self.centers);
-         if size(eigenvecs,2)<2, normal = [0 0 0]';
-         else                    normal = null(eigenvecs(:,1:2)');
-         end
-         
-         if corr(self.centers*normal,self.radii')<0
-            normal = -normal;
-         end
-         
-         objectsCentroid = mean(self.centers,1);
-         camDist = 50*sqrt(sum(std(self.centers).^2));
-         camSettings.CameraPosition = objectsCentroid'-normal*camDist;
-         camSettings.CameraTarget   = objectsCentroid;
-      end
-
       function elaborateHinton(self,values,varargin)
       % SetOfHyps.elaborateHinton: Generates elaborated Hinton diagrams as
       %    alternative visualizations of the summary statistic values,
