@@ -1,4 +1,4 @@
-function varargout = estimateHypersphere(points,varargin)
+function hyp = estimateHypersphere(points,varargin)
 % hyp = estimateHypersphere(points,nBootstrapSamples) % output is a Hypersphere obj
 % hyps = estimateHypersphere(points,categories) % output is an array of Hypersphere objs
 %
@@ -9,13 +9,6 @@ function varargout = estimateHypersphere(points,varargin)
 %    e.g. for a movie:
 % hyp = estimateHypersphere(points,categories,1)
 %
-% OTHER OUTPUT OPTIONS
-% [loc,locCI,rad,radCI] = estimateHypersphere(points,nBootstrapSamples)
-% uses expected distance between pairs of points to estimate the radius of
-% the hypersphere.
-% uses the mean (or median) to estimate the location of the center.
-% uses bootstrap resampling of the points to estimate 95% confidence
-% intervals for both.
 
 %% preparation
 [n,d,f] = size(points);
@@ -37,15 +30,15 @@ if exist('categories','var') && numel(categories.labels)>1
 
 %% EVALUATE ALL FRAMES IN SAME SPACE
    if f > 1
-      points       = reshape(permute(points,[1 3 2]),n*f,d);
-      nCats        = numel(categories.labels);
+      points  = reshape(permute(points,[1 3 2]),n*f,d);
+      nCats   = numel(categories.labels);
 
       % EVALUATE ALL TOGETHER!
-      hyp          = estimateHypersphere(points,categories.internalrepmat(f));
+      hypEst  = estimateHypersphere(points,categories.internalrepmat(f));
       % SEPARATE COMBINED HYP
-      centers      = mat2cell(hyp.centers,nCats*ones(f,1));
-      radii        = num2cell(reshape(hyp.radii,[nCats f]),1)';
-      varargout{1} = Hypersphere(centers,radii,categories);
+      centers = mat2cell(hypEst.centers,nCats*ones(f,1));
+      radii   = num2cell(reshape(hypEst.radii,[nCats f]),1)';
+      hyp     = Hypersphere(centers,radii,categories);
       return
    end
 %% permutation or stratified bootstrap test
@@ -61,30 +54,7 @@ if exist('categories','var') && numel(categories.labels)>1
       hyp = cell2mat_concat(cellfun(@estimateHypersphere,p,'UniformOutput',false));
       hyp = hyp.concat(categories);
    end
-   varargout{1} = hyp;
    return
-end
-
-%% Bootstrap via recursion
-if nBootstrapSamples > 1
-   [loc,~,rad] = estimateHypersphere(points); % All-data estimate
-   % Bootstrap
-   locs = NaN(nBootstrapSamples,d);
-   rads = NaN(nBootstrapSamples,1);
-   for bootstrapI = 1:nBootstrapSamples
-      bsIs = ceil(rand(n,1)*n); % boostrap sample indices
-      [locs(bootstrapI,:),~,rads(bootstrapI)] = estimateHypersphere(points(bsIs,:));
-   end
-   if nargout==1, varargout = {Hypersphere(mat2cell([loc;locs],...
-                                 ones(nBootstrapSamples+1,1),d), [rad;rads])};
-   else
-      locCI = prctile(locs,[2.5 97.5]);
-      radCI = prctile(rads,[2.5 97.5]);
-      varargout = {loc,locCI,rad,radCI};
-      varargout = varargout(1:nargout);
-   end
-   return
-else  locCI = [];   radCI = [];
 end
 
 %% estimate location
@@ -107,10 +77,7 @@ if ~exist('categories','var')
    categories = Categories(numel(rad));
 end
 
-if nargout==1, varargout = {Hypersphere(loc,rad,categories)};
-else           varargout = {loc,locCI,rad,radCI};
-               varargout = varargout(1:nargout);
-end
+hyp = Hypersphere(loc,rad,categories);
 
 return
 end
