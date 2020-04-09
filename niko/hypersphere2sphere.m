@@ -91,15 +91,12 @@ switch estimator
         end
 
     case 'meanDist'
-        estLocs = nan(nCats,nDim);
-        estRadii = nan(1,nCats);
-        
         nBootstrapSamples = 0;
         for catI = 1:nCats
-            [estLocs(catI,:),locCI,estRadii(catI),radCI] = estimateHypersphere(points(logical(categories.vectors(:,catI)),:),nBootstrapSamples);
+            high(catI) = estimateHypersphere(points(logical(categories.vectors(:,catI)),:),nBootstrapSamples);
         end
 end
-high = Hypersphere(estLocs, estRadii,categories);
+high = high.concat;
 
 %% compute posteriors for distances and margins
 % margin = distance - r1 - r2
@@ -125,13 +122,13 @@ switch estimator
         % However, it would require a lot of memory (2*nCats times more).
     
     case 'meanDist'
-        estDists = pdist(estLocs,'Euclidean');
+        estDists = pdist(high.centers,'Euclidean');
         estMargins = nan(size(estDists));
 
         catPairI = 1;
         for cat1I = 1:nCats-1
             for cat2I = cat1I+1:nCats
-                estMargins(catPairI) = estDists(1,catPairI) - sum(estRadii([cat1I cat2I]));
+                estMargins(catPairI) = estDists(1,catPairI) - sum(high.radii([cat1I cat2I]));
                 catPairI = catPairI+1;
             end
         end
@@ -140,10 +137,10 @@ end
 %% compute target point estimates to be visualized
 if isequal(estimator,'MCMC')
     % use posterior medians as estimates
-    estRadii   = median(postSampleRadii,1);   estRadii =   estRadii(:)';
-    estDists   = median(postSampleDists,1);   estDists =   estDists(:)';
+    high.radii = vectify(median(postSampleRadii,1))';
+    estDists   = vectify(median(postSampleDists,1))';
     estMargins = median(postSampleMargins,1); estMargins = estMargins(:)';
-    disp(any2str('median radii: ',estRadii));
+    disp(any2str('median radii: ',high.radii));
     disp(any2str('median distances: ',estDists));
     disp(any2str('median margins: ',estMargins));
 end
@@ -151,7 +148,7 @@ end
 %% initialize 3D model
 mdsCenters_3d = mdscale(estDists,dimLow,'criterion','metricstress');
 model.centers = mdsCenters_3d;
-model.radii = estRadii;
+model.radii = high.radii;
 model.categories = categories;
 model.error = NaN;
 
@@ -164,9 +161,9 @@ model.error = NaN;
 
 
 %% return remaining error
-model = measureError(model, estDists, estRadii,  estMargins);
+model = measureError(model, estDists, high.radii,  estMargins);
 
-%%%diagnostics(model, estDists, estRadii, estMargins);
+%%%diagnostics(model, estDists, high.radii, estMargins);
 
 
 %% measure error
