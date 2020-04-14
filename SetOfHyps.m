@@ -184,14 +184,13 @@ classdef SetOfHyps < Hypersphere
       % e.g.:
       % hyps = hyps.significance(points)
       % hyps = hyps.significance(points,N)
-      % hyps = hyps.significance([],N)
       % hyps = hyps.significance(ci)
       % hyps = hyps.significance           % works only if hyps.ci is populated
       % 
       % SEE ALSO ESTIMATEHYPERSPHERE, HYPERSPHERE.MEANANDMERGE
          if ~exist('N','var') || isempty(N), N=100; end
-         if ~exist('points','var') && isstruct(self.ci) && ...
-            ~isempty(self.ci.bootstraps)  % then use self.ci.bootstraps
+         if ~exist('points','var') && isstruct(self.ci) && ~isempty(self.ci.bootstraps)
+            % then use self.ci.bootstraps
          elseif isstruct(points) && ~isempty(points)
             self.ci = points;
          elseif ~size(self.categories.vectors,1)==size(points,1)

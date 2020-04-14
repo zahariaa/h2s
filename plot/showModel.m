@@ -5,7 +5,7 @@ function [objHs,XY] = showModel(varargin)
 % 
 % e.g.:
 % showModel(model)
-% showModel(model,'A very nice model')
+% showModel(model,'A very nice model')% specifies plot title
 % showModel(model,500)                % super hi-res!
 % showModel(model,false)              % don't use standard camera angle
 % [objHs,XY] = showModel(model);      % keep object handles and corrdinates
