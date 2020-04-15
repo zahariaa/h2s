@@ -13,10 +13,8 @@ if ~exist('dimLow','var'), dimLow = 3; end
 nax = numel(ax);
 
 %% hypersphere to sphere visualization
-model = hypersphere2sphere(pointsOrDistMat,categories,[],dimLow);
-if     dimLow==2;   showCirclesModel(model, ax(1), titleStr);
-elseif dimLow==3;   showSpheresModel(model, ax(1), titleStr);
-end
+model = SetOfHyps('estimate',pointsOrDistMat,categories).h2s(dimLow);
+model.show(ax(1),titleStr);
 
 %% other visualizations
 dists = pdist(pointsOrDistMat,'Euclidean');
