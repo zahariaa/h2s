@@ -73,6 +73,8 @@ class VGGtiny(nn.Module):
             losses = np.array([])
             accuracies = np.array([])
             for i, (inputs,labels) in enumerate(trainloader, 0):
+            # running_loss = 0.0
+            # running_accuracy = 0.0
                 # get the inputs
                 inputs, labels = inputs.to(device), labels.to(device)
 
@@ -87,11 +89,20 @@ class VGGtiny(nn.Module):
                 optimizer.step()
                 
                 # calculate accuracy
+                # from IPython.core.debugger import Pdb
+                # ipdb = Pdb()
+                # ipdb.set_trace()
                 accuracy = (outputs.max(1)[1] == labels).sum().item() / trainloader.batch_size
                 accuracies = np.append(accuracies,accuracy)
 
                 # print statistics
+                # running_loss += loss.item()
+                # running_accuracy += accuracy
                 if plotmode and i % nupdate == nupdate-1:    # print every 100 mini-batches
+                    # print('[%d, %5d] loss: %.3f accuracy: %.2f' %
+                    #       (epoch + 1, i + 1, running_loss / nupdate, running_accuracy / nupdate))
+                    # running_loss = 0.0
+                    # running_accuracy = 0.0
                     # PLOT!
                     clear_output(wait=True)
                     plt.figure(figsize=(10,5))

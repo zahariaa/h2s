@@ -15,7 +15,7 @@ function hyp = estimateHypersphere(points,varargin)
 STRATIFIED = true;     % stratified bootstrap (default)
 
 for v = 2:nargin
-   if isa(varargin{v-1},'Categories'), categories = varargin{v-1};
+   if isa(varargin{v-1},'Categories'), categories        = varargin{v-1};
    elseif  isnumeric(varargin{v-1}),   nBootstrapSamples = varargin{v-1};
    elseif  ischar(   varargin{v-1})
       switch(lower(varargin{v-1}))
@@ -25,9 +25,9 @@ for v = 2:nargin
    end
 end
 if ~exist('nBootstrapSamples','var'),  nBootstrapSamples = 1; end
+
 %% recurse cell array of points
 if exist('categories','var') && numel(categories.labels)>1
-
 %% EVALUATE ALL FRAMES IN SAME SPACE
    if f > 1
       points  = reshape(permute(points,[1 3 2]),n*f,d);
@@ -41,7 +41,7 @@ if exist('categories','var') && numel(categories.labels)>1
       hyp     = Hypersphere(centers,radii,categories);
       return
    end
-%% permutation or stratified bootstrap test
+   %% permutation or stratified bootstrap test
    if nBootstrapSamples > 1
       catperm = [categories; categories.permute(nBootstrapSamples,STRATIFIED)];
       for i = 1:nBootstrapSamples+1

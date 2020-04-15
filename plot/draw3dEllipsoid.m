@@ -38,7 +38,9 @@ function [h,XYZ] = draw3dEllipsoid(center,covariance,color,alpha,n,SETLIGHT)
 %       FaceAlpha/opacity. Same value applied to all ellipsoids.
 %    n (DEFAULT = 100): Level of surface detail, as measured by the number of
 %       vertices for the ellipsoids.
-%    SETLIGHT (DEFAULT = true): 
+%    SETLIGHT (DEFAULT = true): sets lighting for all ellipsoids in the plot.
+%       This is mainly a placeholder; it's forced to be false in recursive calls
+%       to avoid multiple lighting sources piling up.
 % 
 % SEE ALSO DRAWCIRCLE, SHOWMODEL
 
