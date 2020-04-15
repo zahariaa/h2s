@@ -46,13 +46,18 @@ for s = scenarios
                    randsphere(nPtsPerCat{s}(2),nDim,radii{s}(2))];
          points(1:nPtsPerCat{s}(1)    ,1) = points(1:nPtsPerCat{s}(1)    ,1) + centers{s}(1);
          points(nPtsPerCat{s}(1)+1:end,1) = points(nPtsPerCat{s}(1)+1:end,1) + centers{s}(2);
+         SIG = [];
       else    % GAUSSIAN
-         SIG  = rand(nDim,nDim,2);
-         for i = 1:2;   SIG(:,:,i) = SIG(:,:,i)*SIG(:,:,i)';   end
-         if s>=8, SIG(:,:,2) = SIG(:,:,1); end
-         points = nan(sum(nPtsPerCat{s}),nDim);
-         points(1:nPtsPerCat{s}(1),:)     = mvnrnd(centers{s}(1)*ones(nDim,1),SIG(:,:,1),nPtsPerCat{s}(1));
-         points(nPtsPerCat{s}(1)+1:end,:) = mvnrnd(centers{s}(2)*ones(nDim,1),SIG(:,:,2),nPtsPerCat{s}(1));
+         if ~exist('SIG','var') || isempty(SIG)
+            SIG  = rand(nDim,nDim,2);
+            for i = 1:2;   SIG(:,:,i) = SIG(:,:,i)*SIG(:,:,i)';   end
+            if s>=8, SIG(:,:,2) = SIG(:,:,1); end
+            points = nan(sum(nPtsPerCat{s}),nDim);
+            points(1:nPtsPerCat{s}(1),:)     = mvnrnd(centers{s}(1)*ones(nDim,1),SIG(:,:,1),nPtsPerCat{s}(1));
+            points(nPtsPerCat{s}(1)+1:end,:) = mvnrnd(centers{s}(2)*ones(nDim,1),SIG(:,:,2),nPtsPerCat{s}(1));
+         else
+            keyboard
+         end
       end
       categories = Categories(nPtsPerCat{s});
       if PLOTALL
@@ -63,7 +68,7 @@ for s = scenarios
       frow = (find(scenarios==s)-1);
       ax = fh.a.h(9*frow+1:9*(frow+1));
       if nDim==3,       HS2SandMDS(points,categories,ax(2:5),[],dimLow);
-                        plotEllipsoids(ax(1),categories,centers{s},radii{s});
+                        plotEllipsoids(ax(1),categories,centers{s},radii{s},SIG);
       elseif nDim==200, HS2SandMDS(points,categories,ax(6:9),[],dimLow);
       end
       
@@ -75,21 +80,30 @@ end
 % printFig([],[],'eps');
 
 %% Finish up combo figures
+set(stfig.f,'Renderer','openGL');
+subplotResize([],0.01,0.01);       printFig(stfig.f);
 %set(fh.a.h(1:9:end),'CameraPosition',[0 0 -33]); % make 3D views consistent
 papsz = [6.5 4];
 set(fh.f,'PaperUnits','inches','PaperSize',papsz,'PaperPosition',[0.01*papsz papsz],'PaperPositionMode','manual');
 set(findobj(fh.f,'type','line'),'MarkerSize',3); % make dots slightly smaller
-subplotResize([],0.01,0.01);
-set(fh.f,'Renderer','painters');   printFig;
+subplotResize(fh.a.h,0.01,0.01);
+set(fh.f,'Renderer','painters');   printFig(fh.f);
 delete(fh.a.h(2:9:end));
 set(fh.f,'Renderer','openGL');     printFig(fh.f,[],'png',1200);
 
 %% Add 3D renders to "Combo plot" for paper
-function plotEllipsoids(ax,categories,centers,radii)
+function plotEllipsoids(ax,categories,centers,radii,covariance)
    % format abbreviated radii and centers into full 3D vectors/matrices
    locations  = zeros(numel(centers),3); locations(:,1) = centers(:);
-   covariance = arrayfun(@(r) r*eye(3),radii.^2,'UniformOutput',false)';
+   if ~exist('covariance','var') || isempty(covariance)
+      covariance = arrayfun(@(r) r*eye(3),radii.^2,'UniformOutput',false)';
+   end
 
    axtivate(ax);
-   draw3dEllipsoid(locations,covariance,categories.colors,[],1/3);
+   draw3dEllipsoid(locations,covariance,categories.colors,0.5);
+delete(findall(gca,'type','light'));
+camlight
+set(findobj(gca,'Type','Surface'),'AmbientStrength',  0,...
+                                  'SpecularStrength', 1,...
+                                  'DiffuseStrength',  1);
 

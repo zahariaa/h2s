@@ -1,7 +1,8 @@
-% demo_intro: generates introductory explanation figure
+% demo_intro: generates introductory explanation figure and hinton diagram
+%    explantatory figure (#6)
 
-INTROFIG = true;
-n        = 50;
+INTROFIG = true; % true = fig 1, false = fig 6
+n        = 50;   % points per category
 nCats    = 4;
 dotsz    = 6;
 
@@ -24,7 +25,7 @@ else
    r = {1:4,ones(1,6)/sqrt(3/2)};
 
 %%TODO: generalize simplex scale factor to have 0 overlap
-   %d=3;hi = SetOfHyps(nsimplex(d)*sqrt(3/2),ones(d+1,1));hi.margins
+   %d=3;hi = Hypersphere(nsimplex(d)*sqrt(3/2),ones(d+1,1));hi.margins
    v{2} = nsimplex(3)';
    v{2} = v{2}([1:3 2:4],:) + [[3;3;3;-3;-3;-3] zeros(6,2)];
    
@@ -42,8 +43,7 @@ end
 %% PLOT
 for itype = 1;%0;%1:-1:0
 planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
-   orig = SetOfHyps(v{itype+1},r{itype+1});
-   orig.categories = Categories(n*ones(1,numel(r{itype+1})));
+   orig = SetOfHyps(v{itype+1},r{itype+1},Categories({n*ones(1,numel(r{itype+1}))}));
    if ~INTROFIG  && itype==0
    orig.categories.colors = orig.categories.colors([1 4 3 2],:);
    end
@@ -61,8 +61,8 @@ planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
    axtivate(2) 
    sh = draw3dEllipsoid(v{itype+1},...
             arrayfun(@(x) eye(3)*x^2,r{itype+1},'UniformOutput',false),...
-            orig.categories.colors(1:nCats,:),[],0.5);
    draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*planelim); view(40,22);
+            orig.categories.colors(1:nCats,:),0.5);
    match3D(fh.a.h(1),fh.a.h(2));
    set(fh.f,'Renderer','openGL');
    axis(fh.a.h(3),'off');
@@ -124,8 +124,8 @@ planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
    
    axtivate(3)
    model = hypersphere2sphere(points{itype+1}(1:(n*nCats),:),orig.categories.select(1:nCats),[],2);
-   [~,~,model.error] = SetOfHyps(model).stress(orig);
-   showCirclesModel(model,[],[]);
+   model = SetOfHyps(model).stressUpdate(orig);
+   model.show;
    for i = 1:nCats
       plot(model.centers(i,1),model.centers(i,2),'wo','MarkerSize',dotsz,...
            'MarkerFaceColor',orig.categories.colors(i,:))
@@ -150,18 +150,15 @@ low  = SetOfHyps(model);
 if ~INTROFIG  && itype==0
 low.categories.colors = low.categories.colors([1 4 3 2],:);
 end
-[~,~,low.error] = low.stress(orig);
+low.stressUpdate(orig);
 new  = low.h2s(orig,2)%orig.h2s
 % Calculate significance
-[orig.sig,sec] = orig.significance(points{itype+1},10000);
+orig = orig.significance(points{itype+1},400);
 % Plot
-low.sig = orig.sig;
-new.sig = orig.sig;
 fh = newfigure([3 2],'compare'); low.show(fh.a.h(1));
                                  new.show(fh.a.h(2));
 set(fh.f,'Renderer','openGL')
-orig.showSig(fh.a.h(5),'legend');
-orig.showSig(sec,fh.a.h(6));
+orig.showSig(fh.a.h(5:6),'legend');
 matchy(fh.a.h(5:6))
 
 low.showValues(fh.a.h(3))
@@ -174,8 +171,7 @@ printFig(fh.f,[],'eps')
 fh = newfigure([1 4],'stats');
 new.show(fh.a.h(1));
 new.showValues(low,fh.a.h(2))
-orig.showSig(fh.a.h(3));
-orig.showSig(sec,fh.a.h(4));
+orig.showSig(fh.a.h(3:4));
 matchy(fh.a.h(2:4))
 % Print
 set(fh.f,'Renderer','painters')

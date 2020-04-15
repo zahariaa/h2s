@@ -8,16 +8,6 @@ if ~nargin, epsilon = 0; end
 
 dimLow = 2;
 model  = 'lenet';
-colors = [250   138   117
-          246   136   159
-          215   148   196
-          162   166   215
-          100   180   210
-           61   187   180
-           88   189   139
-          135   184    98
-          182   173    74
-          223   157    79]/255;
 %% MNIST, trained model responses, from pyTorch
 data = load(sprintf('demo/mnist_%s_eps%0.2f.mat',model,epsilon)); % Trained net on MNIST
 label2resp = @(L,chunk) cell2mat_concat(arrayfun(@(i) L(chunk)==i,0:9,'UniformOutput',false))';
@@ -43,11 +33,11 @@ else
    % right now this uses the true labels
    for i = 1:2
       cats(i).(model) = Categories(label2resp(data.labels{i},chunk),...
-                                   arrayfun(@num2str,0:9,'UniformOutput',false)',colors);
+                                   arrayfun(@num2str,0:9,'UniformOutput',false)');
    end
    % % output labels
    % cats.(model) = Categories(data.x{end},...
-   %                         arrayfun(@num2str,0:9,'UniformOutput',false)',colors);
+   %                         arrayfun(@num2str,0:9,'UniformOutput',false)');
    
    nPointsPerCat   = sum(cats(end).(model).vectors);
    [nPoints,nCats] =size(cats(end).(model).vectors);

@@ -23,7 +23,7 @@ for iball = 1:nballs
    points(ix,:) = r(iball)*points(ix,:) + repmat(centers(iball,:),[N(iball+1) 1]);
 end
 
-categories = Categories(N(2:end));
+categories = Categories(num2cell(N(2:end)));
 
 return
 

@@ -1,10 +1,8 @@
 % demo_variability
 
-seed = rng(0);
-SIMPLICES = true;
+seed = rng(1);
+SIMPLICES = false;%true;
 another3  = false;
-CONSTRAINT= false;
-FIXRADII  = true;
 ninits    = 5;
 
 if SIMPLICES
@@ -36,20 +34,20 @@ for d = ds
                                                    groundtruth.radii);
    
       [model,high] = hypersphere2sphere(points,categories,[],dimLow);
-      model = SetOfHyps(model,groundtruth);
-      model.sig = model.significance(points,1000);
+      model = SetOfHyps(model,categories,groundtruth);
+      model = model.significance(points,1000);
       %keyboard
-      testhi = SetOfHyps('estimate',points,categories);%,100).merge;
-      [~,~,testhi.error,testhi.msflips] = testhi.stress(groundtruth);
-      testhi.sig = testhi.significance(points);
+      testhi = SetOfHyps('estimate',points,categories,groundtruth);%,100).merge;
+      testhi = testhi.significance(points,1000);
    
       %axtivate(fh.a.h(i*2*nconditions+j));  model.show;
-      for MDS_INIT = [false true]
-         testlo = testhi.h2s([dimLow 0 ninits],[FIXRADII CONSTRAINT MDS_INIT]);
-         [~,~,testlo.error,testlo.msflips] = testlo.stress(groundtruth);
-         testlo.sig = testlo.significance(points);
+      for MDS_INIT = {'randinit' 'mdsinit'}
+         testlo = testhi.h2s([dimLow ninits],MDS_INIT{1});
+         testlo = testlo.stressUpdate(groundtruth);
+         testlo = testlo.significance(points,1000);
       
-         axtivate(fh.a.h((i*2+double(MDS_INIT))*nconditions+j)); testlo.show;
+         axtivate(fh.a.h((i*2+double(strcmpi(MDS_INIT,'mdsinit')))*nconditions+j));
+         testlo.show;
          drawnow;
       end
    end

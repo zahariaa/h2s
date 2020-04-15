@@ -4,6 +4,7 @@
 SEED      = rng(1);
 SIMPLICES = true;
 ALLOW3D   = false;
+DBUGPLOT  = 'quiet'; %'verbose' %'debug' %'quiet'
 
 if SIMPLICES
    ds = [3 5 7 3];
@@ -42,24 +43,22 @@ for d = ds
    end
    [points,categories] = randnsimplex_of_nballs(groundtruth.centers,50,...
                                                 groundtruth.radii);
-   [model,high] = hypersphere2sphere(points,categories,[],dimLow);
-   model = SetOfHyps(model,groundtruth);
-   model.sig = model.significance(points,1000);
+   model = hypersphere2sphere(points,categories,[],dimLow);
+   model = SetOfHyps(model).stressUpdate(groundtruth);
+   % model = model.significance(points,1000);
    %keyboard
-   testhi = SetOfHyps('estimate',points,categories,groundtruth);%,100).merge;
-   [testhi.sig,sechi] = testhi.significance(points);
+   testhi = SetOfHyps('estimate',points,categories,groundtruth,1000);
    axtivate(fh.a.h((i-1)*nconditions+j));  model.show;
 
-   for MDS_INIT = true%[false true]
-      for FIXRADII = false%[false true]
+   for MDS_INIT = {'mdsinit'} %{'mdsinit' 'randinit'}
+      for alpha = {[1 1 1]} %{[1 1 1],[1 1 0]} %fix radii or not
          j = j+1;
-         testlo = testhi.h2s(dimLow,[FIXRADII MDS_INIT],groundtruth);
-         [testlo.sig,seclo] = testlo.significance(points,1000);
+         testlo = testhi.h2s(dimLow,MDS_INIT{1},DBUGPLOT,groundtruth,alpha);
+         testlo = testlo.significance(points,1000);
       
          testlo.show(      fh.a.h((i-1)*nconditions+j  ));
          testlo.showValues(fh.a.h((i-1)*nconditions+j+1),testhi);
-         testhi.showSig(   fh.a.h((i-1)*nconditions+j+2),'legend');
-         testhi.showSig(   fh.a.h((i-1)*nconditions+j+3),sechi);
+         testhi.showSig(   fh.a.h((i-1)*nconditions+j+[2 3]),'legend');
          drawnow;
       end
    end
