@@ -1,5 +1,5 @@
-function [h,XY] = drawCircle(center,radius,color,border,alpha,n)
-% h=drawCircle(center=[0 0],radius=1,color='k',border=2,alpha=0.2,n=100)
+function [h,XY] = drawCircle(center,radius,color,alpha,n,border)
+% [h,XY]=drawCircle(center=[0 0],radius=1,color='k',alpha=0.2,n=100,border=2)
 % -  center must be Nx2
 % -  accepts multiple inputs and draws multiple circles
 % 
@@ -70,7 +70,7 @@ if mn > 1
    if numel(alpha ) < mn;   alpha  = repmat({alpha },[mn 1]);   end
    if numel(n     ) < mn;   n      = repmat({n     },[mn 1]);   end
    % RECURSE!
-   [h,XY] = cellfun( @drawCircle, center,radius(:),color,border,alpha,n,...
+   [h,XY] = cellfun(@drawCircle, center,radius(:),color,alpha,n,border,...
                     'UniformOutput',false');
    h  = vertcat( h{:});
    XY = vertcat(XY{:});

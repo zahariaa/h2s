@@ -91,5 +91,5 @@ function plotEllipsoids(ax,categories,centers,radii)
    covariance = arrayfun(@(r) r*eye(3),radii.^2,'UniformOutput',false)';
 
    axtivate(ax);
-   draw3dEllipsoid(locations,covariance,categories.colors,[],1/3);
+   draw3dEllipsoid(locations,covariance,categories.colors,0.5);
 

@@ -69,12 +69,12 @@ title(titleStr);
 
 if dimLow == 2
   %% draw circles
-  [objHs,XY] = drawCircle(model.centers(:,1:2),model.radii,model.categories.colors,[],opacity,patchDetail);
+  [objHs,XY] = drawCircle(model.centers(:,1:2),model.radii,model.categories.colors,opacity,patchDetail);
   % xlabel({any2str('# samples/category: ',model.nSamplesPerCat)});
 elseif dimLow == 3
   %% draw spheres
   covs = arrayfun(@(r) eye(3)*r^2,model.radii,'UniformOutput',false);
-  [objHs,XY] = draw3dEllipsoid(model.centers,covs,model.categories.colors,patchDetail,opacity);
+  [objHs,XY] = draw3dEllipsoid(model.centers,covs,model.categories.colors,opacity,patchDetail);
   set(get(ax,'Parent'),'Renderer','OpenGL');
 end
 

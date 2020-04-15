@@ -1,6 +1,6 @@
-function [h,XYZ] = draw3dEllipsoid(center,covariance,color,n,alpha,SETLIGHT)
+function [h,XYZ] = draw3dEllipsoid(center,covariance,color,alpha,n,SETLIGHT)
 % [h,XYZ] = draw3dEllipsoid(center=[0 0 0],covariance=eye(3),...
-%                           color=[0.5 0.5 0.5],n=100,alpha=0.2,SETLIGHT=true)
+%                           color=[0.5 0.5 0.5],alpha=0.2,n=100,SETLIGHT=true)
 % -  center must be Nx3
 % -  accepts multiple inputs and draws multiple ellipsoids
 % 
@@ -71,7 +71,7 @@ if mn > 1
    if numel(alpha) < mn;   alpha = repmat({alpha},[mn 1]);   end
    % Recursive call, with SETLIGHT flag set to false ...
    [h,XYZ] = cellfun(@draw3dEllipsoid,...
-                     center,covariance,color,n,alpha,repmat({false},[mn 1]),'UniformOutput',false);
+                     center,covariance,color,alpha,n,repmat({false},[mn 1]),'UniformOutput',false);
    lighting phong; camlight('headlight'); view(180,90); % ... so that lighting is only applied 1x
    h  = vertcat (h{:});   XYZ = cat(1,XYZ{:});
    return
