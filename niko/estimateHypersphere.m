@@ -54,7 +54,12 @@ if exist('categories','var') && numel(categories.labels)>1
       end
    else
       for i = 1:numel(categories.labels)
-         p{i} = points(~~categories.select(i).vectors,:);
+         ix = categories.select(i).vectors;
+         if categories.ispermuted
+            ix = undeal(2,@() unique(ix)); ix = ix(2:end);
+         end
+         p{i} = points(ix,:);
+      end
       % Recursive call
       hyp = cellfun(@(x) estimateHypersphere(x,'raw',ESTIMATOR,nBootstrapSamples),...
                p,'UniformOutput',false);
