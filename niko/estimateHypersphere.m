@@ -12,6 +12,7 @@ function hyp = estimateHypersphere(points,varargin)
 
 %% preparation
 [n,d,f] = size(points);
+nBootstrapSamples = 1;
 STRATIFIED = true;     % stratified bootstrap (default)
 NORMALIZE  = true;     % pre-normalize points
 ESTIMATOR  = '';
@@ -29,9 +30,9 @@ end
 
 for v = 2:nargin
    if isa(varargin{v-1},'Categories'), categories        = varargin{v-1};
-   elseif  isnumeric(varargin{v-1}),   nBootstrapSamples = varargin{v-1};
-   elseif  ischar(   varargin{v-1})
-      switch(lower(varargin{v-1}))
+   elseif isnumeric(varargin{v-1}),    nBootstrapSamples = varargin{v-1};
+   elseif ischar(   varargin{v-1})
+      switch( lower(varargin{v-1}) )
          case 'permute';     STRATIFIED = false;
          case 'stratified';  STRATIFIED = true;
          case 'normalize';   NORMALIZE  = true;
@@ -40,7 +41,6 @@ for v = 2:nargin
       end
    end
 end
-if ~exist('nBootstrapSamples','var'),  nBootstrapSamples = 1; end
 
 if f==1 && NORMALIZE, points = normalize(points,normtype); end
 

@@ -310,7 +310,7 @@ classdef SetOfHyps < Hypersphere
       %       'debugplot' (DEFAULT = false): display the h2s optimization
       %          debugging plot, which updates on each iteration. Must be second
       %          element in logical vector.
-      %       'verbose' (DEFAULT = false): prints fminunc optimization messages
+      %       'verbose' (DEFAULT = false): prints fmincon optimization messages
       %          to the command prompt on every iteration. Must be third element
       %          in logical vector.
       %       'debug': equivalent to 'debugplot' and 'verbose'
