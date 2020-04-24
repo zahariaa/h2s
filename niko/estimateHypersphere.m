@@ -18,6 +18,15 @@ ESTIMATOR  = '';
 DBUGPLOT   = false;
 VERBOSE    = false;
 
+% Auto-detect distance matrix (do easy/fast checks first)
+if f==1 && n==d && all(diag(points)==0) && issymmetric(points)
+   DISTMATRIX = true;
+   normtype   = [];    % if normalizing, make full matrix min be 0 and max be 1
+else
+   DISTMATRIX = false;
+   normtype   = 'col'; % if normalizing, adjust each column by overall mean and std
+end
+
 for v = 2:nargin
    if isa(varargin{v-1},'Categories'), categories        = varargin{v-1};
    elseif  isnumeric(varargin{v-1}),   nBootstrapSamples = varargin{v-1};
@@ -57,9 +66,8 @@ if exist('categories','var') && numel(categories.labels)>1
    %% permutation or stratified bootstrap test
    if nBootstrapSamples > 1 && ~strcmpi(ESTIMATOR,'mcmc')
       catperm = [categories; categories.permute(nBootstrapSamples,STRATIFIED)];
-      for i = 1:nBootstrapSamples+1
-         hyp(i) = estimateHypersphere(points,catperm(i));
-      end
+      % Recursive call
+      hyp = arrayfun(@(c) estimateHypersphere(points,c,'raw',ESTIMATOR),catperm);
    else
       for i = 1:numel(categories.labels)
          ix = categories.select(i).vectors;
