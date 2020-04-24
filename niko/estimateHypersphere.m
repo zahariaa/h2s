@@ -13,6 +13,9 @@ function hyp = estimateHypersphere(points,varargin)
 %% preparation
 [n,d,f] = size(points);
 STRATIFIED = true;     % stratified bootstrap (default)
+ESTIMATOR  = '';
+DBUGPLOT   = false;
+VERBOSE    = false;
 
 for v = 2:nargin
    if isa(varargin{v-1},'Categories'), categories        = varargin{v-1};
@@ -21,6 +24,7 @@ for v = 2:nargin
       switch(lower(varargin{v-1}))
          case 'permute';     STRATIFIED = false;
          case 'stratified';  STRATIFIED = true;
+         otherwise,          ESTIMATOR  = varargin{v-1};
       end
    end
 end
@@ -34,7 +38,8 @@ if exist('categories','var') && numel(categories.labels)>1
       nCats   = numel(categories.labels);
 
       % EVALUATE ALL TOGETHER!
-      hypEst  = estimateHypersphere(points,categories.internalrepmat(f));
+      % Recursive call
+      hypEst  = estimateHypersphere(points,categories.internalrepmat(f),'raw',ESTIMATOR);
       % SEPARATE COMBINED HYP
       centers = mat2cell(hypEst.centers,nCats*ones(f,1));
       radii   = num2cell(reshape(hypEst.radii,[nCats f]),1)';
@@ -42,7 +47,7 @@ if exist('categories','var') && numel(categories.labels)>1
       return
    end
    %% permutation or stratified bootstrap test
-   if nBootstrapSamples > 1
+   if nBootstrapSamples > 1 && ~strcmpi(ESTIMATOR,'mcmc')
       catperm = [categories; categories.permute(nBootstrapSamples,STRATIFIED)];
       for i = 1:nBootstrapSamples+1
          hyp(i) = estimateHypersphere(points,catperm(i));
@@ -50,27 +55,40 @@ if exist('categories','var') && numel(categories.labels)>1
    else
       for i = 1:numel(categories.labels)
          p{i} = points(~~categories.select(i).vectors,:);
+      % Recursive call
+      hyp = cellfun(@(x) estimateHypersphere(x,'raw',ESTIMATOR,nBootstrapSamples),...
+               p,'UniformOutput',false);
+      if strcmpi(ESTIMATOR,'mcmc')
+         % do some fancy combining
+         hyp = cellfun(@unconcat, hyp,'UniformOutput',false); % n cell of nSamples
+         hyp = num2cell(cell2mat_concat(hyp),1); % nSamples cell of n Hyperspheres
+         hyp = cellfun(@(x) x.concat(categories),hyp); % nSamples of Hyperspheres
+      else
+         hyp = cell2mat_concat(hyp).concat(categories);
       end
-      hyp = cell2mat_concat(cellfun(@estimateHypersphere,p,'UniformOutput',false));
-      hyp = hyp.concat(categories);
    end
    return
 end
 
-%% estimate location
-loc = mean(points,1); % optimises L2 cost, corresponds to L1 force equilibrium
-% dists = pdist(points,'Euclidean');
-% cv = cvindex(n,10);
-% loc = mean(cell2mat_concat(cv.crossvalidate(@mean,points)));
+switch(lower(ESTIMATOR))
+   case 'mcmc'
+      [loc,rad,llh] = inferHyperspherePosterior(points,nBootstrapSamples,DBUGPLOT,VERBOSE);
+   otherwise
+      %% estimate location
+      loc = mean(points,1); % optimises L2 cost, corresponds to L1 force equilibrium
+      % dists = pdist(points,'Euclidean');
+      % cv = cvindex(n,10);
+      % loc = mean(cell2mat_concat(cv.crossvalidate(@mean,points)));
 
-%% estimate radius via skew-based MVUEs
-points = points - repmat(loc,[n 1]);
-radii = sqrt(sum(points.^2,2));
-dvarrad = log2(std(radii/median(radii)))+log2(d)/1.5;
-if dvarrad > -0.5 % Assume Gaussian
-   rad = sqrt(sum(var(points,[],2))/(n-1))*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2));
-else             % Assume Uniform
-   rad = stdPer(d)*std(radii) + median(radii);
+      %% estimate radius via skew-based MVUEs
+      points = points - repmat(loc,[n 1]);
+      radii = sqrt(sum(points.^2,2));
+      dvarrad = log2(std(radii/median(radii)))+log2(d)/1.5;
+      if dvarrad > -0.5 % Assume Gaussian
+         rad = sqrt(sum(var(points,[],2))/(n-1))*sqrt(2)*exp(gammaln((d+1)/2)-gammaln(d/2));
+      else             % Assume Uniform
+         rad = stdPer(d)*std(radii) + median(radii);
+      end
 end
 
 if ~exist('categories','var')

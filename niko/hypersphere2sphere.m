@@ -64,7 +64,6 @@ monitor = false;
 %% preparations
 [~,nCats] = size(categories.vectors);
 
-%if ~exist('estimator','var'), estimator = 'MCMC'; end
 if ~exist('estimator','var') || isempty(estimator), estimator = 'meanDist'; end
 if ~exist('dimLow'   ,'var'),                       dimLow    =          3; end
 
@@ -77,10 +76,9 @@ points = pointsOrDistMat;
 
 [~,nDim] = size(points);
 
-
-%% infer posts over hypersphere parameters
 switch estimator
     case 'MCMC'
+        %% infer posts over hypersphere parameters
         postSampleLocs = nan(nPostSamples,nDim,nCats);
         postSampleRadii = nan(nPostSamples,1,nCats);
         postSampleLogLikelihoods = nan(nPostSamples,1,nCats);
@@ -89,150 +87,66 @@ switch estimator
             [postSampleLocs(:,:,catI),postSampleRadii(:,:,catI),postSampleLogLikelihoods(:,:,catI)] =...
                 inferHyperspherePosterior(points(logical(categories.vectors(:,catI)),:), nPostSamples, monitor);
         end
-
+        high = Hypersphere(cellfun(@(x) squeeze(x)',num2cell(postSampleLocs,2:3),'UniformOutput',false),...
+                           num2cell(squeeze(postSampleRadii),2),categories);
+        high = high.meanAndMerge(true);
     case 'meanDist'
-        nBootstrapSamples = 0;
-        for catI = 1:nCats
-            high(catI) = estimateHypersphere(points(logical(categories.vectors(:,catI)),:),nBootstrapSamples);
-        end
+        high  = Hypersphere('estimate',points,categories);
 end
-high = high.concat;
+model = SetOfHyps(high).h2s(dimLow);
 
-%% compute posteriors for distances and margins
-% margin = distance - r1 - r2
-
-switch estimator
-    case 'MCMC'
-        nCatPairs = (nCats^2-nCats)/2;
-        postSampleDists = nan(nPostSamples,nCatPairs);
-        postSampleMargins = nan(nPostSamples,nCatPairs);
-
-        for sampleI = 1: nPostSamples
-            catPairI = 1;
-            for cat1I = 1:nCats-1
-                for cat2I = cat1I+1:nCats
-                    postSampleDists(sampleI,catPairI) = sqrt(sum((postSampleLocs(sampleI,:,cat1I) - postSampleLocs(sampleI,:,cat2I)).^2,2));
-                    postSampleMargins(sampleI,catPairI) = postSampleDists(sampleI,catPairI) - sum(postSampleRadii(sampleI,1,[cat1I cat2I]));
-                    catPairI = catPairI+1;
-                end
-            end
-        end
-
-        % This could be sped up by using arrays instead of the for loops.
-        % However, it would require a lot of memory (2*nCats times more).
-    
-    case 'meanDist'
-        estDists = pdist(high.centers,'Euclidean');
-        estMargins = nan(size(estDists));
-
-        catPairI = 1;
-        for cat1I = 1:nCats-1
-            for cat2I = cat1I+1:nCats
-                estMargins(catPairI) = estDists(1,catPairI) - sum(high.radii([cat1I cat2I]));
-                catPairI = catPairI+1;
-            end
-        end
-end
-
-%% compute target point estimates to be visualized
-if isequal(estimator,'MCMC')
-    % use posterior medians as estimates
-    high.radii = vectify(median(postSampleRadii,1))';
-    estDists   = vectify(median(postSampleDists,1))';
-    estMargins = median(postSampleMargins,1); estMargins = estMargins(:)';
-    disp(any2str('median radii: ',high.radii));
-    disp(any2str('median distances: ',estDists));
-    disp(any2str('median margins: ',estMargins));
-end
-
-%% initialize 3D model
-mdsCenters_3d = mdscale(estDists,dimLow,'criterion','metricstress');
-model.centers = mdsCenters_3d;
-model.radii = high.radii;
-model.categories = categories;
-model.error = NaN;
-
-%showSpheresModel(model, 200, '\bfinitial model based on MDS')
-
-
-%% optimize 3D model
-% TASK: further optimise the model to minimise various specific cost
-% functions
-
-
-%% return remaining error
-model = measureError(model, estDists, high.radii,  estMargins);
-
-%%%diagnostics(model, estDists, high.radii, estMargins);
-
-
-%% measure error
-function model = measureError(model,dataDists,dataRadii,dataMargins)
-
-nCats = numel(model.radii);
-
-model.dists = pdist(model.centers);
-model.margins = squareform(model.dists) - ...
-    ( repmat(model.radii,[nCats 1])+repmat(model.radii',[1 nCats]) );
-model.margins(logical(eye(nCats)))=0;
-model.margins = squareform(model.margins);
-
-modelParams = [model.dists model.radii model.margins];
-dataParams = [dataDists dataRadii dataMargins];
-mx = max(modelParams);
-errors = dataParams/mx - modelParams/mx;
-model.error = max(abs(errors));
-
+% model.show(200, '\bfinitial model based on MDS')
+% diagnostics(model, high);
 
 
 %% show summary statistics
-function diagnostics(model,dataDists,dataRadii,dataMargins)
+function diagnostics(model,data)
 
 % compare model and data statistics
 h=figure(505); set(h,'Color','w'); clf;
-showSpheresModel(model, [505 2 2 1], {'\bfhs2s\rm',any2str('error <= ',ceil(model.error*100),'%')});
+showModel(model, [505 2 2 1], {'\bfhs2s\rm',any2str('error <= ',ceil(model.error*100),'%')});
 
 % summary stats for data and model as bar graphs
 dataCol =  [0 0 0];
 modelCol = [0.5 0.5 0.5];
 
 subplot(2,3,4);
-radiusBars = [dataRadii' model.radii'];
+radiusBars = [data.radii' model.radii'];
 h=bar(radiusBars,'grouped','EdgeColor','none');
 colormap([dataCol; modelCol]);
 
 mx = max(model.radii);
-radErrors = dataRadii/mx - model.radii/mx;
-model.radiiError = max(abs(radErrors));
+radErrors = data.radii/mx - model.radii/mx;
+radiiError = max(abs(radErrors));
 
-title({'\bfradii',['\rmerror: ',num2str(model.radiiError,2)]});
+title({'\bfradii',['\rmerror: ',num2str(radiiError,2)]});
 legend({'data','model'},'Location','SouthEast');
 
 subplot(4,3,[8 9]);
-distBars = [dataDists' model.dists'];
+distBars = [data.dists' model.dists'];
 if numel(model.dists)==1, distBars = [distBars; [0 0]]; end
 h=bar(distBars,'group','EdgeColor','none');
 colormap([dataCol; modelCol]);
 
 mx = max(model.dists);
-distErrors = dataDists/mx - model.dists/mx;
-model.distError = max(abs(distErrors));
+distErrors = data.dists/mx - model.dists/mx;
+distError = max(abs(distErrors));
 
-title({'\bfdists',['\rmerror: ',num2str(model.distError,2)]});
+title({'\bfdists',['\rmerror: ',num2str(distError,2)]});
 %legend({'data','model'},'Location','SouthEast');
 nanaxis([0.5 numel(model.dists)+0.5 nan nan]);
 
 subplot(4,3,[11 12]); cla;
-marginBars = [dataMargins' model.margins'];
+marginBars = [data.margins' model.margins'];
 if numel(model.margins)==1, marginBars = [marginBars; [0 0]]; end
 h=bar(marginBars,'group','EdgeColor','none');
 colormap([dataCol; modelCol]);
 
 mx = max(model.margins);
-marginErrors = dataMargins/mx - model.margins/mx;
-model.marginError = max(abs(marginErrors));
+marginErrors = data.margins/mx - model.margins/mx;
+marginError = max(abs(marginErrors));
 
-title({'\bfmargins',['\rmerror: ',num2str(model.marginError,2)]});
+title({'\bfmargins',['\rmerror: ',num2str(marginError,2)]});
 %legend({'data','model'},'Location','SouthEast');
 nanaxis([0.5 numel(model.margins)+0.5 nan nan]);
 
@@ -251,13 +165,13 @@ marginWidth = nCats^(1/2);
 axis([0 nCats 0 (2+marginWidth)*nCats]); axis equal;
 set(gca,'YDir','reverse');
 
-maxDistRad = max([dataRadii(:);model.radii(:);dataDists(:);model.dists(:)]);
-maxAbsMargin = max(abs([dataMargins(:);model.margins(:)]));
+maxDistRad = max([data.radii(:);model.radii(:);data.dists(:);model.dists(:)]);
+maxAbsMargin = max(abs([data.margins(:);model.margins(:)]));
 
 
-dists = squareform(dataDists);
-radii = dataRadii;
-margins = squareform(dataMargins);
+dists = squareform(data.dists);
+radii = data.radii;
+margins = squareform(data.margins);
 
 shift = 0;
 w = 0.9;

@@ -31,8 +31,8 @@ function [posteriorSamplesLoc,posteriorSamplesRad,logLikelihoods] = inferHypersp
 
 %% preparations
 if ~exist('nSamples','var'), nSamples = 1000; end
-if ~exist('monitor','var'), monitor = true; end
-if ~exist('VERBOSE','var') || isempty(VERBOSE), VERBOSE = false; end
+if ~exist('monitor' ,'var'), monitor = false; end
+if ~exist('VERBOSE' ,'var') || isempty(VERBOSE), VERBOSE = false; end
 
 [nPoints,nDim] = size(points);
 

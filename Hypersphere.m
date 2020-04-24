@@ -166,7 +166,7 @@ classdef Hypersphere < handle
          end
       end
 
-      function self = meanAndMerge(self)
+      function self = meanAndMerge(self,FORCE)
       % Hypersphere.meanAndMerge: takes an array of Hypersphere (or SetOfHyps)
       %    objects as input. Outputs a single SetOfHyps object, where the
       %    centers and radii are the means of those in the object array. 95%
@@ -181,8 +181,13 @@ classdef Hypersphere < handle
       % SEE ALSO SETOFHYPS.SIGNIFICANCE
          ci = [];
          % uses 1st object's categories
-         if numel(self)>1 % assumes Hypersphere was bootstrapped
-            cperms = ispermuted([self.categories]);
+         n = numel(self);
+         if n > 1 % assumes Hypersphere was bootstrapped
+            if exist('FORCE','var') && FORCE
+               cperms = true(n,1);
+            else
+               cperms = ispermuted([self.categories]);
+            end
             ci.bootstraps = self(cperms);
             ci.centers = prctile(cat(3,self(cperms).centers),[2.5 97.5],3);
             ci.radii   = prctile(vertcat(self.radii),[2.5 97.5])';

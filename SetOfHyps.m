@@ -117,8 +117,11 @@ classdef SetOfHyps < Hypersphere
             % Use Hypersphere constructor to handle other possible inputs
             if ~exist('radii','var'), radii = []; end
             obj = Hypersphere(centers,radii,varargin{:});
-            if obj(end).categories.ispermuted
-               obj = obj.meanAndMerge;
+
+            % Deal with multiple Hyperspheres, how to convert to SetOfHyps
+            MCMC = any(strcmpi(varargin,'mcmc'));
+            if obj(end).categories.ispermuted || MCMC
+               obj = obj.meanAndMerge(MCMC);
             else
                % assume multiple objects are not bootstraps, but different
                % frames etc, leave them as multiple objects
