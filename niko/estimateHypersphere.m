@@ -13,6 +13,7 @@ function hyp = estimateHypersphere(points,varargin)
 %% preparation
 [n,d,f] = size(points);
 STRATIFIED = true;     % stratified bootstrap (default)
+NORMALIZE  = true;     % pre-normalize points
 ESTIMATOR  = '';
 DBUGPLOT   = false;
 VERBOSE    = false;
@@ -24,17 +25,24 @@ for v = 2:nargin
       switch(lower(varargin{v-1}))
          case 'permute';     STRATIFIED = false;
          case 'stratified';  STRATIFIED = true;
+         case 'normalize';   NORMALIZE  = true;
+         case 'raw';         NORMALIZE  = false;
          otherwise,          ESTIMATOR  = varargin{v-1};
       end
    end
 end
 if ~exist('nBootstrapSamples','var'),  nBootstrapSamples = 1; end
 
+if f==1 && NORMALIZE, points = normalize(points,normtype); end
+
 %% recurse cell array of points
 if exist('categories','var') && numel(categories.labels)>1
 %% EVALUATE ALL FRAMES IN SAME SPACE
    if f > 1
       points  = reshape(permute(points,[1 3 2]),n*f,d);
+      if NORMALIZE
+         points = normalize(points,normtype);
+      end
       nCats   = numel(categories.labels);
 
       % EVALUATE ALL TOGETHER!
