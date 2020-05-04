@@ -71,9 +71,11 @@ classdef Categories
 
          if isstruct(vectors) && numel(vectors)==1  % input option (4)
             obj.labels  = vectors.labels;
-            obj.colors  = vectors.colors;
             obj.vectors = vectors.vectors;
-            return
+            if isfield(vectors,'colors')
+               obj.colors  = vectors.colors;
+               return
+            end
          elseif islogical(vectors)                  % input option (1)
             obj.vectors = vectors;
          elseif iscell(vectors)                     % input option (3)
