@@ -196,6 +196,31 @@ classdef Categories
          end
       end
 
+      function ix = vectorsForDistanceMatrix(self)
+      % Categories.vectorsForDistanceMatrix: converts vectors to indices to
+      %    make selections from a distance matrix.
+      % e.g.:
+      % dists = squareform(distanceMatrix);            % extract upper triangle
+      % dists(cats.select(2).vectorsForDistanceMatrix) % distances within category 2
+         ix = [];
+         [p,n] = size(self.vectors); %p=# points, n=# hyps
+
+         if       isempty(self.vectors), return
+         elseif ~any(self.vectors(:)>1), sels = self.vectors.*repmat((1:p)',[1 n]);
+         else                            sels = self.vectors;
+         end
+
+         % find nonzero entries in all columns (DO WE CARE ABOUT INDIVIDUAL COLS?)
+         uniqueEntries = unique(sels(~~sels))';
+         excluded = setdiff(1:p,uniqueEntries);
+
+         % Populate indices, take away excluded ones
+         ix = true(1,nchoosek(p,2));
+         ixkey = nchoosek_ix(p);
+         for i = excluded
+            ix(any(ixkey==i)) = false;
+         end
+      end
 
       function varargout = legend(self,pos,extratxt)
       % Categories.legend: creates a text legend, in which the category
