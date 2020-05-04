@@ -1,4 +1,4 @@
-function HS2SandMDS(pointsOrDistMat,categories,ax,titleStr,dimLow)
+function varargout = HS2SandMDS(pointsOrDistMat,categories,ax,titleStr,dimLow,varargin)
 % create hypersphere-to-sphere visualization and show it alongside the MDS solution for comparison 
 % 
 % pass 4 axis handles for: h2s, PCA, MDS, t-SNE
@@ -13,11 +13,16 @@ if ~exist('dimLow','var'), dimLow = 3; end
 nax = numel(ax);
 
 %% hypersphere to sphere visualization
-model = SetOfHyps('estimate',pointsOrDistMat,categories).h2s(dimLow);
+hyp   = SetOfHyps('estimate',pointsOrDistMat,categories,varargin{:});
+model = hyp.h2s(dimLow);
 model.show(ax(1),titleStr);
 
+%% compute distances if not given directly
+if any(strcmpi(varargin,'distance')), dists = pointsOrDistMat;
+else                                  dists = pdist(pointsOrDistMat,'Euclidean');
+end
+
 %% other visualizations
-dists = pdist(pointsOrDistMat,'Euclidean');
 points2D{floor(nax/2)} = mdscale(dists,2,'criterion','metricstress');
 % only run requested visualizations
 if nax>=3,   points2D{nax-1} = tsne(pointsOrDistMat,[],[],min(size(pointsOrDistMat)));   end
@@ -60,6 +65,13 @@ for i = 1:nax-1
    end
    axis equal off;
 end
+
+switch(nargout)
+  case 1; varargout = {hyp};
+  case 2; varargout = {hyp,model};
+end
+
+return
 
 % showRDMs(dists,300,0);
 
