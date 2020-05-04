@@ -2,8 +2,8 @@
 
 
 %% control variables
-DEBUG = false;
-
+DEBUG  = false;
+dimLow = 3;
 
 
 %% define categories
@@ -17,14 +17,7 @@ naturalObjects =  zeros(62,1); naturalObjects(45:50)=1;
 artificialScenes =  zeros(62,1); artificialScenes(51:56)=1;
 naturalScenes =  zeros(62,1); naturalScenes(57:62)=1;
 
-categoryVectors=[controlledHumanFaces+humanFaces+animalFaces humanBodies+animalBodies artificialObjects+naturalObjects artificialScenes+naturalScenes];
 
-categories.vectors =[humanFaces+animalFaces humanBodies+animalBodies artificialObjects+naturalObjects artificialScenes+naturalScenes];
-categories.labels = {'faces','bodies','objects','scenes'};
-categories.colors = [0.8 0 0
-                     0.2 0.8 0
-                     0   0.5 0.8
-                     0.5 0.5 0.5];
 
 %% roll all subsets and supersets into one
 allcategories.vectors = [humanFaces+animalFaces+humanBodies+animalBodies ... % animate
@@ -34,16 +27,13 @@ allcategories.vectors = [humanFaces+animalFaces+humanBodies+animalBodies ... % a
                          humanFaces animalFaces humanBodies animalBodies artificialObjects naturalObjects artificialScenes naturalScenes]; % all
 allcategories.labels  = {'animate' 'inanimate' 'faces' 'bodies' 'objects' 'scenes' ...
                          'humanFaces' 'animalFaces' 'humanBodies' 'animalBodies' 'artificialObjects' 'naturalObjects' 'artificialScenes' 'naturalScenes'};
-allcategories.colors = [1   0.5 0     % animate   = orange
-                        0.5 0   0.5   % inanimate = purple
-                        1   0   0     % faces     = red
-                        0   1   0     % bodies    = green
-                        0   0   1     % objects   = blue
-                        0.5 0.5 0.5]; % scenes    = grey
-natart = allcategories.colors([1 1 2 2 3 3 4 4]+2,:);
-natart(1:2:end,:) = min(1,natart(1:2:end,:)+0.5); % human/artifical are lighter
-natart(2:2:end,:) = max(0,natart(2:2:end,:)-0.5); % animal/natural are darker
-allcategories.colors = [allcategories.colors;natart];
+allcategories.colors = [215   148   196% animate   = magenta
+                        135   184    98% inanimate = yellow
+                        246   136   159% faces     = red
+                        100   180   210% bodies    = blue
+                         88   189   139% objects   = green
+                        223   157    79% scenes    = orange
+                        ]/255; 
 ac = Categories(allcategories);
 
 %% define ROIs
@@ -94,26 +84,41 @@ for roiI = selectedROIs
     xlabel('rdm');
     ylabel('rdm-nonNeg');
    end
-    % re-embed as points in high-dimensional space to reflect the representational geometry
-    nDim = 100;
-    distanceMeasure = 'Euclidean';
-    [patterns,errorSSQ] = rdm2patternEnsemble(avgRdm_nonNeg,nDim,distanceMeasure);
-    
     % hs2s & MDS
     titleStr = any2str(roi.hemisphere{hemisphereI},' \bf',roi.name{roiI},'\rm (',roi.size(roiSizeI),' vox)');
     figrowI = figrowI + 1;
-    HS2SandMDS(patterns,categories,fh.a.h(figrowI*2+(-1:0)),titleStr,3);
+    
+    % % use embedded points
+    % % re-embed as points in 100-dimensional space to reflect the representational geometry
+    % [patterns,errorSSQ] = rdm2patternEnsemble(avgRdm_nonNeg,100,'Euclidean');
+    % hyp(roiI) = HS2SandMDS(patterns,ac.select(3:6),fh.a.h(figrowI*2+(-1:0)),...
+    %                        titleStr,dimLow,1000);
 
-    %model = multidimensionalCategoryScaling(avgRDMs(1,:,1),categoryVectors,catLabels,[],'ellipsoid',3);
-    
-    
+    % direct to distance-based estimator
+    hyp(roiI) = HS2SandMDS(avgRdm_nonNeg,ac.select(3:6),fh.a.h(figrowI*2+(-1:0)),...
+                           titleStr,dimLow,'distance',1000);
+    drawnow;
+   % keyboard
+   % figure(2);subplot(3,2,figrowI);hyp(roiI).show;
 end % roiI
 
+
+[fh,f] = newfigure([nROIs/2 2*2],'trans62_stats',fh);
+for i = 1:nROIs
+    % hyp(selectedROIs(i)).showValues(fh.a(f).h(i*2-1));
+    % hyp(selectedROIs(i)).showSig(fh.a(f).h(i*2),'diff');
+    hyp(selectedROIs(i)).showSig(fh.a(f).h(i*2+(-1:0)));
+end
+
+figure;plotErrorPatch(1:4,hyp(7).radii,hyp(7).ci.radii)
+figure;hist(reshape([hyp(7).ci.bootstraps.radii],4,[])')
+
+keyboard
 %% Finish up comparison figure
 papsz = [4 3];
 set(fh.f,'PaperUnits','inches','PaperSize',papsz,'PaperPosition',[0.01*papsz papsz],'PaperPositionMode','manual');
 set(findobj(fh.f,'type','line'),'MarkerSize',3); % make dots slightly smaller
-subplotResize([],0.01,0.01);
+subplotResize(fh.f,0.01,0.01);
 set(fh.a.h(11)   ,'CameraViewAngle',5  );
 set(fh.a.h([3 7]),'CameraViewAngle',3.5);
 set(fh.f,'Renderer','painters');   printFig;
