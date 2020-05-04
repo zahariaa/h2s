@@ -203,10 +203,15 @@ classdef Categories
             itis = false;
             return
          end
-
+      
          % actual function
          if isnumeric(self.vectors)
-            itis = all(sum(self.vectors,2));
+            if any(self.vectors(:)>1)
+               allEntries = self.vectors(~~self.vectors);
+               itis = numel(allEntries) ~= numel(unique(allEntries)); % stratified only
+            else
+               itis = all(sum(self.vectors,2));
+            end
          else
             itis = numel(unique(self.vectors))==size(self.vectors,1);
          end
