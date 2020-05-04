@@ -13,6 +13,9 @@ classdef Categories
                  223   157    79]/255; 
       vectors  % [n x c] logical matrix: (n = # points, c = # categories)
    end
+   properties (SetAccess = 'protected')
+      ispermuted = false;
+   end
    methods
       function obj = Categories(vectors,labels,colors)
       % Contructor for Categories object for Hypersphere, SetOfHyps, for
@@ -167,6 +170,7 @@ classdef Categories
          p    = nnz(vecs);
 
          % Build categories objs with permuted vector identities
+         self.ispermuted = true;
          if STRAT_BOOTSTRAP % resample with replacement
             self.vectors = zeros(p,n);
             objs = repmat(self,[N 1]);
@@ -190,32 +194,6 @@ classdef Categories
          end
       end
 
-      function itis = ispermuted(self)
-      % Categories.ispermuted: returns a logical, or vector of logicals,
-      %    for each Categories object this is run on, indicating whether
-      %    it has been permuted or not
-      % e.g.:
-      % if cats.ispermuted, disp('cats is permuted'); end
-         if numel(self) > 1 % recurse
-            itis = arrayfun(@ispermuted, self);
-            return
-         elseif isempty(self.vectors)
-            itis = false;
-            return
-         end
-      
-         % actual function
-         if isnumeric(self.vectors)
-            if any(self.vectors(:)>1)
-               allEntries = self.vectors(~~self.vectors);
-               itis = numel(allEntries) ~= numel(unique(allEntries)); % stratified only
-            else
-               itis = all(sum(self.vectors,2));
-            end
-         else
-            itis = numel(unique(self.vectors))==size(self.vectors,1);
-         end
-      end
 
       function varargout = legend(self,pos,extratxt)
       % Categories.legend: creates a text legend, in which the category
