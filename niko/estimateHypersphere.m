@@ -72,13 +72,35 @@ if exist('categories','var') && numel(categories.labels)>1
       catperm = [categories; categories.permute(nBootstrapSamples,STRATIFIED)];
       % Recursive call
       hyp = arrayfun(@(c) estimateHypersphere(points,c,'raw',ESTIMATOR),catperm);
-   else
-      for i = 1:numel(categories.labels)
-         ix = categories.select(i).vectors;
-         if categories.ispermuted
-            ix = undeal(2,@() unique(ix)); ix = ix(2:end);
+   else % mcmc or single sample (of bootstrap or not)
+      if DISTMATRIX
+         % build inter-category mean distance matrix
+         nCats = numel(categories.labels);
+         catix = nchoosek_ix(nCats);
+         distsAcross = zeros(1,nchoosek(nCats,2));
+         for i = 1:size(catix,2)
+            distsAcross(i) = mean(points( ...
+                              categories.select(catix(:,i)).vectorsForDistanceMatrix ));
          end
-         p{i} = points(ix,:);
+         % collect within-category distances, so later recursive calls compute radii
+         for i = 1:nCats
+            p{i} = points( categories.select(i).vectorsForDistanceMatrix );
+         end
+         % not doing this anymore: compute centers from all unique distances
+
+         % mds on the category-level distance matrix to get centers
+         % TODO: what should the dimensionality of the high-dimensional embedding be?
+         nDimsEmbedding = max(2,nCats-1);
+         centers = mdscale(distsAcross,nDimsEmbedding,'Criterion','metricstress');
+      else
+         for i = 1:numel(categories.labels)
+            ix = categories.select(i).vectors;
+            if categories.ispermuted
+               ix = undeal(2,@() unique(ix)); ix = ix(2:end);
+            end
+            if isnumeric(ix) && ~any(ix>1), ix = ~~ix; end
+            p{i} = points(ix,:);
+         end
       end
       % Recursive call
       hyp = cellfun(@(x) estimateHypersphere(x,'raw',ESTIMATOR,nBootstrapSamples),...
@@ -89,6 +111,10 @@ if exist('categories','var') && numel(categories.labels)>1
             hyp = cellfun(@unconcat, hyp,'UniformOutput',false); % n-cell of nSamples
             hyp = num2cell(cell2mat_concat(hyp),1); % nSamples-cell of n-Hyperspheres
             hyp = cellfun(@(x) x.concat(categories),hyp); % nSamples n-Hyperspheres
+         case 'distance'
+            hyp = cell2mat_concat(hyp).concat(categories);
+            % replace true centers in all hyp's
+            hyp.centers = centers;
          otherwise
             hyp = cell2mat_concat(hyp).concat(categories);
       end
@@ -100,6 +126,10 @@ end
 switch(ESTIMATOR)
    case 'mcmc'
       [loc,rad] = inferHyperspherePosterior(points,nBootstrapSamples,DBUGPLOT,VERBOSE);
+   case 'distance'
+      loc = []; % consistent center points are in a lower call
+      % points here are actually distances
+      rad = mean(points)/expDistPerRad(d);
    otherwise
       %% estimate location
       loc = mean(points,1); % optimises L2 cost, corresponds to L1 force equilibrium
@@ -136,3 +166,13 @@ v = interp1(2.^(1:12),expectedStds,d);
 return
 end
 
+
+function r = expDistPerRad(d)
+% by interpolation among estimates precomputed in QT_expectedDistBetweenTwoPointsWithinHypersphere
+expectedDists = [0.9067    1.1037    1.2402    1.3215    1.3660    1.3902    1.4018    1.4081    1.4112  1.4126    1.4134    1.4138];
+
+if d<4097,   r = interp1(2.^(1:12),expectedDists,d);
+else         r = sqrt(2);
+end
+return
+end
