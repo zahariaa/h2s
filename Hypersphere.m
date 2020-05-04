@@ -186,7 +186,7 @@ classdef Hypersphere < handle
             if exist('FORCE','var') && FORCE
                cperms = true(n,1);
             else
-               cperms = ispermuted([self.categories]);
+               cperms = arrayfun(@(x) x.categories.ispermuted,self)';
             end
             ci.bootstraps = self(cperms);
             ci.centers = prctile(cat(3,self(cperms).centers),[2.5 97.5],3);
