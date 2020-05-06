@@ -59,44 +59,20 @@ function [model,high] = hypersphere2sphere(pointsOrDistMat,categories,estimator,
 
 %% control variables
 nPostSamples = 1000; % number of samples from the post over the parameters of each hypershpere
-monitor = false;
+% monitor = false;
 
 %% preparations
-[~,nCats] = size(categories.vectors);
-
-if ~exist('estimator','var') || isempty(estimator), estimator = 'meanDist'; end
 if ~exist('dimLow'   ,'var'),                       dimLow    =          3; end
-
-%% create point data from distances if necessary
-
-% under construction
-% for now assuming points have been passed
-
-points = pointsOrDistMat;
-
-[~,nDim] = size(points);
-
-switch estimator
-    case 'MCMC'
-        %% infer posts over hypersphere parameters
-        postSampleLocs = nan(nPostSamples,nDim,nCats);
-        postSampleRadii = nan(nPostSamples,1,nCats);
-        postSampleLogLikelihoods = nan(nPostSamples,1,nCats);
-
-        for catI = 1:nCats
-            [postSampleLocs(:,:,catI),postSampleRadii(:,:,catI),postSampleLogLikelihoods(:,:,catI)] =...
-                inferHyperspherePosterior(points(logical(categories.vectors(:,catI)),:), nPostSamples, monitor);
-        end
-        high = Hypersphere(cellfun(@(x) squeeze(x)',num2cell(postSampleLocs,2:3),'UniformOutput',false),...
-                           num2cell(squeeze(postSampleRadii),2),categories);
-        high = high.meanAndMerge(true);
-    case 'meanDist'
-        high  = Hypersphere('estimate',points,categories);
+if ~exist('estimator','var') || isempty(estimator), estimator = 'meanDist'; nPostSamples = 1;
 end
+
+high  = Hypersphere('estimate',pointsOrDistMat,categories,estimator,nPostSamples);
 model = SetOfHyps(high).h2s(dimLow);
 
 % model.show(200, '\bfinitial model based on MDS')
 % diagnostics(model, high);
+return
+
 
 
 %% show summary statistics
