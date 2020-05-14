@@ -238,6 +238,15 @@ classdef SetOfHyps < Hypersphere
             self.sigdiff.di(i) = ciprctile2tail(diff(   dist_boot(:,ixc2(:,i)),[],2));
          end
          self.sigdiff.ma = 1-self.sigdiff.ov;
+
+         % %% DEBUG distances
+         % fh = newfigure([nc2 1]);
+         % for i=1:nc2
+         %    axtivate(i)
+         %    hist(dist_boot(:,i));
+         %    plot((self.dists(i)^2)*[1 1],[0 N/nc2],'r-','LineWidth',2);
+         % end
+         % matchy(fh.a.h,{'XLim','YLim'})
       end
 
       function self = stressUpdate(self,hypsTarget)
