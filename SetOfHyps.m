@@ -34,6 +34,7 @@ classdef SetOfHyps < Hypersphere
       % hypset = SetOfHyps(hypstruct)                                    % (4)
       % hypset = SetOfHyps({hyps},radii,extraargs)                       % (5)
       % hypset = SetOfHyps(centers,radii,categories,'cvdists',cvdists)   % (6)
+      % hypset = SetOfHyps(hypset,hypsetTarget)                          % (7)
       % 
       % Constructor input options:
       %    (1-2) Same as Hypersphere input options (1-2), but yields a SetOfHyps.
@@ -43,8 +44,8 @@ classdef SetOfHyps < Hypersphere
       %       ci argument, which is a structure containing the confidence
       %       intervals and bootstrapped Hypersphere/SetOfHyps objects (computed
       %       using SetOfHyps.significance), and saves it in the SetOfHyps object.
-      %    (4-5) Same as Hypersphere input options (4-5), but yields a SetOfHyps.
-      %    (6) Regardless of the preceding inputs, if a SetOfHyps object is
+      %    (4-6) Same as Hypersphere input options (4-6), but yields a SetOfHyps.
+      %    (7) Regardless of the preceding inputs, if a SetOfHyps object is
       %       included as an additional (i.e., not the first) input argument, it
       %       is treated as the "target" SetOfHyps from which errors of the
       %       existing/first input/newly constructed SetOfHyps are computed.
@@ -60,6 +61,7 @@ classdef SetOfHyps < Hypersphere
       %    centers    - [n x d] matrix: n centers of d-dimensional hyperspheres
       %    radii      - [1 x n] vector: radii of each of n hyperspheres
       %    categories - a Categories object (see help Categories)
+      %    distances2CrossValidated - (protected) false or vector of squared cross-validated distances
       % Properties:
       %    volume     - volume of hypersphere(s) (auto-computed)
       %    dists      - distances between centers of hyperspheres (auto-computed)
@@ -98,7 +100,7 @@ classdef SetOfHyps < Hypersphere
       % See also HYPERSPHERE, CATEGORIES, ESTIMATEHYPERSPHERE, SHOWMODEL
          if nargin==0; return; end
 
-         if isa(centers,'SetOfHyps'), obj = centers;
+         if isa(centers,'SetOfHyps'), obj = centers;    % input option  (7)
          elseif isa(centers,'Hypersphere')              % input option  (3)
             if numel(centers) == 1
                obj.centers    = centers.centers;
@@ -110,7 +112,7 @@ classdef SetOfHyps < Hypersphere
             else
                obj = SetOfHyps(centers.meanAndMerge,varargin{:});
             end
-         else
+         else                                           % input options (1-2,4-6)
             % Use Hypersphere constructor to handle other possible inputs
             if ~exist('radii','var'), radii = []; end
             obj = Hypersphere(centers,radii,varargin{:});
@@ -127,7 +129,7 @@ classdef SetOfHyps < Hypersphere
             end
          end
 
-         for v = 1:numel(varargin)
+         for v = 1:numel(varargin)                      % input option  (7)
             if     isa(varargin{v},'SetOfHyps'),  hypsTarget     = varargin{v};
             elseif isa(varargin{v},'Categories'), obj.categories = varargin{v};
             end
@@ -154,7 +156,7 @@ classdef SetOfHyps < Hypersphere
          self.volume = Hypersphere.calcVolume(self.centers,self.radii);
       end
       function self = set.dists(self,~)    % Compute distance between two hyperspheres
-         self.dists = Hypersphere.calcDists(self.centers,self.radii);
+         self.dists = Hypersphere.calcDists(self.centers,self.distances2CrossValidated);
       end
       function self = set.margins(self,~)
          self.margins = Hypersphere.calcMargins(self.radii,self.dists);
@@ -202,7 +204,7 @@ classdef SetOfHyps < Hypersphere
             self.ci = boots.ci;
          end
 
-         dist_boot    =       self.ci.bootstraps.dists;
+         dist_boot    = cat(1,self.ci.bootstraps.distances2CrossValidated);
          radii_boot   = cat(1,self.ci.bootstraps.radii);
          margin_boot  =       self.ci.bootstraps.margins;
 
@@ -783,6 +785,9 @@ classdef SetOfHyps < Hypersphere
             if ~any(isnan(self.error))
                warning(['SetOfHyps object updated, but obj.errors/ci/sig/sigdiff '...
                         'are out of sync']);
+            elseif self.distances2CrossValidated
+               warning(['SetOfHyps object updated, but self.distances2CrossValidated, '...
+                        'and thus self.dists, are out of sync'])
             end
          end
       end

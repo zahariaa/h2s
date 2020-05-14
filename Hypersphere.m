@@ -4,6 +4,9 @@ classdef Hypersphere < handle
       radii      % [1 x n] vector: radii of each of n hyperspheres
       categories(1,1) % a Categories object (see help Categories)
    end
+   properties (SetAccess = protected)
+      distances2CrossValidated = false; % false or vector of squared cross-validated distances
+   end
 
    methods
       function obj = Hypersphere(centers,radii,varargin)
@@ -14,6 +17,7 @@ classdef Hypersphere < handle
       % hyp = Hypersphere(hypset)                                        % (3)
       % hyp = Hypersphere(hypstruct)                                     % (4)
       % hyp = Hypersphere({hyps},radii,<extraargs>)                      % (5)
+      % hyp = Hypersphere(centers,radii,<categories>,'cvdists',cvdists)  % (6)
       % 
       % Constructor input options:
       %    (1) centers is an [n x d] numeric matrix, and radii is a [1 x n]
@@ -28,7 +32,8 @@ classdef Hypersphere < handle
       %       Hypersphere object(s). points and categories are required
       %       inputs; other optional valid inputs are the number of bootstraps
       %       and the 'stratified' or 'permute' inputs to determine whether
-      %       to sample with or without replacement during bootstrapping.
+      %       to sample with or without replacement during bootstrapping, and
+      %       'cvdists' to determine whether distances are cross-validated.
       %    (3) A SetOfHyps object input is stripped down to a Hypersphere
       %       object output.
       %    (4) Mainly for compatibility with old code, this takes a struct with
@@ -40,6 +45,14 @@ classdef Hypersphere < handle
       %       centers cell elements and the corresponding radii vector
       %       elements. This makes sense for bootstrapped estimates of
       %       centers/radii.
+      %    (6) cvdists is an (n choose 2)-vector of cross-validated distances
+      %       computed in estimateHypersphere. Must be preceded by string
+      %       'cvdists'. These are placed in hyp.distances2CrossValidated, which
+      %       overrides hyp.dists. If 'cvdists' string argument is used with
+      %       'estimate' option, the vector of distances will be computed in
+      %       estimateHypersphere (and any cvdists numeric argument to
+      %       Hypersphere is ignored). cvdists can also be inserted via
+      %       hyp.concat(categories,cvdists)
       % 
       % N.B.: unlike SetOfHyps, volume, dists, margins, and overlap are all
       %    computed on-demand, every time (and only when) those methods are
@@ -49,6 +62,7 @@ classdef Hypersphere < handle
       %    centers    - [n x d] matrix: n centers of d-dimensional hyperspheres
       %    radii      - [1 x n] vector: radii of each of n hyperspheres
       %    categories - a Categories object (see help Categories)
+      %    distances2CrossValidated (protected) - false or vector of cross-validated distances
       % 
       % Methods:
       %   Hypersphere.select
@@ -91,9 +105,17 @@ classdef Hypersphere < handle
             return
          elseif iscell(centers)                                % input option (5)
             % Recurse if multiple centers provided (e.g., bootstrapping)
-            obj = repmat(Hypersphere(),[numel(centers) 1]);
-            for i = 1:numel(centers)
-               obj(i) = Hypersphere(centers{i},radii{i},varargin{:});
+            n   = numel(centers);
+            obj = repmat(Hypersphere(),[n 1]);
+            v   = find(strcmpi(varargin,'cvdists'));
+            if ~isempty(v)
+               cvdists = varargin{v+1};
+               varargin(v:v+1) = [];
+            else
+               cvdists = repmat({false},[1 n]);
+            end
+            for i = 1:n
+               obj(i) = Hypersphere(centers{i},radii{i},'cvdists',cvdists{i},varargin{:});
             end
             return
          end
@@ -105,6 +127,9 @@ classdef Hypersphere < handle
          for v = 1:numel(varargin)
             if isa(varargin{v},'Categories')
                obj.categories = varargin{v};
+            elseif ischar(varargin{v}) && strcmpi(varargin{v},'cvdists')
+               % Save cross-validated distances
+               obj.distances2CrossValidated = varargin{v+1};
             end
          end
          % Auto-generate dummy Categories if none exists by now
@@ -130,23 +155,25 @@ classdef Hypersphere < handle
          end
       end
 
-      function self = concat(self,cats)
+      function self = concat(self,cats,cvdists)
       % Hypersphere.concat: collapses an array of Hypersphere objects into
       %    a single Hypersphere object, with centers and radii concatenated,
       %    i.e., an [n x 1] array of Hypersphere objects with one hypersphere
       %.   each turns into one Hypersphere object that has n hyperspheres.
       % 
-      % Optional input argument:
+      % Optional input arguments:
       %    cats: a categories object to embed in the concatenated object
+      %    cvdists: cross-validated distances, to embed in concatenated object
       % 
       % e.g.:
       % oneBigHyp = aFewHypsArray.concat
       % oneBigHyp = aFewHypsArray.concat(categoriesForUnifiedHyp)
          if ~exist('cats',   'var'),    cats = [];    end
+         if ~exist('cvdists','var'), cvdists = false; end
          if isa(self,'SetOfHyps')
-            self =   SetOfHyps(cat(1,self.centers),[self.radii],cats);
+            self =   SetOfHyps(cat(1,self.centers),[self.radii],cats,'cvdists',cvdists);
          else
-            self = Hypersphere(cat(1,self.centers),[self.radii],cats);
+            self = Hypersphere(cat(1,self.centers),[self.radii],cats,'cvdists',cvdists);
          end
       end
 
@@ -461,7 +488,7 @@ classdef Hypersphere < handle
             D = cell2mat_concat(arrayfun(@dists,self,'UniformOutput',false));
             return
          end
-         D = self.calcDists(self.centers,self.radii);
+         D = self.calcDists(self.centers,self.distances2CrossValidated);
       end
 
       function M = margins(self)
@@ -568,10 +595,16 @@ classdef Hypersphere < handle
          V = (radii.^d).*(pi.^(d/2))./gamma((d/2)+1);
       end
 
-      function D = calcDists(centers,radii)
+      function D = calcDists(centers,CROSSVAL)
       % Compute distances between pairs of hyperspheres (along center-connection
-      %    lines)
-         n = numel(radii);
+      %    lines). Or take square root of squared cross-validated distances, if
+      %    they exist.
+         if CROSSVAL
+            D = sqrt(CROSSVAL);
+            return
+         end
+
+         n = size(centers,1);
          D = zeros(1,(n^2-n)/2);
          i=0;
          for a = 1:n-1
