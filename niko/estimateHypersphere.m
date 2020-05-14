@@ -1,6 +1,8 @@
-function hyp = estimateHypersphere(points,varargin)
-% hyp = estimateHypersphere(points,nBootstrapSamples) % output is a Hypersphere obj
+function [hyp,loc_cv] = estimateHypersphere(points,varargin)
+% hyp = estimateHypersphere(points,nBootstraps) % output is a Hypersphere obj
 % hyps = estimateHypersphere(points,categories) % output is an array of Hypersphere objs
+% [hyp,loc_cv] = estimateHypersphere(points) % output is a Hypersphere obj and
+%    its 2-fold cross-validated center
 %
 % IF POINTS IS 3D:
 % hyp = estimateHypersphere(points,categories) % assumes 3rd dim are bootstraps
@@ -15,6 +17,8 @@ function hyp = estimateHypersphere(points,varargin)
 nBootstraps= 1;
 STRATIFIED = true;     % stratified bootstrap (default)
 NORMALIZE  = true;     % pre-normalize points
+CVDISTS    = true;     % distances are cross-validated by default
+cvdists    = false;    % placeholder if don't have cross-validated distance values
 ESTIMATOR  = 'meandist';
 DBUGPLOT   = false;
 VERBOSE    = false;
@@ -22,14 +26,17 @@ VERBOSE    = false;
 for v = 1:numel(varargin)
    if isa(varargin{v},'Categories')
       categories  = varargin{v};
+      varargin{v} = [];
    elseif isnumeric(varargin{v}) && numel(varargin{v})==1
       nBootstraps = varargin{v};
+      varargin{v} = [];
    elseif ischar(   varargin{v})
       switch( lower(varargin{v}) )
          case 'permute';     STRATIFIED = false;
          case 'stratified';  STRATIFIED = true;
-         case 'normalize';   NORMALIZE  = true;
-         case 'raw';         NORMALIZE  = false;
+         case 'normalize';   NORMALIZE  = true;  varargin{v} = [];
+         case 'raw';         NORMALIZE  = false; varargin{v} = [];
+         case 'nocvdists';     CVDISTS  = false;
          case {'meandist','distance','mcmc','jointml','gaussian','uniformball','uniformcube'}
             ESTIMATOR = lower(varargin{v});
          otherwise warning('bad string input option: %s', varargin{v})
@@ -67,18 +74,25 @@ if exist('categories','var') && numel(categories.labels)>1
 
       % EVALUATE ALL TOGETHER!
       % Recursive call
-      hypEst  = estimateHypersphere(points,categories.internalrepmat(f),'raw',ESTIMATOR);
+      [hypEst,loc_cv] = estimateHypersphere(points,categories.internalrepmat(f),...
+                                            'raw',nBootstraps,'nocvdists',varargin{:});
       % SEPARATE COMBINED HYP
       centers = mat2cell(hypEst.centers,nCats*ones(f,1));
       radii   = num2cell(reshape(hypEst.radii,[nCats f]),1)';
-      hyp     = Hypersphere(centers,radii,categories);
+      loc_cv  = reshape(loc_cv,[nCats f])';
+      if CVDISTS, cvdists = cvCenters2cvSqDists(loc_cv); end
+
+      hyp     = Hypersphere(centers,radii,categories,'cvdists',cvdists);
       return
    end
+
    %% permutation or stratified bootstrap test
    if nBootstraps > 1 && ~strcmp(ESTIMATOR,'mcmc')
       catperm = [categories; categories.permute(nBootstraps,STRATIFIED)];
       % Recursive call
-      hyp = arrayfun(@(c) estimateHypersphere(points,c,'raw',ESTIMATOR),catperm);
+      [hyp,loc_cv] = arrayfun(@(c) estimateHypersphere(points,c,'raw',varargin{:}),...
+                                   catperm,'UniformOutput',false);
+      hyp = cell2mat_concat(hyp);
    else % mcmc or single sample (of bootstrap or not)
       if DISTMATRIX
          % build inter-category mean distance matrix
@@ -109,26 +123,33 @@ if exist('categories','var') && numel(categories.labels)>1
          end
       end
       % Recursive call
-      hyp = cellfun(@(x) estimateHypersphere(x,'raw',ESTIMATOR,nBootstrapSamples),...
-               p,'UniformOutput',false);
+      [hyp,loc_cv] = cellfun(@(x) estimateHypersphere(x,'raw',nBootstraps,varargin{:}),...
+                                  p,'UniformOutput',false);
+      % Compute cross-validated distances
+      if CVDISTS, cvdists = cvCenters2cvSqDists(loc_cv); end
+
       switch(ESTIMATOR)
          case 'mcmc'
             % do some fancy combining
             hyp = cellfun(@unconcat, hyp,'UniformOutput',false); % n-cell of nSamples
             hyp = num2cell(cell2mat_concat(hyp),1); % nSamples-cell of n-Hyperspheres
-            hyp = cellfun(@(x) x.concat(categories),hyp); % nSamples n-Hyperspheres
+            hyp = cellfun(@(x) x.concat(categories,cvdists),hyp); % nSamples n-Hyperspheres
          case 'distance'
-            hyp = cell2mat_concat(hyp).concat(categories);
+            hyp = cell2mat_concat(hyp).concat(categories,cvdists);
             % replace true centers in all hyp's
             hyp.centers = centers;
          otherwise
-            hyp = cell2mat_concat(hyp).concat(categories);
+            hyp = cell2mat_concat(hyp).concat(categories,cvdists);
       end
    end
    return
 end
 
 %% DO THE ACTUAL ESTIMATION
+% estimate cross-validated centers
+cv     = cvindex(n,2);
+loc_cv = [mean(points(cv.train(1),:));
+          mean(points(cv.train(2),:)) ];
 %% estimate location, re-center points
 switch(ESTIMATOR)
    case 'distance' % do nothing
@@ -195,3 +216,24 @@ function rad = mvue_gaussian(points,d,n)
    return
 end
 
+function cvdists = cvCenters2cvSqDists(loc_cv)
+% Compute SQUARED cross-validated distances from a cell array of 2-fold cross-
+%    validated centers (a standard output of estimateHypersphere).
+   [f,n] = size(loc_cv);
+   if f > 1 % recurse
+      for i = 1:f
+         cvdists{i} = cvCenters2cvSqDists(loc_cv(i,:));
+      end
+      return
+   end
+
+   i=0;
+   for a = 1:n-1
+      for b = a+1:n, i=i+1;
+         cvdists(i) =  (loc_cv{a}(1,:)-loc_cv{b}(1,:))...
+                      *(loc_cv{a}(2,:)-loc_cv{b}(2,:))';
+      end
+   end
+   % cvdists = sqrt(cvdists);
+   return
+end
