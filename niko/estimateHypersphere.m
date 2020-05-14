@@ -12,23 +12,27 @@ function hyp = estimateHypersphere(points,varargin)
 
 %% preparation
 [n,d,f] = size(points);
-nBootstrapSamples = 1;
+nBootstraps= 1;
 STRATIFIED = true;     % stratified bootstrap (default)
 NORMALIZE  = true;     % pre-normalize points
-ESTIMATOR  = '';
+ESTIMATOR  = 'meandist';
 DBUGPLOT   = false;
 VERBOSE    = false;
 
-for v = 2:nargin
-   if isa(varargin{v-1},'Categories'), categories        = varargin{v-1};
-   elseif isnumeric(varargin{v-1}),    nBootstrapSamples = varargin{v-1};
-   elseif ischar(   varargin{v-1})
-      switch( lower(varargin{v-1}) )
+for v = 1:numel(varargin)
+   if isa(varargin{v},'Categories')
+      categories  = varargin{v};
+   elseif isnumeric(varargin{v}) && numel(varargin{v})==1
+      nBootstraps = varargin{v};
+   elseif ischar(   varargin{v})
+      switch( lower(varargin{v}) )
          case 'permute';     STRATIFIED = false;
          case 'stratified';  STRATIFIED = true;
          case 'normalize';   NORMALIZE  = true;
          case 'raw';         NORMALIZE  = false;
-         otherwise,          ESTIMATOR  = lower(varargin{v-1});
+         case {'meandist','distance','mcmc','jointml','gaussian','uniformball','uniformcube'}
+            ESTIMATOR = lower(varargin{v});
+         otherwise warning('bad string input option: %s', varargin{v})
       end
    end
 end
@@ -50,15 +54,16 @@ end
 
 if f==1 && NORMALIZE, points = normalize(points,normtype); end
 
-%% recurse cell array of points
+%% recurse to slice/bootstrap points
 if exist('categories','var') && numel(categories.labels)>1
+   nCats   = numel(categories.labels);
+
    %% EVALUATE ALL FRAMES IN SAME SPACE
    if f > 1
       points  = reshape(permute(points,[1 3 2]),n*f,d);
       if NORMALIZE
          points = normalize(points,normtype);
       end
-      nCats   = numel(categories.labels);
 
       % EVALUATE ALL TOGETHER!
       % Recursive call
@@ -70,14 +75,13 @@ if exist('categories','var') && numel(categories.labels)>1
       return
    end
    %% permutation or stratified bootstrap test
-   if nBootstrapSamples > 1 && ~strcmp(ESTIMATOR,'mcmc')
-      catperm = [categories; categories.permute(nBootstrapSamples,STRATIFIED)];
+   if nBootstraps > 1 && ~strcmp(ESTIMATOR,'mcmc')
+      catperm = [categories; categories.permute(nBootstraps,STRATIFIED)];
       % Recursive call
       hyp = arrayfun(@(c) estimateHypersphere(points,c,'raw',ESTIMATOR),catperm);
    else % mcmc or single sample (of bootstrap or not)
       if DISTMATRIX
          % build inter-category mean distance matrix
-         nCats = numel(categories.labels);
          catix = nchoosek_ix(nCats);
          distsAcross = zeros(1,size(catix,2));
          for i = 1:size(catix,2)
@@ -139,8 +143,8 @@ switch(ESTIMATOR)
       % points here are actually distances
       rad = mean(points)/expDistPerRad(d);
    case 'mcmc'
-      [loc,rad] = inferHyperspherePosterior(points,nBootstrapSamples,DBUGPLOT,VERBOSE);
-   otherwise
+      [loc,rad] = inferHyperspherePosterior(points,nBootstraps,DBUGPLOT,VERBOSE);
+   case 'meandist'
       % dists = pdist(points,'Euclidean');
       % cv = cvindex(n,10);
       % loc = mean(cell2mat_concat(cv.crossvalidate(@mean,points)));

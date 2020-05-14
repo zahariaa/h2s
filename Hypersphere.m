@@ -9,11 +9,11 @@ classdef Hypersphere < handle
       function obj = Hypersphere(centers,radii,varargin)
       % Constructor for Hypersphere object for hypersphere2sphere, SetOfHyps
       % e.g.:
-      % hyp = Hypersphere(centers,radii,<categories>)                % (1)
-      % hyp = Hypersphere('estimate',points,categories,<extraargs>)  % (2)
-      % hyp = Hypersphere(hypset)                                    % (3)
-      % hyp = Hypersphere(hypstruct)                                 % (4)
-      % hyp = Hypersphere({hyps},radii,<extraargs>)                  % (5)
+      % hyp = Hypersphere(centers,radii,<categories>)                    % (1)
+      % hyp = Hypersphere('estimate',points,categories,<extraargs>)      % (2)
+      % hyp = Hypersphere(hypset)                                        % (3)
+      % hyp = Hypersphere(hypstruct)                                     % (4)
+      % hyp = Hypersphere({hyps},radii,<extraargs>)                      % (5)
       % 
       % Constructor input options:
       %    (1) centers is an [n x d] numeric matrix, and radii is a [1 x n]
@@ -113,8 +113,6 @@ classdef Hypersphere < handle
          end
       end
 
-%% TODO: add in input options to choose which estimator to use!!!!!!!!!!!
-
       function newobj = select(self,i)
       % Hypersphere.select: outputs a Hypersphere object that has been
       %    subsampled to have one or more hyperspheres, indexed by input i
@@ -144,7 +142,7 @@ classdef Hypersphere < handle
       % e.g.:
       % oneBigHyp = aFewHypsArray.concat
       % oneBigHyp = aFewHypsArray.concat(categoriesForUnifiedHyp)
-         if ~exist('cats','var'),   cats = [];   end
+         if ~exist('cats',   'var'),    cats = [];    end
          if isa(self,'SetOfHyps')
             self =   SetOfHyps(cat(1,self.centers),[self.radii],cats);
          else

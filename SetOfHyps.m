@@ -28,12 +28,12 @@ classdef SetOfHyps < Hypersphere
       function obj = SetOfHyps(centers,radii,varargin)
       % Constructor for SetOfHyps object for hypersphere2sphere, Hypersphere
       % e.g.:
-      % hypset = SetOfHyps(centers,radii,categories)                 % (1)
-      % hypset = SetOfHyps('estimate',points,categories,extraargs)   % (2)
-      % hypset = SetOfHyps(hyp,ci)                                   % (3)
-      % hypset = SetOfHyps(hypstruct)                                % (4)
-      % hypset = SetOfHyps({hyps},radii,extraargs)                   % (5)
-      % hypset = SetOfHyps(hypset,hypsetTarget)                      % (6)
+      % hypset = SetOfHyps(centers,radii,categories)                     % (1)
+      % hypset = SetOfHyps('estimate',points,categories,extraargs)       % (2)
+      % hypset = SetOfHyps(hyp,ci)                                       % (3)
+      % hypset = SetOfHyps(hypstruct)                                    % (4)
+      % hypset = SetOfHyps({hyps},radii,extraargs)                       % (5)
+      % hypset = SetOfHyps(centers,radii,categories,'cvdists',cvdists)   % (6)
       % 
       % Constructor input options:
       %    (1-2) Same as Hypersphere input options (1-2), but yields a SetOfHyps.
@@ -99,26 +99,23 @@ classdef SetOfHyps < Hypersphere
          if nargin==0; return; end
 
          if isa(centers,'SetOfHyps'), obj = centers;
-         elseif isa(centers,'Hypersphere')
+         elseif isa(centers,'Hypersphere')              % input option  (3)
             if numel(centers) == 1
-               obj.centers = centers.centers;
-               obj.radii = centers.radii;
-               if exist('radii','var') && isstruct(radii) % assumes merged Hypersphere object
-                  obj.ci = radii;
-               end
+               obj.centers    = centers.centers;
+               obj.radii      = centers.radii;
                obj.categories = centers.categories;
+               if exist('radii','var') && isstruct(radii)
+                  obj.ci = radii; % assumes merged Hypersphere object
+               end
             else
                obj = SetOfHyps(centers.meanAndMerge,varargin{:});
             end
-         elseif isnumeric(centers)
-            obj.centers = centers;
-            obj.radii = radii;
          else
             % Use Hypersphere constructor to handle other possible inputs
             if ~exist('radii','var'), radii = []; end
             obj = Hypersphere(centers,radii,varargin{:});
 
-            % Deal with multiple Hyperspheres, how to convert to SetOfHyps
+            % Deal with multiple Hyperspheres, convert to SetOfHyps
             MCMC = any(strcmpi(varargin,'mcmc'));
             if obj(end).categories.ispermuted || MCMC
                obj = obj.meanAndMerge(MCMC);
@@ -130,12 +127,9 @@ classdef SetOfHyps < Hypersphere
             end
          end
 
-         % Update error if another SetOfHyps given
          for v = 1:numel(varargin)
-            if     isa(varargin{v},'SetOfHyps')
-               obj = obj.stressUpdate(varargin{v});
-            elseif isa(varargin{v},'Categories')
-               obj.categories = varargin{v};
+            if     isa(varargin{v},'SetOfHyps'),  hypsTarget     = varargin{v};
+            elseif isa(varargin{v},'Categories'), obj.categories = varargin{v};
             end
          end
 
@@ -150,6 +144,9 @@ classdef SetOfHyps < Hypersphere
          % Set up listeners to update dependent properties only on centers/radii set
          addlistener(obj,'centers','PostSet',@obj.setPostCenters);
          addlistener(obj,'radii'  ,'PostSet',@obj.setPostRadii);
+
+         % Update error if another SetOfHyps given
+         if exist('hypsTarget','var'), obj = obj.stressUpdate(hypsTarget); end
       end
 
       %% SET FUNCTIONS TO COMPUTE AND STORE VOLUME, DISTS, MARGINS, OVERLAPS
@@ -200,7 +197,8 @@ classdef SetOfHyps < Hypersphere
             error('self.categories.vectors needs to index points');
          else
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
-            boots   = Hypersphere('estimate',points,self.categories,N,'stratified').meanAndMerge;
+            boots   = Hypersphere('estimate',points,self.categories,N,...
+                                  'stratified').meanAndMerge;
             self.ci = boots.ci;
          end
 
@@ -228,7 +226,8 @@ classdef SetOfHyps < Hypersphere
          ix    = nchoosek_ix(n);
          ixc2  = nchoosek_ix(nc2);
 
-         self.sigdiff = struct('ra',NaN(1,nc2),'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2),'di',NaN(1,nc2c2));
+         self.sigdiff = struct('ra',NaN(1,nc2),...
+                               'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2),'di',NaN(1,nc2c2));
          for i = 1:nc2
             self.sigdiff.ra(i) = ciprctile2tail(diff(  radii_boot(:,  ix(:,i)),[],2));
          end
@@ -780,8 +779,11 @@ classdef SetOfHyps < Hypersphere
          end
          self.dists   = dists(self);
          self.margins = margins(self);
-         if ~FIRSTRUN && ~any(isnan(self.error))
-            warning('SetOfHyps object updated, but obj.errors/ci/sig/sigdiff are out of sync');
+         if ~FIRSTRUN
+            if ~any(isnan(self.error))
+               warning(['SetOfHyps object updated, but obj.errors/ci/sig/sigdiff '...
+                        'are out of sync']);
+            end
          end
       end
       function self = setPostRadii(self,src,event,FIRSTRUN)

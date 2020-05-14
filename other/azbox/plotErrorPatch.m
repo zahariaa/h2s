@@ -23,12 +23,12 @@ if isstruct(varargin{1}) && isfield(varargin{1},'bins')
    ymean = varargin{1}.respmean;
    ystd  = varargin{1}.respstd;
 else
-   nums   = cellfun(@isnumeric    ,varargin);
-   mats   = cellfun(@ismatrix     ,varargin);
-   n      = cellfun(@numel        ,varargin);
-   flags  = cellfun(@islogical    ,varargin);
-   chars  = cellfun(@ischar       ,varargin);
    mats2d = cellfun(@(x) (size(x,1)>1 && size(x,2)>1),varargin);
+   nums   = cellfun(@isnumeric         ,varargin);
+   mats   = cellfun(@ismatrix          ,varargin);
+   n      = cellfun(@numel             ,varargin);
+   flags  = cellfun(@islogical         ,varargin);
+   chars  = cellfun(@ischar            ,varargin);
    
    if any(flags)
       PATCH = varargin{flags};

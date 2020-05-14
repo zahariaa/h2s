@@ -2,7 +2,7 @@ classdef cvindex
    properties
       nCV     % number of folds
       n       % number of samples
-      rp      % matrix of random perumtation of indices organized by fold
+      rp      % matrix of random permutation of indices organized by fold
    end
    methods
       function obj = cvindex(n,nCV)     % Constructor
