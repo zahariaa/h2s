@@ -154,21 +154,21 @@ if exist('categories','var') && numel(categories.labels)>1
 end
 
 %% DO THE ACTUAL ESTIMATION
-% estimate cross-validated centers
-cv     = cvindex(n,2);
-loc_cv = [mean(points(cv.train(1),:));
-          mean(points(cv.train(2),:)) ];
+cv     = cvindex(n,2); % for cross-validated centers estimation
+
 %% estimate location, re-center points
 switch(ESTIMATOR)
-   case 'distance' % do nothing
-   case 'mcmc'     % do nothing
-   otherwise       loc    = mean(points,1); % optimises L2 cost (same as L1 force equilibrium)
-                   points = points - repmat(loc,[n 1]);
+   case {'distance','mcmc','jointml'} % do nothing
+   otherwise
+      loc_cv = [mean(points(cv.train(1),:));
+                mean(points(cv.train(2),:)) ];
+      loc    =  mean(points,1); % optimises L2 cost (same as L1 force equilibrium)
+      points = points - repmat(loc,[n 1]);
 end
 
 switch(ESTIMATOR)
    case 'distance'
-      loc = []; % consistent center points are in a lower call
+      loc = []; loc_cv = [];% consistent center points are in a lower call
       % points here are actually distances
       rad = mean(points)/expDistPerRad(d);
    case 'mcmc'
