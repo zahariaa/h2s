@@ -22,6 +22,7 @@ cvdists    = false;    % placeholder if don't have cross-validated distance valu
 ESTIMATOR  = 'meandist';
 DBUGPLOT   = false;
 VERBOSE    = false;
+INDEPENDENT= false;
 
 for v = 1:numel(varargin)
    if isa(varargin{v},'Categories')
@@ -37,6 +38,7 @@ for v = 1:numel(varargin)
          case 'normalize';   NORMALIZE  = true;  varargin{v} = [];
          case 'raw';         NORMALIZE  = false; varargin{v} = [];
          case 'nocvdists';     CVDISTS  = false;
+         case 'independent'; INDEPENDENT= true;  varargin{v} = [];
          case {'meandist','distance','mcmc','jointml','gaussian','uniformball','uniformcube'}
             ESTIMATOR = lower(varargin{v});
          otherwise warning('bad string input option: %s', varargin{v})
@@ -67,6 +69,12 @@ if exist('categories','var') && numel(categories.labels)>1
 
    %% EVALUATE ALL FRAMES IN SAME SPACE
    if f > 1
+      if INDEPENDENT % normalize must be false (think about this some more)
+         for i = 1:f
+            hyp(i) = estimateHypersphere(points(:,:,i),categories,'raw',varargin{:});
+         end
+         return
+      end
       points  = reshape(permute(points,[1 3 2]),n*f,d);
       if NORMALIZE
          points = normalize(points,normtype);
