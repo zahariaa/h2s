@@ -39,18 +39,14 @@ else
    % cats.(model) = Categories(data.x{end},...
    %                         arrayfun(@num2str,0:9,'UniformOutput',false)');
    
-   nPointsPerCat   = sum(cats(end).(model).vectors);
-   [nPoints,nCats] =size(cats(end).(model).vectors);
    %% Estimate hyperspheres, run h2s
    for i = 1:nlayers+2
       stationarycounter(i,nlayers+1)
-      hi.(model)(i) = SetOfHyps('estimate',data.x{i}(chunk,:),cats(~~(i-1)+1).(model));
-      [hi.(model)(i).sig,hi.sec(i)] = hi.(model)(i).significance(data.x{i}(chunk,:),10000);
+      hi.(model)(i) = SetOfHyps('estimate',double(data.x{i}(chunk,:)),cats(~~(i-1)+1).(model),10000);
       lo.(model)(i) = hi.(model)(i).h2s(dimLow);
       if all(lo.(model)(i).radii==0)
          lo.(model)(i).radii = 0.05*ones(1,10);
       end
-      [lo.(model)(i).sig,lo.sec(i)] = lo.(model)(i).significance(data.x{i}(chunk,:),10000);
       save(h2sfile,'hi','lo','cats','nlayers')
       fprintf('Saved h2s to %s     \n',h2sfile);
    end
