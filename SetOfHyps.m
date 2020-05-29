@@ -224,9 +224,11 @@ classdef SetOfHyps < Hypersphere
          % compute indices of radii corresponding to overlaps
          n     = numel(self.radii);
          nc2   = nchoosek(n,2);
-         nc2c2 = nchoosek(nc2,2);
          ix    = nchoosek_ix(n);
-         ixc2  = nchoosek_ix(nc2);
+         if n < 3, nc2c2 = 0;
+         else      nc2c2 = nchoosek(nc2,2);
+                   ixc2  = nchoosek_ix(nc2);
+         end
 
          self.sigdiff = struct('ra',NaN(1,nc2),...
                                'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2),'di',NaN(1,nc2c2));
