@@ -103,9 +103,9 @@ classdef SetOfHyps < Hypersphere
          if isa(centers,'SetOfHyps'), obj = centers;    % input option  (7)
          elseif isa(centers,'Hypersphere')              % input option  (3)
             if numel(centers) == 1
-               obj.centers    = centers.centers;
-               obj.radii      = centers.radii;
-               obj.categories = centers.categories;
+               for fn = fieldnames(centers)'
+                  obj.(fn{1}) = centers.(fn{1});
+               end
                if exist('radii','var') && isstruct(radii)
                   obj.ci = radii; % assumes merged Hypersphere object
                end
