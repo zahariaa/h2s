@@ -1,10 +1,11 @@
-function [sigtest,estimates,hyps,groundtruth] = simulate_stats(nboots)
+function [sigtest,estimates,hyps,groundtruth] = simulate_stats(nsamps)
 % simulate_stats: simulate null distributions from different h2s statistical
 %    tests with a few special cases
 
-if ~exist('nboots','var') || isempty(nboots), nboots = 100; end
+if ~exist('nsamps','var') || isempty(nsamps), nsamps = 100; end
 
 %% TODO: ALL TESTS WITH DIFFERENT ESTIMATORS?
+nboots = 100;
 %% Testing as a function of d, n, n-ratio, and r-ratio:
 ns = 2.^( 6:8); % # samples to test
 ds = 2.^( 1:5); % # dimensions
@@ -37,7 +38,7 @@ nm = numel(measures);
 
 % Initialize data for saving (could probably change from cell to tensor)
 nc2   	 = 1+2*double(s>2);
-sigtest   = repmat({NaN(nn,nboots,nc2)},[nm nd]);
+sigtest   = repmat({NaN(nn,nsamps,nc2)},[nm nd]);
 
 if exist(simfile,'file'), load(simfile); fprintf('Loaded simulations.\n'); end
 
@@ -53,14 +54,14 @@ for d = 1:nd
    			DISPLAYED = true;
    		end
 		   % Simulate points
-	      [points,groundtruth] = groundtruth.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nboots);
+	      [points,groundtruth] = groundtruth.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsamps);
 	      hyps(d,n,:) = Hypersphere('estimate',points,groundtruth.categories,'independent');%.meanAndMerge(true);
 
 	      % Assess significance on samples
 	      tmp = NaN(size(sigtest{s,d},[2 3]));
-	      parfor b = 1:nboots
+	      parfor b = 1:nsamps
 	         tmp(b,:) = SetOfHyps(hyps(d,n,b)).significance(...
-	                            points(:,:,b),100).(sigfield{1+double(s>2)}).(mnames{s}(1:2));
+	                            points(:,:,b),nboots).(sigfield{1+double(s>2)}).(mnames{s}(1:2));
 	      end
 		   sigtest{s,d}(n,:,:) = tmp;
 	      stationarycounter([d n],[nd nn])
@@ -71,7 +72,7 @@ for d = 1:nd
 end
 
 %% Extract data: collect estimates (e.g., overlaps, distances)
-estimates = repmat({NaN(nn,nboots,nc2)},[nm nd]);
+estimates = repmat({NaN(nn,nsamps,nc2)},[nm nd]);
 for d = 1:nd
 	for n = 1:nn
       switch s
@@ -100,7 +101,7 @@ for i = 1:4
    axtivate(ax(i));
    hist(estimates{s,dShown(i)}(nShown(i),:))
    set(ax(i).Children(end),'FaceColor',[0 0 0],'EdgeColor',[1 1 1])
-   plot([0 0],[0 nboots/4],'r-','LineWidth',2)
+   plot([0 0],[0 nsamps/4],'r-','LineWidth',2)
    xlabel(measures{s})
    ylabel('count')
    title(sprintf('Estimates (n = %u, d = %u)',ns(nShown(i)),ds(dShown(i))))
