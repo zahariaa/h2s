@@ -80,6 +80,8 @@ classdef SetOfHyps < Hypersphere
       %    SetOfHyps.concat
       %    SetOfHyps.unconcat
       %    SetOfHyps.meanAndMerge
+      %    SetOfHyps.sample
+      %    SetOfHyps.plotSamples
       %    SetOfHyps.show
       %    SetOfHyps.camera
       %    SetOfHyps.movie

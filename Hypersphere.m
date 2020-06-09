@@ -69,6 +69,8 @@ classdef Hypersphere < handle
       %   Hypersphere.concat
       %   Hypersphere.unconcat
       %   Hypersphere.meanAndMerge
+      %   Hypersphere.sample
+      %   Hypersphere.plotSamples
       %   Hypersphere.show
       %   Hypersphere.camera
       %   Hypersphere.movie
@@ -230,6 +232,77 @@ classdef Hypersphere < handle
          if ~isempty(ci) && isempty(self.sig)
             self = self.significance(ci);
          end
+      end
+
+      function [points,self] = sample(self,nsamples,nboots,type)
+      % Hypersphere.sample: samples points from a Hypersphere. Can output the
+      %    points with one or more samplings (bootstraps) as well as an updated
+      %    Hypersphere object with hyp.categories.vectors replaced with the new
+      %    number of samples inputted. Can specify 'uniform' (nball), 'gaussian',
+      %    or 'hypercube' assumption type for sampling.
+      % 
+      % e.g.:
+      % points = hyps.sample;
+      % points = hyps.sample(100);      % 100 points from all hyperspheres
+      % points = hyps.sample([100 50]); % 100 points from hyp1 and 50 from hyp2
+      % [~,hyps] = hyps.sample([100 50]); % hyps.categories.vectors updated
+      % points = hyps.sample([100 50],100); % 100 bootstrap samples
+      % 
+      % Optional inputs:
+      %    nsamples (DEFAULT: numbers derived from self.categories.vectors): A
+      %       scalar or n-vector determining the number of samples to generate
+      %       per hypersphere. If a scalar is provided, all hyperspheres are
+      %       sampled with that same number of points.
+      %    nboots (DEFAULT = 1): Number of 'bootstrap samples', or the size of
+      %       a third (tensor) dimension of samples, to compute.
+      %    type (DEFAULT = 'uniform'): The type of distribution from which
+      %       Hypersphere samples are drawn. Options are: 'uniform',
+      %       'gaussian', 'cube'.
+      % 
+      % Optional output:
+      %    self: self.categories.vectors replaced with logical block diagonal
+      %       of nsamples
+      % 
+      % SEE ALSO SAMPLESPHERES, CATEGORIES.PLOTSAMPLES, HYPERSPHERE.PLOTSAMPLES
+         [n,d] = size(self.centers);
+
+         if ~exist('type',    'var') || isempty(  type  ), type = 'uniform'; end
+         if ~exist('nboots',  'var') || isempty( nboots ), nboots = 1;       end
+         if ~exist('nsamples','var') || isempty(nsamples)
+            nsamples = sum(self.categories.vectors);
+         elseif numel(nsamples)==1
+            nsamples = nsamples*ones(1,n);
+         end
+
+         % Initialize
+         points = arrayfun(@(s) zeros(s,d,nboots),nsamples,'UniformOutput',false);
+         % Sample
+         for i = 1:n
+            points{i} = sampleSpheres(nsamples(i),d,nboots,type)*self.radii(i);
+            points{i} = points{i} + repmat(self.centers(i,:),[nsamples(i) 1 nboots]);
+         end
+         points = cell2mat_concat(points);
+
+         if nargout > 1 % overwrite Hypersphere.categories.vectors with new nsamples
+            self.categories = Categories(num2cell(nsamples),...
+                                 self.categories.labels,self.categories.colors);
+         end
+      end
+
+      function varargout = plotSamples(self,points,varargin)
+      % Hypersphere.plotSamples: Overloads categories.plotSamples. This is a
+      %    wrapper that calls self.categories.plotSamples, but if no points are
+      %    provided, this automatically samples points via self.sample.
+      % 
+      % SEE ALSO CATEGORIES.PLOTSAMPLES, HYPERSPHERE.SAMPLE, SAMPLESPHERES
+         if ~exist('points','var') || isempty(points),          points = self.sample;
+         elseif ishandle(points), varargin = [points varargin]; points = self.sample;
+         end
+         if isvector(points), [points,self] = self.sample(points); end
+
+         out = self.categories.plotSamples(points,varargin{:});
+
+         if nargout, varargout = {out}; end
       end
 
       function varargout = show(self,varargin)

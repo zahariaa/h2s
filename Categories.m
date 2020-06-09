@@ -61,8 +61,11 @@ classdef Categories
       % 
       % Methods:
       %    Categories.select
+      %    Categories.internalrepmat
       %    Categories.permute
+      %    Categories.vectorsForDistanceMatrix
       %    Categories.legend
+      %    Categories.plotSamples
       %    Categories.legendText
       % 
       % 2018-06-07 AZ Created
@@ -252,6 +255,61 @@ classdef Categories
             case 1; varargout = {ann};
             case 2; varargout = {ann; anntxt};
          end
+      end
+
+      function varargout = plotSamples(self,points,ax)
+      % Categories.plotSamples: plots inputted points according to the colors
+      %    and indices in self.categories. Can provide multiple bootstraps of
+      %    points: if one (or no) axis handle is provided, this plots all
+      %    bootstraps in one axis. If multiple axis handles are provided, this
+      %    plots the first nax individual bootstraps of the points in each of
+      %    the nax axes. By default, if points are more than 3D, only the first
+      %    3 dimensions are plotted.
+      % e.g.:
+      % ax = cats.plotSamples(points)
+      % cats.plotSamples(points,ax)
+      % 
+      % Required input:
+      %    points ([n x d x nboots] tensor): the points to be plotted. If d>3,
+      %       only the 1st 3 dimensions are plotted. If nboots>1 and nax<=1, all
+      %       points are plotted in the same plot. If nax>1, then the first nax
+      %       matrices in the points tensor are plotted in the nax axes handles
+      %       provided.
+      % Optional input:
+      %    ax (DEFAULT = gca): axis handle(s) for the plots. If multiple axis
+      %       handles are provided, the first nax matrices in the points
+      %       tensor (points(:,:,iax)) are plotted separately in each of the nax
+      %       axes handles provided.
+      % 
+      % SEE ALSO HYPERSPHERE.PLOTSAMPLES
+
+         if ~exist('ax','var') || isempty(ax), ax = gca; end
+         nax    = numel(ax);
+         nboots = size(points,3);
+
+         for i = 1:numel(self.labels)
+            cat = self.select(i);
+
+            for b = 1:nboots
+               if b==1 || (b>1 && nax>1), axtivate(ax(b)); end
+
+               if size(points,2) > 2
+                  plot3(points(cat.vectors,1,b),points(cat.vectors,2,b),...
+                        points(cat.vectors,3,b),'wo','MarkerFaceColor',cat.colors);
+               else
+                  plot( points(cat.vectors,1,b),points(cat.vectors,2,b),...
+                                                'wo','MarkerFaceColor',cat.colors);
+               end
+
+               if b==nax && nax>1, break; end
+            end
+         end
+         for a = 1:nax
+            axtivate(ax(a));
+            axis equal off;
+         end
+
+         if nargout, varargout = {ax}; end
       end
 
    % end
