@@ -599,7 +599,7 @@ classdef Hypersphere < handle
       % Compute distances between pairs of hyperspheres (along center-connection
       %    lines). Or take square root of squared cross-validated distances, if
       %    they exist.
-         if exist('CROSSVAL','var') && CROSSVAL
+         if exist('CROSSVAL','var') && CROSSVAL(1)
             D = sqrt(abs(CROSSVAL));
             return
          end

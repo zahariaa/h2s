@@ -110,7 +110,7 @@ classdef SetOfHyps < Hypersphere
                   obj.ci = radii; % assumes merged Hypersphere object
                end
             else
-               obj = SetOfHyps(centers.meanAndMerge,varargin{:});
+               obj = SetOfHyps(centers.meanAndMerge(true),varargin{:});
             end
          else                                           % input options (1-2,4-6)
             % Use Hypersphere constructor to handle other possible inputs
