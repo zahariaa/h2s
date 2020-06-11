@@ -1009,15 +1009,16 @@ classdef SetOfHyps < Hypersphere
       %    SETOFHYPS.SHOWSIGLEGEND, STATSMAT
          % Parse inputs
          if ~exist('values','var'), values = []; end
-         N = numel(values);
-         side = '';
+         nVals   = numel(values);
+         nCats   = numel(self.radii);
+         side    = '';
          for v = 1:nargin-2
             if        ischar(varargin{v})
                switch lower(varargin{v})
                   case {'size','left','right'}; side = varargin{v}; sizes = abs(values);
                   case 'sig';             FIRSTORDER = true;
                   case {'sigdiff','diff'};FIRSTORDER = false;
-                  case 'color';               colors = mat2cell(1-abs(values(:))*[1 1 1],ones(1,N));
+                  case 'color';               colors = mat2cell(1-abs(values(:))*[1 1 1],ones(1,nVals));
                   otherwise                  boxpart = varargin{v};
                end
             elseif isnumeric(varargin{v}), colors = varargin(v);
@@ -1030,47 +1031,41 @@ classdef SetOfHyps < Hypersphere
 
          % If whole matrix of values passed, recursively call on each matrix
          % part, after normalizing by abs-max
-         if size(values,1)==sqrt(N) && size(values,2)==sqrt(N)
-            self.elaborateHinton(values(triu(true(sqrt(N)), 1)),'uppert'  ,varargin{:})
-            self.elaborateHinton(diag(values)                  ,'diagonal',varargin{:})
-            self.elaborateHinton(values(tril(true(sqrt(N)),-1)),'lowert'  ,varargin{:})
+         if all(size(values)==nCats)
+            self.elaborateHinton(values(triu(true(nCats), 1)),'uppert'  ,varargin{:})
+            self.elaborateHinton(diag(values)                ,'diagonal',varargin{:})
+            self.elaborateHinton(values(tril(true(nCats),-1)),'lowert'  ,varargin{:})
             return
          end
          % Continue input parsing
-         if ~exist('sizes' ,'var'),  sizes = ones(N,1); end
+         if ~exist('sizes' ,'var'),  sizes = ones(nVals,1); end
          if ~exist('colors','var') || isempty(colors)
-            colors = mat2cell(zeros(N,3),ones(1,N));
+            colors = mat2cell(zeros(nVals,3),ones(1,nVals));
          end
          % separate values (color) and value signs (circle or square)
          circleNotSquare = double(values>-eps); %values = abs(values); % would set values>=0, but not needed
-         if numel(colors)==1, colors = repmat(colors,[1 N]); end
+         if numel(colors)==1, colors = repmat(colors,[1 nVals]); end
          edgewidth = 1;
          % Set up axes
          axtivate(ax); axis ij off;
          set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
 
          % Determine size of matrix, save it in figure
-         nCats   = size(self.categories.colors,1);
          nCatsc2 = nchoosek(nCats,2);
-         SETUP   = isempty(ax.UserData);
+         % Determine nDiag (number of entries along DIAGonal in the DIAGram)
+         SETUP = isempty(ax.UserData);
          if exist('FIRSTORDER','var')
-            if FIRSTORDER, n = nCats;
-            else           n = nCatsc2;
+            if FIRSTORDER, nDiag = nCats;
+            else           nDiag = nCatsc2;
             end
-            ax.UserData = [n FIRSTORDER];
-         elseif ~isempty(ax.UserData)
-            [n,FIRSTORDER] = dealvec(ax.UserData);
+            ax.UserData = [nDiag FIRSTORDER];
+         elseif ~SETUP
+            [nDiag,FIRSTORDER] = dealvec(ax.UserData);
+            end
          else
-            switch N
-               case nCatsc2;             FIRSTORDER = true;  n = nCats;   % margins 1st order
-               case nchoosek(nCatsc2,2); FIRSTORDER = false; n = nCatsc2; % ma/ov diff 2nd order
-               case nCatsc2^2;           FIRSTORDER = false; n = nCatsc2; % full matrix 2nd order
-               case 0;                   FIRSTORDER = true;  n = nCats;   % (empty) radii 1st order
-               case nCats;               FIRSTORDER = true;  n = nCats;   % radii diff 2nd order
-               case nCats^2;             FIRSTORDER = true;  n = nCats;   % full matrix 1st order
-            end
-            ax.UserData = [n FIRSTORDER];
+            error('is this a ''sig'' or ''sigdiff''/''diff'' diagram?')
          end
+         n  = nDiag;              % shorthand for code readability below
          ix = nchoosek_ix(n,2);
 
          % Box parameters
@@ -1122,7 +1117,7 @@ classdef SetOfHyps < Hypersphere
             ix = repmat(1:nchoosek(n,2),[2 1]);
             if FIRSTORDER, colors = mat2cell(self.categories.colors,ones(n,1)); end
          end
-         for i = 1:N
+         for i = 1:nVals
             if ~all(colors{i}==1)
                switch lower(side)
                   case {'left';'right'}
