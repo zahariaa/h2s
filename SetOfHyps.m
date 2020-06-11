@@ -1012,6 +1012,7 @@ classdef SetOfHyps < Hypersphere
          nVals   = numel(values);
          nCats   = numel(self.radii);
          side    = '';
+         boxpart = '';
          for v = 1:nargin-2
             if        ischar(varargin{v})
                switch lower(varargin{v})
@@ -1051,7 +1052,11 @@ classdef SetOfHyps < Hypersphere
          set(get(ax,'Parent'),'CurrentAxes',ax,'Units','normalized')
 
          % Determine size of matrix, save it in figure
-         nCatsc2 = nchoosek(nCats,2);
+         if nCats < 3, nCatsc2   = 0; nCatsc2c2 = 0;
+         else          nCatsc2   = nchoosek(nCats,2);
+                       nCatsc2c2 = nchoosek(nCatsc2,2);
+         end
+
          % Determine nDiag (number of entries along DIAGonal in the DIAGram)
          SETUP = isempty(ax.UserData);
          if exist('FIRSTORDER','var')
@@ -1061,7 +1066,13 @@ classdef SetOfHyps < Hypersphere
             ax.UserData = [nDiag FIRSTORDER];
          elseif ~SETUP
             [nDiag,FIRSTORDER] = dealvec(ax.UserData);
+         elseif ~isempty(boxpart) % don't use side for this
+            switch boxpart
+               case {'uppert','lowert'}; nDiag = ceil(sqrt(nVals*2));
+               case 'diagonal';          nDiag = nVals;
             end
+            FIRSTORDER  = nDiag==nCats; % ambiguous if nCats<4; effectively defaults to true
+            ax.UserData = [nDiag FIRSTORDER];
          else
             error('is this a ''sig'' or ''sigdiff''/''diff'' diagram?')
          end
@@ -1114,7 +1125,7 @@ classdef SetOfHyps < Hypersphere
          end
          if     strcmpi(boxpart,'lowert'), ix = flip(ix);
          elseif strcmpi(boxpart,'diagonal') % plot as circles!
-            ix = repmat(1:nchoosek(n,2),[2 1]);
+            ix = repmat(1:max(2,nchoosek(n,2)),[2 1]);
             if FIRSTORDER, colors = mat2cell(self.categories.colors,ones(n,1)); end
          end
          for i = 1:nVals
