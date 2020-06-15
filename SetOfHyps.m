@@ -220,7 +220,7 @@ classdef SetOfHyps < Hypersphere
          % What percentile confidence interval of bootstrapped margins contains 0?
          self.sig.ma = ciprctileLtail(margin_boot);
          % What percentile confidence interval of bootstrapped overlap/margins contains 0?
-         self.sig.ov = ciprctileLtail(-margin_boot);
+         self.sig.ov = -self.sig.ma;
          self.sig.ra = [];
          % What percentile confidence interval of bootstrapped distances contains 0?
          self.sig.di = ciprctileLtail(dist_boot);
