@@ -18,6 +18,11 @@ measures = {'overlap', 'distance', 'radius difference', ...
             'overlap difference', 'distance difference'};
 mnames   = {'overlap', 'distances2CrossValidated', 'radii', ...
             'overlap', 'distances2CrossValidated'};
+% % debug
+% for s = 1:5
+% 	testScenario(s,ds,rs,measures,mnames);
+% end
+% keyboard
 
 nn = numel(ns);
 nd = numel(ds);
@@ -160,4 +165,28 @@ function hyp = generateScenario(s,d,r)
    end
 end
 
+% debug function
+function fh = testScenario(s,ds,rs,measures,mnames)
+	mnames([2 5]) = {'dists'}; % because we are running on ground truth hyps
+	nd = numel(ds);
+	nr = numel(rs);
+
+	fh = newfigure([nd nr],sprintf('%u%s',s,measures{s}));
+	fh = newfigure([nd nr],sprintf('%u%s_values',s,measures{s}),fh);
+	for d = 1:nd
+		for r = 1:nr
+			stationarycounter([d r],[nd nr])
+			hyp = generateScenario(s,ds(d),rs(r));
+			axtivate([d r],fh.f(1)); hyp.snip.show
+			axtivate([d r],fh.f(2)); SetOfHyps(hyp).showValues
+			% debug
+			valcheck = hyp.(mnames{s});
+			if     numel(valcheck)==1 && valcheck==0                                 % do nothing
+			elseif numel(valcheck) >1 && any(histcounts(valcheck,numel(valcheck))>1) % do nothing
+			else   keyboard
+			end
+		end
+		drawnow
+	end
+	return
 end
