@@ -215,15 +215,16 @@ classdef SetOfHyps < Hypersphere
          n   = numel(self.radii);
          nc2 = nchoosek(n,2);
          % helper functions
-         ciprctileLtail = @(x)        mean(x>0);
-         ciprctile2tail = @(x) abs(2*(mean(x<0)-0.5));
+         ciprctileLtail = @(x)                mean(x>0);
+         ciprctile2tail = @(x) max(abs(       mean(x>0)+[0 -1]));
+         ciprctile2tail2= @(x) max(abs(repmat(mean(x>0),[2 1])+[zeros(1,nc2);-ones(1,nc2)]));
          % What percentile confidence interval of bootstrapped margins contains 0?
          self.sig.ma = ciprctileLtail(margin_boot);
          % What percentile confidence interval of bootstrapped overlap/margins contains 0?
          self.sig.ov = -self.sig.ma;
          self.sig.ra = [];
          % What percentile confidence interval of bootstrapped distances contains 0?
-         self.sig.di = ciprctileLtail(dist_boot);
+         self.sig.di = ciprctile2tail2(dist_boot);
 
          %% SECOND-ORDER COMPARISONS
          % compute indices of radii corresponding to overlaps
