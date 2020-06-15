@@ -346,10 +346,9 @@ classdef Hypersphere < handle
          maxerror = NaN;
          if isa(self,'SetOfHyps'), maxerror = max(self.error); end
 
-         [~,XY] = showModel(self,varargin{:});
-
          switch size(self.centers,2)
             case 2;
+               [~,XY] = showModel(self,varargin{:});
                %% Draw max error bar
                if ~isnan(maxerror)
                   maxXY = max(XY);
@@ -357,6 +356,7 @@ classdef Hypersphere < handle
                                  maxXY([2 2]),'k-','LineWidth',4);
                end
             case 3;
+               [~,XY] = showModel(self,varargin{:});
                %% Draw max error bar
                ax = gca;
                ax.Units = 'normalized';
@@ -366,7 +366,8 @@ classdef Hypersphere < handle
                                            ax.Position([2 2]),'LineWidth',4,'Tag','maxline');
                end
             otherwise
-               varargout = SetOfHyps(self).h2s.show(varargin);
+               varargout = {SetOfHyps(self).h2s({1 0 0}).show(varargin{:})};
+               if nargout==0, varargout = {}; end
                return
          end
          axis ij tight equal vis3d off % puts error bar at bottom right
