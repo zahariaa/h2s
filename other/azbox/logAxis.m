@@ -6,8 +6,8 @@ function logAxis(varargin)
 
 %% Preliminaries
 for v = 1:nargin
-   if     ishandle( varargin{v}),   ax   = varargin{v};
-   elseif isnumeric(varargin{v}),   base = varargin{v};
+   if     isnumeric(varargin{v}),   base = varargin{v};
+   elseif ishandle( varargin{v}),   ax   = varargin{v};
    elseif ischar(   varargin{v}),   xy   = varargin{v};
    end
 end

@@ -1,33 +1,36 @@
-function [fh,f] = newfigure(NSUBPLOTSalso,fh,fp,figname,NSUBPLOTS,holdFlag)
+function [fh,f] = newfigure(varargin)
 % newfigure.m: Set up plots, AZ-style
+% Inputs:
+%    figname (DEFAULT = ' ')
+%    NSUBPLOTS (DEFAULT = [1 1])
+%    holdFlag (DEFAULT = true)
+%    fh, fp (DEFAULT = figsetup)
 % 
 % See also FIGSETUP, PRINTFIG, BATCHPLOTREFINE, AXTIVATE
 % 
 % 2012-11-14 AZ Created
 % 2013-02-15 AZ Added DeleteFcn
+% 2020-06-09 AZ Simplified and made more flexible with varargin
 
-if ~exist('fh'      ,'var') || isempty(fh);        figsetup;
-elseif ischar(fh) && ( ~exist('figname' ,'var') || isempty(figname ) )
-   figname = fh;   figsetup;
-elseif isnumeric(fh) && ( ~exist('figname' ,'var') || isempty(figname ) )
-   NSUBPLOTS = fh; figsetup;
+for v = 1:nargin
+   if     ischar(varargin{v}),        figname = varargin{v};
+   elseif isstruct(varargin{v})
+      if     isfield(varargin{v}, 'a' ), fhin = varargin{v};
+      elseif isfield(varargin{v},'pap'),   fp = varargin{v};
+      end
+   elseif isnumeric(varargin{v}),   NSUBPLOTS = varargin{v};
+   elseif islogical(varargin{v}),    holdFlag = varargin{v};
+   end
 end
+
+if ~exist('fp','var') || isempty(fp);      figsetup; end
+if exist('fhin','var') && ~isempty(fhin); fh = fhin; end
+
 ftmp = figure;
 if verLessThan('matlab','8.4'), fh.f=[fh.f ftmp];
 else                            fh.f=[fh.f ftmp.Number];
 end
 f = numel(fh.f);
-
-% NSUBPLOTSalso is now a dummy variable (for backwards compatibility).
-% NEEDS TESTING
-if exist('NSUBPLOTSalso','var') && ~isempty(NSUBPLOTSalso)
-   if isnumeric(NSUBPLOTSalso) && ...
-      ( ~exist('NSUBPLOTS','var') || isempty(NSUBPLOTS) )
-      NSUBPLOTS = NSUBPLOTSalso;
-   elseif ischar(NSUBPLOTSalso) && ( ~exist('figname' ,'var') || isempty(figname ) )
-      figname = NSUBPLOTSalso;
-   end
-end
 
 if ~exist('figname' ,'var') || isempty(figname );   figname  = char(32);  end
 if ~exist('holdFlag','var') || isempty(holdFlag)
