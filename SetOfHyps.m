@@ -212,6 +212,8 @@ classdef SetOfHyps < Hypersphere
          margin_boot  =       self.ci.bootstraps.margins;
 
          %% COMPUTE SIGNIFICANCE
+         n   = numel(self.radii);
+         nc2 = nchoosek(n,2);
          % helper functions
          ciprctileLtail = @(x)        mean(x>0);
          ciprctile2tail = @(x) abs(2*(mean(x<0)-0.5));
@@ -225,9 +227,7 @@ classdef SetOfHyps < Hypersphere
 
          %% SECOND-ORDER COMPARISONS
          % compute indices of radii corresponding to overlaps
-         n     = numel(self.radii);
-         nc2   = nchoosek(n,2);
-         ix    = nchoosek_ix(n);
+         ix = nchoosek_ix(n);
          if n < 3, nc2c2 = 0;
          else      nc2c2 = nchoosek(nc2,2);
                    ixc2  = nchoosek_ix(nc2);
@@ -628,7 +628,7 @@ classdef SetOfHyps < Hypersphere
 
          if isempty(sig)
             error(['need to populate obj.sig/sigdiff first,'...
-                   ' e.g., obj.significance(points);']);
+                   ' e.g. with:\nobj = obj.significance(points);']);
          end
 
          if numel(ax) == 2
