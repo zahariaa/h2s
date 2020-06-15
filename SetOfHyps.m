@@ -77,6 +77,7 @@ classdef SetOfHyps < Hypersphere
       % 
       % Inherited Methods (from Hypersphere):
       %    SetOfHyps.select
+      %    SetOfHyps.snip
       %    SetOfHyps.concat
       %    SetOfHyps.unconcat
       %    SetOfHyps.meanAndMerge

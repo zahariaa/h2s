@@ -66,6 +66,7 @@ classdef Hypersphere < handle
       % 
       % Methods:
       %   Hypersphere.select
+      %   Hypersphere.snip
       %   Hypersphere.concat
       %   Hypersphere.unconcat
       %   Hypersphere.meanAndMerge
@@ -154,6 +155,31 @@ classdef Hypersphere < handle
             newobj = Hypersphere(self.centers(i,:),...
                                  self.radii(i),    ...
                                  self.categories.select(i));
+         end
+      end
+
+      function newobj = snip(self,dimLow)
+      % Hypersphere.snip: Drops center coordinates after the 2nd or 3rd
+      %    dimension, depending on optional dimLow input (DEFAULT = 2). Useful
+      %    for quick n dirty plotting.
+      % e.g.,
+      % hyps.snip.show
+      % 
+      % NB. May want to replace or add an option for MDS instead of coordinate
+      %    dropping.
+         if ~exist('dimLow','var') || isempty(dimLow), dimLow = 2; end
+         d = size(self.centers,2);
+
+         if d <= dimLow, newobj = self; return; end
+
+         if isa(self,'SetOfHyps')
+            newobj =   SetOfHyps(self.centers(:,1:dimLow),...
+                                 self.radii,       ...
+                                 self.categories);
+         else
+            newobj = Hypersphere(self.centers(:,1:dimLow),...
+                                 self.radii,         ...
+                                 self.categories);
          end
       end
 
