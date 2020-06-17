@@ -100,7 +100,7 @@ classdef Hypersphere < handle
             return;
          elseif isa(centers,'Hypersphere'), obj = centers; return;
          elseif ischar(centers) && strcmpi(centers,'estimate') % input option (2)
-            obj = estimateHypersphere(radii,varargin{:});
+            obj = Hypersphere.estimate(radii,varargin{:});
             return
          elseif isstruct(centers)                              % input option (4)
             % Helper for older struct-based code
@@ -781,6 +781,12 @@ classdef Hypersphere < handle
                M(i) = dists(i) - radii(a) - radii(b);
             end
          end
+      end
+   end
+
+   methods(Static)
+      function newobj = estimate(points,varargin)
+         newobj = estimateHypersphere(points,varargin{:});
       end
    end
 end
