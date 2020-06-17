@@ -45,7 +45,7 @@ s  = 1;         % scenario chosen from the following:
 % Initialize data for saving (could probably change from cell to tensor)
 nc2     = 1+2*double(s>2);
 sigtest = repmat({NaN(nn,nsamps)},[nm nd]);
-simfile = sprintf('statsim_%u%s.mat',s,measures{s}(1:2));
+simfile = 'statsim.mat';
 
 if exist(simfile,'file'), load(simfile); fprintf('Loaded simulations.\n'); end
 
