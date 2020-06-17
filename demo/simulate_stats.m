@@ -22,7 +22,7 @@ mnames   = {'overlap', 'distances2CrossValidated', 'radii', ...
             'overlap', 'distances2CrossValidated'};
 % % debug
 % for s = 1:5
-% 	testScenario(s,ds,rs,measures,mnames);
+%    testScenario(s,ds,rs,measures,mnames);
 % end
 % keyboard
 
@@ -30,7 +30,7 @@ nn = numel(ns);
 nd = numel(ds);
 nm = numel(measures);
 
-s  = 3;         % scenario chosen from the following:
+s  = 1;         % scenario chosen from the following:
 % Different scenarios needing testing:
 % (1) 2 balls with 0 overlap.
 % (2) 2 balls with 0 distance.
@@ -51,30 +51,18 @@ if exist(simfile,'file'), load(simfile); fprintf('Loaded simulations.\n'); end
 
 DISPLAYED = false;
 for d = 1:nd
-	% Generate points for the different scenarios
-	groundtruth{s,d,r} = generateScenario(s,ds(d),rs(r));
+   % Generate points for the different scenarios
+   groundtruth{s,d,r} = generateScenario(s,ds(d),rs(r));
 
    for n = 1:nn
-   		if ~DISPLAYED
-   			DISPLAYED = true;
-   		end
-		   % Simulate points
-	      [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsamps);
-	      hyps{s}(d,n,:) = Hypersphere('estimate',points,groundtruth{s,d,r}.categories,'independent');%.meanAndMerge(true);
-
-	      % Assess significance on samples
-	      tmp = NaN(nsamps,nc2);
-	      parfor b = 1:nsamps
-	         tmp(b,:) = SetOfHyps(hyps{s}(d,n,b)).significance(...
-	                            points(:,:,b),nboots).(sigfield{1+double(s>2)}).(mnames{s}(1:2));
-	      end
-	      sigtest{s,d}(n,:) = tmp(:,1+2*double(s==3)); % pick 3rd comparison only when s==3
-	      stationarycounter([d n],[nd nn])
-	      % save in-progress fits
-	      save(simfile,'hyps','sigtest','groundtruth')
-	   end
       if ~exist('hyps','var') || numel(hyps)<s || size(hyps{s},1)<d || size(hyps{s},2)<n || isempty(hyps{s}(d,n,1))
+         if ~DISPLAYED
             fprintf('Simulating points and estimating hyperspheres...      ')
+            DISPLAYED = true;
+         end
+         % Simulate points
+         [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsamps);
+         hyps{s}(d,n,:) = Hypersphere.estimate(points,groundtruth{s,d,r}.categories,'independent');%.meanAndMerge(true);
          % save in-progress fits
          save(simfile,'hyps','sigtest','groundtruth')
          stationarycounter([d n],[nd nn])
@@ -93,18 +81,29 @@ for d = 1:nd
          % regenerate points
          groundtruth{s,d,r}.resetRandStream
          [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsamps);
+         % Assess significance on samples
+         tmp = NaN(nsamps,nc2);
+         parfor b = 1:nsamps
+            tmp(b,:) = SetOfHyps(hyps{s}(d,n,b)).significance(...
+                               points(:,:,b),nboots).(sigfield{1+double(s>2)}).(mnames{s}(1:2));
+         end
+         sigtest{s,d}(n,:) = tmp(:,1+2*double(s==3)); % pick 3rd comparison only when s==3
+         % save in-progress fits
+         save(simfile,'hyps','sigtest','groundtruth')
+         stationarycounter([d n],[nd nn])
+      end
    end
 end
 
 %% Extract data: collect estimates (e.g., overlaps, distances)
 estimates = repmat({NaN(nn,nsamps)},[nm nd]);
 for d = 1:nd
-	for n = 1:nn
+   for n = 1:nn
       switch s
-      	case {1,2}; estimates{s,d}(n,:) =                     hyps{s}(d,n,:).(mnames{s});
-      	case 3;     estimates{s,d}(n,:) = diff(indexm(vertcat(hyps{s}(d,n,:).(mnames{s})),[],2:3),[],2);
-   		case {4,5}; estimates{s,d}(n,:) = diff(indexm(vertcat(hyps{3}(d,n,:).(mnames{s})),[],1:2),[],2);
-   	end
+         case {1,2}; estimates{s,d}(n,:) =                     hyps{s}(d,n,:).(mnames{s});
+         case 3;     estimates{s,d}(n,:) = diff(indexm(vertcat(hyps{s}(d,n,:).(mnames{s})),[],2:3),[],2);
+         case {4,5}; estimates{s,d}(n,:) = diff(indexm(vertcat(hyps{3}(d,n,:).(mnames{s})),[],1:2),[],2);
+      end
    end
 end
 
@@ -209,42 +208,42 @@ function hyp = generateScenario(s,d,r)
 %    r: (scalar) the radius of one hypersphere (the other(s) is/are 1)
    switch s
       case 1 % OVERLAP. Null distribution: 0 overlap.
-			hyp = Hypersphere([zeros(1,d);r+1 zeros(1,d-1)],[r 1]);
+         hyp = Hypersphere([zeros(1,d);r+1 zeros(1,d-1)],[r 1]);
       case 2 % INTER-CENTER DISTANCE. Null distribution: 0 distance.
-      	hyp = Hypersphere( zeros(2,d),[r 1]);
-   	case {3,4,5} % (Need 3+ balls.)
-   		% RADIUS DIFFERENCE. Null distribution: radii are the same.
-   		% OVERLAP DIFFERENCE. Null distribution: overlaps are the same.
-   		% INTER-CENTER DISTANCE DIFFERENCE. Null distribution: distances are the same.
-   		hyp = Hypersphere([zeros(1,d);r+0.75 zeros(1,d-1);0 r+0.75 zeros(1,d-2)],[r 1 1]);
-   		% hyp = Hypersphere([zeros(1,d);r+1 zeros(1,d-1);ones(1,d)],[r 1 1]);
-   	% case 4 % OVERLAP DIFFERENCE. Null distribution: overlaps are the same. (Need 3+ balls.)
-   		% hyp = Hypersphere([zeros(1,d);3*r/2 zeros(1,d-1);0 3*r/2 zeros(1,d-2)],[r 1 1]);
+         hyp = Hypersphere( zeros(2,d),[r 1]);
+      case {3,4,5} % (Need 3+ balls.)
+         % RADIUS DIFFERENCE. Null distribution: radii are the same.
+         % OVERLAP DIFFERENCE. Null distribution: overlaps are the same.
+         % INTER-CENTER DISTANCE DIFFERENCE. Null distribution: distances are the same.
+         hyp = Hypersphere([zeros(1,d);r+0.75 zeros(1,d-1);0 r+0.75 zeros(1,d-2)],[r 1 1]);
+         % hyp = Hypersphere([zeros(1,d);r+1 zeros(1,d-1);ones(1,d)],[r 1 1]);
+      % case 4 % OVERLAP DIFFERENCE. Null distribution: overlaps are the same. (Need 3+ balls.)
+         % hyp = Hypersphere([zeros(1,d);3*r/2 zeros(1,d-1);0 3*r/2 zeros(1,d-2)],[r 1 1]);
    end
 end
 
 % debug function
 function fh = testScenario(s,ds,rs,measures,mnames)
-	mnames([2 5]) = {'dists'}; % because we are running on ground truth hyps
-	nd = numel(ds);
-	nr = numel(rs);
+   mnames([2 5]) = {'dists'}; % because we are running on ground truth hyps
+   nd = numel(ds);
+   nr = numel(rs);
 
-	fh = newfigure([nd nr],sprintf('%u%s',s,measures{s}));
-	fh = newfigure([nd nr],sprintf('%u%s_values',s,measures{s}),fh);
-	for d = 1:nd
-		for r = 1:nr
-			stationarycounter([d r],[nd nr])
-			hyp = generateScenario(s,ds(d),rs(r));
-			axtivate([d r],fh.f(1)); hyp.snip.show
-			axtivate([d r],fh.f(2)); SetOfHyps(hyp).showValues
-			% debug
-			valcheck = hyp.(mnames{s});
-			if     numel(valcheck)==1 && valcheck==0                                 % do nothing
-			elseif numel(valcheck) >1 && any(histcounts(valcheck,numel(valcheck))>1) % do nothing
-			else   keyboard
-			end
-		end
-		drawnow
-	end
-	return
+   fh = newfigure([nd nr],sprintf('%u%s',s,measures{s}));
+   fh = newfigure([nd nr],sprintf('%u%s_values',s,measures{s}),fh);
+   for d = 1:nd
+      for r = 1:nr
+         stationarycounter([d r],[nd nr])
+         hyp = generateScenario(s,ds(d),rs(r));
+         axtivate([d r],fh.f(1)); hyp.snip.show
+         axtivate([d r],fh.f(2)); SetOfHyps(hyp).showValues
+         % debug
+         valcheck = hyp.(mnames{s});
+         if     numel(valcheck)==1 && valcheck==0                                 % do nothing
+         elseif numel(valcheck) >1 && any(histcounts(valcheck,numel(valcheck))>1) % do nothing
+         else   keyboard
+         end
+      end
+      drawnow
+   end
+   return
 end
