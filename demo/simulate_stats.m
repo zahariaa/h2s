@@ -11,6 +11,8 @@ ns = 2.^( 6:8); % # samples to test
 ds = 2.^( 1:5); % # dimensions
 rs = 2.^(-1:3); % # radii
 
+sigthresh = 0.05;
+
 r  = 2;
 
 sigfield = {'sig',     'sigdiff'};
@@ -53,9 +55,7 @@ for d = 1:nd
 	groundtruth{s,d,r} = generateScenario(s,ds(d),rs(r));
 
    for n = 1:nn
-   	if any(isnan(vectify(sigtest{s,d}(n,:,:))))
    		if ~DISPLAYED
-   			fprintf('Simulating points, estimating hyperspheres, and significance testing...      ')
    			DISPLAYED = true;
    		end
 		   % Simulate points
@@ -73,6 +73,26 @@ for d = 1:nd
 	      % save in-progress fits
 	      save(simfile,'hyps','sigtest','groundtruth')
 	   end
+      if ~exist('hyps','var') || numel(hyps)<s || size(hyps{s},1)<d || size(hyps{s},2)<n || isempty(hyps{s}(d,n,1))
+            fprintf('Simulating points and estimating hyperspheres...      ')
+         % save in-progress fits
+         save(simfile,'hyps','sigtest','groundtruth')
+         stationarycounter([d n],[nd nn])
+      end
+   end
+end
+
+DISPLAYED = false;
+for d = 1:nd
+   for n = 1:nn
+      if any(isnan(vectify(sigtest{s,d}(n,:,:))))
+         if ~DISPLAYED
+            fprintf('Significance testing...      ')
+            DISPLAYED = true;
+         end
+         % regenerate points
+         groundtruth{s,d,r}.resetRandStream
+         [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsamps);
    end
 end
 
@@ -88,13 +108,23 @@ for d = 1:nd
    end
 end
 
+%% Are the signifiance tests significantly performing correctly?
+ptests = NaN(nd,nn,nm);
+for d = 1:nd
+   for n = 1:nn
+      sigcount = [nsamps 0] + [-1 1]*sum(1-sigtest{s,d}(n,:)<=sigthresh);
+      ptests(d,n,s) = testCountDistribution_chi2(sigcount,[1-sigthresh sigthresh]);
+   end
+end
+
+
 %% Plot analyses
 nShown = [1 nn  1 nn];
 dShown = [1  1 nd nd];
 rShown = 2;
 
-fh = newfigure([3 3],measures{s});
-ax = fh.a.h([4 5 7 8]);
+fh = newfigure([3 4],measures{s});
+ax = fh.a.h([5 6 9 10]);
 
 for i = 1:3
    sampsz = (2^(i+4))*ones(1,2+double(s>2));
@@ -104,10 +134,18 @@ for i = 1:3
    end
 end
 
+axtivate(4)
+plot(log2(ns),100*ptests(:,:,s))
+plot(log2(ns([1 end])),100*sigthresh*[1 1],'--k')
+logAxis(2)
+xlabel('samples')
+ylabel('Significance of false positives compared to 5%')
+title('Test performance')
+
 %% TODO: different colors for different conditions
 
 for i = 1:4
-   axtivate(ax(i));
+   axtivate(ax(i))
    hist(estimates{s,dShown(i)}(nShown(i),:))
    set(ax(i).Children(end),'FaceColor',[0 0 0],'EdgeColor',[1 1 1])
    plot([0 0],[0 nsamps/4],'r-','LineWidth',2)
@@ -118,22 +156,42 @@ end
 matchy(ax)
 
 for i = 2:3
-   plotErrorPatch(log2(ns),estimates{s,dShown(i)}',fh.a.h(6),[0 0 0])%,'sem')
+   plotErrorPatch(log2(ns),estimates{s,dShown(i)}',fh.a.h(7),[0 0 0])%,'sem')
 end
 logAxis(2)
 xlabel('samples')
 ylabel(measures{s})
 title('Estimate vs n')
 
-axtivate(9);
 for i = 2:3
-   plot(log2(ns),100*mean(1-sigtest{s,dShown(i)}<=0.05,2),'-k','LineWidth',2)
+   plotErrorPatch(log2(ds),squeeze(indexm(cat(3,estimates{s,:}),nShown(i))),fh.a.h(8),[0 0 0])%,'sem')
 end
-plot(log2(ns([1 end])),[5 5],'--k')
+logAxis(2)
+xlabel('dimensions')
+ylabel(measures{s})
+title('Estimate vs d')
+
+axtivate(11)
+for i = 2:3
+   plot(log2(ns),100*mean(1-sigtest{s,dShown(i)}<=sigthresh,2),'-k','LineWidth',2)
+end
+plot(log2(ns([1 end])),100*sigthresh*[1 1],'--k')
 logAxis(2)
 xlabel('samples')
 ylabel('False positive rate (%)')
 title('False positive rate vs n')
+
+axtivate(12)
+for i = 2:3
+   plot(log2(ds),100*squeeze(mean(1-indexm(cat(3,sigtest{s,:}),nShown(i))<=sigthresh,2)),'-k','LineWidth',2)
+end
+plot(log2(ds([1 end])),100*sigthresh*[1 1],'--k')
+logAxis(2)
+xlabel('dimensions')
+ylabel('False positive rate (%)')
+title('False positive rate vs d')
+
+
 
 keyboard
 return
