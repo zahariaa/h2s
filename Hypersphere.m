@@ -7,6 +7,9 @@ classdef Hypersphere < handle
    properties (SetAccess = protected)
       distances2CrossValidated = false; % false or vector of squared cross-validated distances
    end
+   properties (GetAccess = private, SetAccess = private)
+      stream     % random stream for controlled sampling
+   end
 
    methods
       function obj = Hypersphere(centers,radii,varargin)
@@ -65,6 +68,9 @@ classdef Hypersphere < handle
       %    distances2CrossValidated (protected) - false or vector of cross-validated distances
       % 
       % Methods:
+      %   Hypersphere.resetRandStream
+      %   Hypersphere.getRandStream
+      %   Hypersphere.isempty
       %   Hypersphere.select
       %   Hypersphere.snip
       %   Hypersphere.concat
@@ -86,6 +92,7 @@ classdef Hypersphere < handle
 
          % create dummy object (for initializing multiple objects, e.g. option (5))
          if nargin==0; return; end
+         obj.resetRandStream;
 
          if isa(centers,'SetOfHyps')                           % input option (3)
             obj = Hypersphere(centers.centers,centers.radii,...
@@ -138,6 +145,50 @@ classdef Hypersphere < handle
          % Auto-generate dummy Categories if none exists by now
          if ~isa(obj.categories,'Categories')
             obj.categories = Categories(numel(obj.radii));
+         end
+      end
+
+      function resetRandStream(self)
+      % Hypersphere.resetRandStream: Useful if you want to resample the same
+      %    points.
+      % e.g.,
+      % points1 = hyps.sample(100)
+      % hyps.resetRandStream
+      % points2 = hyps.sample(100) % points1 and points2 are the same
+      % 
+      % SEE ALSO HYPERSPHERE.GETRANDSTREAM, HYPERSPHERE.SAMPLE
+         if isempty(self.stream)
+            self.stream = RandStream.create('mrg32k3a','Seed','shuffle');
+         end
+         reset(self.stream);
+      end
+
+      function stream = getRandStream(self)
+      % Hypersphere.getRandStream: Keep RandStream hidden by default, but show
+      %    it if requested.
+      % e.g.,
+      % hyps.getRandStream.Seed % just returns the seed number
+      % 
+      % SEE ALSO HYPERSPHERE.RESETRANDSTREAM, HYPERSPHERE.SAMPLE
+         stream = self.stream;
+      end
+
+      function result = isempty(self)
+      % Hypersphere.isempty: Overloaded isempty. Assumes default constructor
+      %    has been run with no arguments.
+      % e.g.,
+      % hyps = Hypersphere()
+      % isempty(hyps)        % returns true
+         if numel(self) > 1
+            % Would be better if this short-circuited, but matlab taught me to avoid loops.
+            result = any(vectify(~arrayfun(@isempty, self)));
+            return
+         end
+
+         if isempty(self.centers) && isempty(self.radii) && self.categories==0
+            result = true;
+         else
+            result = false;
          end
       end
 
@@ -274,6 +325,11 @@ classdef Hypersphere < handle
       % [~,hyps] = hyps.sample([100 50]); % hyps.categories.vectors updated
       % points = hyps.sample([100 50],100); % 100 bootstrap samples
       % 
+      % Use Hypersphere.resetRandStream if you want to resample the same points:
+      % points1 = hyps.sample(100)
+      % hyps.resetRandStream
+      % points2 = hyps.sample(100) % points1 and points2 are the same
+      % 
       % Optional inputs:
       %    nsamples (DEFAULT: numbers derived from self.categories.vectors): A
       %       scalar or n-vector determining the number of samples to generate
@@ -289,7 +345,8 @@ classdef Hypersphere < handle
       %    self: self.categories.vectors replaced with logical block diagonal
       %       of nsamples
       % 
-      % SEE ALSO SAMPLESPHERES, CATEGORIES.PLOTSAMPLES, HYPERSPHERE.PLOTSAMPLES
+      % SEE ALSO SAMPLESPHERES, CATEGORIES.PLOTSAMPLES, HYPERSPHERE.PLOTSAMPLES,
+      %    HYPERSPHERE.RESETRANDSTREAM
          [n,d] = size(self.centers);
 
          if ~exist('type',    'var') || isempty(  type  ), type = 'uniform'; end
@@ -304,7 +361,7 @@ classdef Hypersphere < handle
          points = arrayfun(@(s) zeros(s,d,nboots),nsamples,'UniformOutput',false);
          % Sample
          for i = 1:n
-            points{i} = sampleSpheres(nsamples(i),d,nboots,type)*self.radii(i);
+            points{i} = sampleSpheres(nsamples(i),d,nboots,type,self.stream)*self.radii(i);
             points{i} = points{i} + repmat(self.centers(i,:),[nsamples(i) 1 nboots]);
          end
          points = cell2mat_concat(points);

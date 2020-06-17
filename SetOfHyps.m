@@ -76,6 +76,9 @@ classdef SetOfHyps < Hypersphere
       %                    center-connection lines (auto-computed)
       % 
       % Inherited Methods (from Hypersphere):
+      %    SetOfHyps.resetRandStream
+      %    SetOfHyps.getRandStream
+      %    SetOfHyps.isempty
       %    SetOfHyps.select
       %    SetOfHyps.snip
       %    SetOfHyps.concat

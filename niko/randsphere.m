@@ -1,4 +1,4 @@
-function X = randsphere(m,n,r)
+function X = randsphere(m,n,r,stream)
  
 % This function returns an m by n array, X, in which 
 % each of the m rows has the n Cartesian coordinates 
@@ -13,7 +13,11 @@ function X = randsphere(m,n,r)
 % hypersphere of finite radius r with a uniform % spatial distribution.
 % Roger Stafford - 12/23/05
  
-X = randn(m,n);
+if ~exist('stream','var') || isempty(stream)
+	stream = RandStream.getGlobalStream;
+end
+
+X = randn(stream,m,n);
 s2 = sum(X.^2,2);
 X = X.*repmat(r*(gammainc(s2/2,n/2).^(1/n))./sqrt(s2),1,n);
  

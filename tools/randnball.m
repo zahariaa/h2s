@@ -1,4 +1,4 @@
-function X = randnball(n,d,r)
+function X = randnball(n,d,r,stream)
 % X = randnball(n,d,r=1)
 % Generates n points uniformly distributed in d-dimensional 
 % ball with radius r using Marsaglia (1972) method
@@ -10,10 +10,13 @@ function X = randnball(n,d,r)
 % 2018-03-16 Andrew Zaharia
 
 if ~exist('r','var') || isempty(r),   r = 1;   end
+if ~exist('stream','var') || isempty(stream)
+	stream = RandStream.getGlobalStream;
+end
 
 % Initialize
-X = randn(n,d);
-U = rand( n,1).^(1/d);
+X = randn(stream,n,d);
+U = rand( stream,n,1).^(1/d);
 N = zeros(n,1);        % To be filled with norms of rows of X,
 
 % ... to transform X onto unit (n-1)-sphere,
