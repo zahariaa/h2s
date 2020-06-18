@@ -1,8 +1,9 @@
-function [sigtest,estimates,hyps,groundtruth] = simulate_stats(nsamps)
+function [sigtest,estimates,hyps,groundtruth] = simulate_stats(s,nsims)
 % simulate_stats: simulate null distributions from different h2s statistical
 %    tests with a few special cases
 
-if ~exist('nsamps','var') || isempty(nsamps), nsamps = 100; end
+if ~exist('nsims','var') || isempty(nsims), nsims = 100; end
+if ~exist('s','var') || isempty(s), s = 1;  end       % scenario chosen from the following:
 
 %% TODO: ALL TESTS WITH DIFFERENT ESTIMATORS?
 nboots = 100;   % # of bootstraps during statistical testing
@@ -30,7 +31,6 @@ nn = numel(ns);
 nd = numel(ds);
 nm = numel(measures);
 
-s  = 1;         % scenario chosen from the following:
 % Different scenarios needing testing:
 % (1) 2 balls with 0 overlap.
 % (2) 2 balls with 0 distance.
@@ -44,7 +44,7 @@ s  = 1;         % scenario chosen from the following:
 
 % Initialize data for saving (could probably change from cell to tensor)
 nc2     = 1+2*double(s>2);
-sigtest = repmat({NaN(nn,nsamps)},[nm nd]);
+sigtest = repmat({NaN(nn,nsims)},[nm nd]);
 simfile = 'statsim.mat';
 
 if exist(simfile,'file'), load(simfile); fprintf('Loaded simulations.\n'); end
@@ -58,13 +58,14 @@ for d = 1:nd
       if ~exist('hyps','var') || numel(hyps)<s || size(hyps{s},1)<d || size(hyps{s},2)<n || isempty(hyps{s}(d,n,1))
          if ~DISPLAYED
             fprintf('Simulating points and estimating hyperspheres...      ')
+            stationarycounter([d n-1],[nd nn])
             DISPLAYED = true;
          end
          % Simulate points
-         [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsamps);
+         [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
          hyps{s}(d,n,:) = Hypersphere.estimate(points,groundtruth{s,d,r}.categories,'independent');%.meanAndMerge(true);
          % save in-progress fits
-         save(simfile,'hyps','sigtest','groundtruth')
+         save(simfile,'hyps','groundtruth')
          stationarycounter([d n],[nd nn])
       end
    end
@@ -76,14 +77,15 @@ for d = 1:nd
       if any(isnan(vectify(sigtest{s,d}(n,:,:))))
          if ~DISPLAYED
             fprintf('Significance testing...      ')
+            stationarycounter([d n-1],[nd nn])
             DISPLAYED = true;
          end
          % regenerate points
          groundtruth{s,d,r}.resetRandStream
-         [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsamps);
+         [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
          % Assess significance on samples
-         tmp = NaN(nsamps,nc2);
-         parfor b = 1:nsamps
+         tmp = NaN(nsims,nc2);
+         parfor b = 1:nsims
             tmp(b,:) = SetOfHyps(hyps{s}(d,n,b)).significance(...
                                points(:,:,b),nboots).(sigfield{1+double(s>2)}).(mnames{s}(1:2));
          end
@@ -96,7 +98,7 @@ for d = 1:nd
 end
 
 %% Extract data: collect estimates (e.g., overlaps, distances)
-estimates = repmat({NaN(nn,nsamps)},[nm nd]);
+estimates = repmat({NaN(nn,nsims)},[nm nd]);
 for d = 1:nd
    for n = 1:nn
       switch s
@@ -111,7 +113,7 @@ end
 ptests = NaN(nd,nn,nm);
 for d = 1:nd
    for n = 1:nn
-      sigcount = [nsamps 0] + [-1 1]*sum(1-sigtest{s,d}(n,:)<=sigthresh);
+      sigcount = [nsims 0] + [-1 1]*sum(1-sigtest{s,d}(n,:)<=sigthresh);
       ptests(d,n,s) = testCountDistribution_chi2(sigcount,[1-sigthresh sigthresh]);
    end
 end
@@ -122,7 +124,7 @@ nShown = [1 nn  1 nn];
 dShown = [1  1 nd nd];
 rShown = 2;
 
-fh = newfigure([3 4],measures{s});
+fh = newfigure([3 4],sprintf('%u%s',s,measures{s}));
 ax = fh.a.h([5 6 9 10]);
 
 for i = 1:3
@@ -147,7 +149,7 @@ for i = 1:4
    axtivate(ax(i))
    hist(estimates{s,dShown(i)}(nShown(i),:))
    set(ax(i).Children(end),'FaceColor',[0 0 0],'EdgeColor',[1 1 1])
-   plot([0 0],[0 nsamps/4],'r-','LineWidth',2)
+   plot([0 0],[0 nsims/4],'r-','LineWidth',2)
    xlabel(measures{s})
    ylabel('count')
    title(sprintf('Estimates (n = %u, d = %u)',ns(nShown(i)),ds(dShown(i))))
@@ -189,8 +191,7 @@ logAxis(2)
 xlabel('dimensions')
 ylabel('False positive rate (%)')
 title('False positive rate vs d')
-
-
+printFig;
 
 keyboard
 return
