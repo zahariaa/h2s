@@ -4,6 +4,16 @@ function [sigtest,estimates,hyps,groundtruth] = simulate_stats(s,nsims)
 
 if ~exist('nsims','var') || isempty(nsims), nsims = 100; end
 if ~exist('s','var') || isempty(s), s = 1;  end       % scenario chosen from the following:
+% Different scenarios needing testing:
+% (1) 2 balls with 0 overlap.
+% (2) 2 balls with 0 distance.
+% (3) 2 balls with same (non-zero) radius.
+% (4) 3 balls, 2 with same (non-zero) overlaps
+% (5) 3 balls, 2 with same (non-zero) distances
+% Can combine scenarios:
+% (a) is (1) and (2) in 3 balls. Balls 1 and 2 have 0 distance, ball 3 placed
+%    to have 0 overlap with ball 1.
+% ... though this gets annoying if playing with r- and n-ratios.
 
 %% TODO: ALL TESTS WITH DIFFERENT ESTIMATORS?
 nboots = 100;   % # of bootstraps during statistical testing
@@ -30,17 +40,6 @@ mnames   = {'overlap', 'distances2CrossValidated', 'radii', ...
 nn = numel(ns);
 nd = numel(ds);
 nm = numel(measures);
-
-% Different scenarios needing testing:
-% (1) 2 balls with 0 overlap.
-% (2) 2 balls with 0 distance.
-% (3) 2 balls with same (non-zero) radius.
-% (4) 3 balls, 2 with same (non-zero) overlaps
-% (5) 3 balls, 2 with same (non-zero) distances
-% Can combine scenarios:
-% (a) is (1) and (2) in 3 balls. Balls 1 and 2 have 0 distance, ball 3 placed
-%    to have 0 overlap with ball 1.
-% ... though this gets annoying if playing with r- and n-ratios.
 
 % Initialize data for saving (could probably change from cell to tensor)
 nc2     = 1+2*double(s>2);
