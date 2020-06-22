@@ -64,7 +64,7 @@ for d = 1:nd
          [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
          hyps{s}(d,n,:) = Hypersphere.estimate(points,groundtruth{s,d,r}.categories,'independent');%.meanAndMerge(true);
          % save in-progress fits
-         save(simfile,'hyps','groundtruth')
+         save(simfile,'hyps','groundtruth','sigtest','bootsamps')
          stationarycounter([d n],[nd nn])
       end
    end
