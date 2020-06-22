@@ -131,7 +131,7 @@ dShown = [1  1 nd nd];
 rShown = 2;
 
 fh = newfigure([3 4],sprintf('%u%s',s,measures{s}));
-ax = fh.a.h([5 6 9 10]);
+ax = fh.a.h([9 10]);
 
 for i = 1:3
    sampsz = (2^(i+4))*ones(1,2+double(s>2));
@@ -149,15 +149,39 @@ xlabel('samples')
 ylabel('Significance of false positives compared to 5%')
 title('Test performance')
 
+axtivate(5)
+plot([0 nsims],[0 0],'k--')
+d=1;n=1;
+for i = 1:nsims
+   if bootprc{s,d}(n,i,1)<0 && bootprc{s,d}(n,i,2)>0, linecol = [0.5 0.5 0.5];
+   else                                               linecol = [0   0   0  ];
+   end
+   plot([i i],squeeze(bootprc{s,d}(n,i,:)),'-','Color',linecol,'LineWidth',4)
+   plot(i,estimates{s,d}(n,i),'wo','MarkerFaceColor','r','LineWidth',1.5)
+end
+ylabel(sprintf('%s\nestimates (red)\nconfidence intervals (black = significant)',measures{s}))
+xlabel('Simulation #')
+title({'Estimate (red)' 'boostrapped CI (black/grey)'})
+
+axtivate(6)
+[counts,bins] = hist(bootsamps{s,d}(n,:),100);
+barh(bins,counts/(nsims*nboots),'FaceColor',[0 0 0],'EdgeColor',[1 1 1])
+[counts,bins] = hist(estimates{s,d}(n,:));
+barh(bins,counts/(nsims*nboots),'FaceColor',[1 0 0],'EdgeColor',[1 1 1])
+ylabel(measures{s})
+xlabel('frequency')
+title({'Boostrapped estimates from' 'all simulations (black) and' 'true estimates (red)'})
+matchy(fh.a.h(5:6),'y')
+
 %% TODO: different colors for different conditions
 
-for i = 1:4
-   axtivate(ax(i))
-   hist(estimates{s,dShown(i)}(nShown(i),:))
-   set(ax(i).Children(end),'FaceColor',[0 0 0],'EdgeColor',[1 1 1])
-   plot([0 0],[0 nsims/4],'r-','LineWidth',2)
+for i = 3:4
+   axtivate(ax(i-2))
+   [count,bins] = hist(estimates{s,dShown(i)}(nShown(i),:));
+   bar(bins,counts/nsims,'FaceColor',[0 0 0],'EdgeColor',[1 1 1])
+   plot([0 0],[0 0.25],'r-','LineWidth',2)
    xlabel(measures{s})
-   ylabel('count')
+   ylabel('frequency')
    title(sprintf('Estimates (n = %u, d = %u)',ns(nShown(i)),ds(dShown(i))))
 end
 matchy(ax)
