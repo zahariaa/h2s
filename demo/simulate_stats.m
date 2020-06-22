@@ -42,12 +42,13 @@ nd = numel(ds);
 nm = numel(measures);
 
 % Initialize data for saving (could probably change from cell to tensor)
-nc2     = 1+2*double(s>2);
-sigtest = repmat({NaN(nn,nsims)},[nm nd]);
+nc2       = 1+2*double(s>2);
+sigtest   = repmat({NaN(nn,nsims  )},[nm nd]);
+bootprc   = repmat({NaN(nn,nsims,2)},[nm nd]);
+bootsamps = repmat({NaN(nn,nsims,nboots)},[nm nd]);
+
 simfile = 'statsim.mat';
-
 if exist(simfile,'file'), load(simfile); fprintf('Loaded simulations.\n'); end
-
 DISPLAYED = false;
 for d = 1:nd
    % Generate points for the different scenarios
@@ -83,14 +84,21 @@ for d = 1:nd
          groundtruth{s,d,r}.resetRandStream
          [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
          % Assess significance on samples
-         tmp = NaN(nsims,nc2);
+         sigtmp = NaN(nsims,nc2);
+         prctmp = NaN(nsims,2);
+         bootmp = NaN(nboots,nc2,nsims);
          parfor b = 1:nsims
-            tmp(b,:) = SetOfHyps(hyps{s}(d,n,b)).significance(...
-                               points(:,:,b),nboots).(sigfield{1+double(s>2)}).(mnames{s}(1:2));
+            hyptmp = SetOfHyps(hyps{s}(d,n,b)).significance(points(:,:,b),nboots);
+            sigtmp(b,:) = hyptmp.(sigfield{1+double(s>2)}).(mnames{s}(1:2));
+            bootmp(:,:,b) = hyptmp.ci.bootstraps.(mnames{s});
+            prctmp(b,:) = prctile([-Inf(1,nc2);bootmp(:,:,b);Inf(1,nc2)],...
+                                  [0 100] + [1 -1]*sigthresh*100/2);
          end
-         sigtest{s,d}(n,:) = tmp(:,1+2*double(s==3)); % pick 3rd comparison only when s==3
+         sigtest{s,d}(n,:)   = sigtmp(:,1+2*double(s==3)); % pick 3rd comparison only when s==3
+         bootsamps{s,d}(n,:,:) = bootmp(:,1+2*double(s==3),:); % pick 3rd comparison only when s==3
+         bootprc{s,d}(n,:,:) = prctmp;
          % save in-progress fits
-         save(simfile,'hyps','sigtest','groundtruth')
+         save(simfile,'hyps','groundtruth','sigtest','bootprc','bootsamps')
          stationarycounter([d n],[nd nn])
       end
    end
@@ -112,8 +120,8 @@ end
 ptests = NaN(nd,nn,nm);
 for d = 1:nd
    for n = 1:nn
-      sigcount = [nsims 0] + [-1 1]*sum(1-sigtest{s,d}(n,:)<=sigthresh);
-      ptests(d,n,s) = testCountDistribution_chi2(sigcount,[1-sigthresh sigthresh]);
+      sigcount = [nsims 0] + [-1 1]*sum(1-sigtest{s,d}(n,:)<=sigthresh/2);
+      ptests(d,n,s) = testCountDistribution_chi2(sigcount,[1-sigthresh/2 sigthresh/2]);
    end
 end
 
@@ -173,7 +181,7 @@ title('Estimate vs d')
 
 axtivate(11)
 for i = 2:3
-   plot(log2(ns),100*mean(1-sigtest{s,dShown(i)}<=sigthresh,2),'-k','LineWidth',2)
+   plot(log2(ns),100*mean(sigtest{s,dShown(i)}<=sigthresh/2,2),'-k','LineWidth',2)
 end
 plot(log2(ns([1 end])),100*sigthresh*[1 1],'--k')
 logAxis(2)
@@ -183,7 +191,7 @@ title('False positive rate vs n')
 
 axtivate(12)
 for i = 2:3
-   plot(log2(ds),100*squeeze(mean(1-indexm(cat(3,sigtest{s,:}),nShown(i))<=sigthresh,2)),'-k','LineWidth',2)
+   plot(log2(ds),100*squeeze(mean(indexm(cat(3,sigtest{s,:}),nShown(i))<=sigthresh/2,2)),'-k','LineWidth',2)
 end
 plot(log2(ds([1 end])),100*sigthresh*[1 1],'--k')
 logAxis(2)
