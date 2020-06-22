@@ -43,8 +43,7 @@ nm = numel(measures);
 
 % Initialize data for saving (could probably change from cell to tensor)
 nc2       = 1+2*double(s>2);
-sigtest   = repmat({NaN(nn,nsims  )},[nm nd]);
-bootprc   = repmat({NaN(nn,nsims,2)},[nm nd]);
+sigtest   = repmat({NaN(nn,nsims       )},[nm nd]);
 bootsamps = repmat({NaN(nn,nsims,nboots)},[nm nd]);
 
 simfile = 'statsim.mat';
@@ -91,21 +90,19 @@ for d = 1:nd
             hyptmp = SetOfHyps(hyps{s}(d,n,b)).significance(points(:,:,b),nboots);
             sigtmp(b,:) = hyptmp.(sigfield{1+double(s>2)}).(mnames{s}(1:2));
             bootmp(:,:,b) = hyptmp.ci.bootstraps.(mnames{s});
-            prctmp(b,:) = prctile([-Inf(1,nc2);bootmp(:,:,b);Inf(1,nc2)],...
-                                  [0 100] + [1 -1]*sigthresh*100/2);
          end
-         sigtest{s,d}(n,:)   = sigtmp(:,1+2*double(s==3)); % pick 3rd comparison only when s==3
+         sigtest{s,d}(n,:)     = sigtmp(:,1+2*double(s==3));   % pick 3rd comparison only when s==3
          bootsamps{s,d}(n,:,:) = bootmp(:,1+2*double(s==3),:); % pick 3rd comparison only when s==3
-         bootprc{s,d}(n,:,:) = prctmp;
          % save in-progress fits
-         save(simfile,'hyps','groundtruth','sigtest','bootprc','bootsamps')
+         save(simfile,'hyps','groundtruth','sigtest','bootsamps')
          stationarycounter([d n],[nd nn])
       end
    end
 end
 
 %% Extract data: collect estimates (e.g., overlaps, distances)
-estimates = repmat({NaN(nn,nsims)},[nm nd]);
+estimates = repmat({NaN(nn,nsims  )},[nm nd]);
+bootprc   = repmat({NaN(nn,nsims,2)},[nm nd]);
 for d = 1:nd
    for n = 1:nn
       switch s
@@ -113,6 +110,8 @@ for d = 1:nd
          case 3;     estimates{s,d}(n,:) = diff(indexm(vertcat(hyps{s}(d,n,:).(mnames{s})),[],2:3),[],2);
          case {4,5}; estimates{s,d}(n,:) = diff(indexm(vertcat(hyps{3}(d,n,:).(mnames{s})),[],1:2),[],2);
       end
+      bootprc{s,d}(n,:,:) = prctile([-Inf(1,nsims);squeeze([bootsamps{s,d}(n,:,:)]);Inf(1,nsims)],...
+                                  [0 100] + [1 -1]*sigthresh*100/2);
    end
 end
 
