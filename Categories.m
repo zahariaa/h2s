@@ -294,6 +294,9 @@ classdef Categories
 
          for i = 1:numel(self.labels)
             cat = self.select(i);
+            if cat.ispermuted
+               cat.vectors = unique(find(cat.vectors));
+            end
 
             for b = 1:nboots
                if b==1 || (b>1 && nax>1), axtivate(ax(b)); end
