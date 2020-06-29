@@ -110,15 +110,15 @@ estimates = repmat({NaN(nn,nsims,nr  )},[nm nd]);
 bootprc   = repmat({NaN(nn,nsims,nr,2)},[nm nd]);
 for d = 1:nd
    for r = 1:nr
-   for n = 1:nn
-      switch s
-         case {1,2}; estimates{s,d,r}(n,:) =                     hyps{s,d,r}(n,:).(mnames{s});
-         case 3;     estimates{s,d,r}(n,:) = diff(indexm(vertcat(hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
-         case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(vertcat(hyps{3,d,r}(n,:).(mnames{s})),[],1:2),[],2);
+      for n = 1:nn
+         switch s
+            case {1,2}; estimates{s,d,r}(n,:) =                     hyps{s,d,r}(n,:).(mnames{s});
+            case 3;     estimates{s,d,r}(n,:) = diff(indexm(vertcat(hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
+            case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(vertcat(hyps{3,d,r}(n,:).(mnames{s})),[],1:2),[],2);
+         end
+         bootprc{s,d,r}(n,:,:) = prctile([-Inf(1,nsims);squeeze([bootsamps{s,d,r}(n,:,:)]);Inf(1,nsims)],...
+                                         [0 100] + [1 -1]*sigthresh*100/2)';
       end
-      bootprc{s,d,r}(n,:,:) = prctile([-Inf(1,nsims);squeeze([bootsamps{s,d,r}(n,:,:)]);Inf(1,nsims)],...
-                                      [0 100] + [1 -1]*sigthresh*100/2)';
-   end
    end
 end
 
@@ -126,10 +126,10 @@ end
 ptests = NaN(nd,nn,nr,nm);
 for d = 1:nd
    for r = 1:nr
-   for n = 1:nn
-      sigcount = [nsims 0] + [-1 1]*sum(1-sigtest{s,d,r}(n,:)<=sigthresh/2);
-      ptests(d,n,r,s) = testCountDistribution_chi2(sigcount,[1-sigthresh/2 sigthresh/2]);
-   end
+      for n = 1:nn
+         sigcount = [nsims 0] + [-1 1]*sum(1-sigtest{s,d,r}(n,:)<=sigthresh/2);
+         ptests(d,n,r,s) = testCountDistribution_chi2(sigcount,[1-sigthresh/2 sigthresh/2]);
+      end
    end
 end
 
@@ -162,8 +162,8 @@ axtivate(5)
 plot([0 nsims],[0 0],'k--')
 d=1;n=1;
 for i = 1:nsims
-   else                                               linecol = [0   0   0  ];
    if bootprc{s,d,r}(n,i,1)<0 && bootprc{s,d,r}(n,i,2)>0, linecol = [0.5 0.5 0.5];
+   else                                                   linecol = [0   0   0  ];
    end
    plot([i i],squeeze(bootprc{s,d,r}(n,i,:)),'-','Color',linecol,'LineWidth',4)
    plot(i,estimates{s,d,r}(n,i),'wo','MarkerFaceColor','r','LineWidth',1.5)
