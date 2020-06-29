@@ -42,8 +42,9 @@ nm = numel(measures);
 
 % Initialize data for saving (could probably change from cell to tensor)
 nc2       = 1+2*double(s>2);
-sigtest   = repmat({NaN(nn,nsims       )},[nm nd]);
-bootsamps = repmat({NaN(nn,nsims,nboots)},[nm nd]);
+sigtest   = repmat({NaN(nn,nsims,nr       )},[nm nd]);
+bootsamps = repmat({NaN(nn,nsims,nr,nboots)},[nm nd]);
+hyps      = cell(nm,nd,nr);
 
 simfile = 'statsim.mat';
 if exist(simfile,'file'), load(simfile); fprintf('Loaded simulations.\n'); end
@@ -54,19 +55,19 @@ for d = 1:nd
       groundtruth{s,d,r} = generateScenario(s,ds(d),rs(r));
 
       for n = 1:nn
-         if ~exist('hyps','var') || numel(hyps)<s || size(hyps{s},1)<d || size(hyps{s},2)<n || isempty(hyps{s}(d,n,1))
+         if ~exist('hyps','var') || any(size(hyps)<[s d r]) || size(hyps{s,d,r},1)<n || isempty(hyps{s,d,r}(n,1))
             if ~DISPLAYED
                fprintf('Simulating points and estimating hyperspheres...      ')
-               stationarycounter([d n-1],[nd nn])
+               stationarycounter([d r n-1],[nd nr nn])
                DISPLAYED = true;
             end
             % Simulate points
             [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
-            hyps{s}(d,n,:) = Hypersphere.estimate(points,groundtruth{s,d,r}.categories,...
+            hyps{s,d,r}(n,:) = Hypersphere.estimate(points,groundtruth{s,d,r}.categories,...
                                                   'raw','independent');%.meanAndMerge(true);
             % save in-progress fits
             save(simfile,'hyps','groundtruth','sigtest','bootsamps')
-            stationarycounter([d n],[nd nn])
+            stationarycounter([d r n],[nd nr nn])
          end
       end
    end
@@ -76,10 +77,10 @@ DISPLAYED = false;
 for d = 1:nd
    for r = 1:nr
       for n = 1:nn
-         if any(isnan(vectify(sigtest{s,d}(n,:,:))))
+         if any(isnan(vectify(sigtest{s,d,r}(n,:,:))))
             if ~DISPLAYED
                fprintf('Significance testing...      ')
-               stationarycounter([d n-1],[nd nn])
+               stationarycounter([d r n-1],[nd nr nn])
                DISPLAYED = true;
             end
             % regenerate points
@@ -90,41 +91,45 @@ for d = 1:nd
             prctmp = NaN(nsims,2);
             bootmp = NaN(nboots,nc2,nsims);
             parfor b = 1:nsims
-               hyptmp = SetOfHyps(hyps{s}(d,n,b)).significance(points(:,:,b),nboots);
+               hyptmp = SetOfHyps(hyps{s,d,r}(n,b)).significance(points(:,:,b),nboots);
                sigtmp(b,:) = hyptmp.(sigfield{1+double(s>2)}).(mnames{s}(1:2));
                bootmp(:,:,b) = hyptmp.ci.bootstraps.(mnames{s});
             end
-            sigtest{s,d}(n,:)     = sigtmp(:,1+2*double(s==3));   % pick 3rd comparison only when s==3
-            bootsamps{s,d}(n,:,:) = bootmp(:,1+2*double(s==3),:); % pick 3rd comparison only when s==3
+            sigtest{s,d,r}(n,:)     = sigtmp(:,1+2*double(s==3));   % pick 3rd comparison only when s==3
+            bootsamps{s,d,r}(n,:,:) = bootmp(:,1+2*double(s==3),:); % pick 3rd comparison only when s==3
             % save in-progress fits
             save(simfile,'hyps','groundtruth','sigtest','bootsamps')
-            stationarycounter([d n],[nd nn])
+            stationarycounter([d r n],[nd nr nn])
          end
       end
    end
 end
 
 %% Extract data: collect estimates (e.g., overlaps, distances)
-estimates = repmat({NaN(nn,nsims  )},[nm nd]);
-bootprc   = repmat({NaN(nn,nsims,2)},[nm nd]);
+estimates = repmat({NaN(nn,nsims,nr  )},[nm nd]);
+bootprc   = repmat({NaN(nn,nsims,nr,2)},[nm nd]);
 for d = 1:nd
+   for r = 1:nr
    for n = 1:nn
       switch s
-         case {1,2}; estimates{s,d}(n,:) =                     hyps{s}(d,n,:).(mnames{s});
-         case 3;     estimates{s,d}(n,:) = diff(indexm(vertcat(hyps{s}(d,n,:).(mnames{s})),[],2:3),[],2);
-         case {4,5}; estimates{s,d}(n,:) = diff(indexm(vertcat(hyps{3}(d,n,:).(mnames{s})),[],1:2),[],2);
+         case {1,2}; estimates{s,d,r}(n,:) =                     hyps{s,d,r}(n,:).(mnames{s});
+         case 3;     estimates{s,d,r}(n,:) = diff(indexm(vertcat(hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
+         case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(vertcat(hyps{3,d,r}(n,:).(mnames{s})),[],1:2),[],2);
       end
-      bootprc{s,d}(n,:,:) = prctile([-Inf(1,nsims);squeeze([bootsamps{s,d}(n,:,:)]);Inf(1,nsims)],...
-                                    [0 100] + [1 -1]*sigthresh*100/2)';
+      bootprc{s,d,r}(n,:,:) = prctile([-Inf(1,nsims);squeeze([bootsamps{s,d,r}(n,:,:)]);Inf(1,nsims)],...
+                                      [0 100] + [1 -1]*sigthresh*100/2)';
+   end
    end
 end
 
 %% Are the signifiance tests significantly performing correctly?
-ptests = NaN(nd,nn,nm);
+ptests = NaN(nd,nn,nr,nm);
 for d = 1:nd
+   for r = 1:nr
    for n = 1:nn
-      sigcount = [nsims 0] + [-1 1]*sum(1-sigtest{s,d}(n,:)<=sigthresh/2);
-      ptests(d,n,s) = testCountDistribution_chi2(sigcount,[1-sigthresh/2 sigthresh/2]);
+      sigcount = [nsims 0] + [-1 1]*sum(1-sigtest{s,d,r}(n,:)<=sigthresh/2);
+      ptests(d,n,r,s) = testCountDistribution_chi2(sigcount,[1-sigthresh/2 sigthresh/2]);
+   end
    end
 end
 
@@ -146,7 +151,7 @@ for i = 1:3
 end
 
 axtivate(4)
-plot(log2(ns),100*ptests(:,:,s))
+plot(log2(ns),100*squeeze(ptests(:,:,r,s)))
 plot(log2(ns([1 end])),100*sigthresh*[1 1],'--k')
 logAxis(2)
 xlabel('samples')
@@ -157,21 +162,21 @@ axtivate(5)
 plot([0 nsims],[0 0],'k--')
 d=1;n=1;
 for i = 1:nsims
-   if bootprc{s,d}(n,i,1)<0 && bootprc{s,d}(n,i,2)>0, linecol = [0.5 0.5 0.5];
    else                                               linecol = [0   0   0  ];
+   if bootprc{s,d,r}(n,i,1)<0 && bootprc{s,d,r}(n,i,2)>0, linecol = [0.5 0.5 0.5];
    end
-   plot([i i],squeeze(bootprc{s,d}(n,i,:)),'-','Color',linecol,'LineWidth',4)
-   plot(i,estimates{s,d}(n,i),'wo','MarkerFaceColor','r','LineWidth',1.5)
+   plot([i i],squeeze(bootprc{s,d,r}(n,i,:)),'-','Color',linecol,'LineWidth',4)
+   plot(i,estimates{s,d,r}(n,i),'wo','MarkerFaceColor','r','LineWidth',1.5)
 end
 ylabel(sprintf('%s\nestimates (red)\nconfidence intervals (black = significant)',measures{s}))
 xlabel('Simulation #')
 title({'Estimate (red)' 'boostrapped CI (black/grey)'})
 
 axtivate(6)
-[counts,bins] = hist(bootsamps{s,d}(n,:),100);
 barh(bins,counts/(nsims*nboots),'FaceColor',[0 0 0],'EdgeColor',[1 1 1])
-[counts,bins] = hist(estimates{s,d}(n,:));
 barh(bins,counts/(nsims*nboots),'FaceColor',[1 0 0],'EdgeColor',[1 1 1])
+[counts,bins] = hist(bootsamps{s,d,r}(n,:),100);
+[counts,bins] = hist(estimates{s,d,r}(n,:));
 ylabel(measures{s})
 xlabel('frequency')
 title({'Boostrapped estimates from' 'all simulations (black) and' 'true estimates (red)'})
@@ -181,7 +186,7 @@ matchy(fh.a.h(5:6),'y')
 
 for i = 3:4
    axtivate(ax(i-2))
-   [count,bins] = hist(estimates{s,dShown(i)}(nShown(i),:));
+   [count,bins] = hist(estimates{s,dShown(i),r}(nShown(i),:));
    bar(bins,counts/nsims,'FaceColor',[0 0 0],'EdgeColor',[1 1 1])
    plot([0 0],[0 0.25],'r-','LineWidth',2)
    xlabel(measures{s})
