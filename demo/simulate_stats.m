@@ -42,8 +42,8 @@ nm = numel(measures);
 
 % Initialize data for saving (could probably change from cell to tensor)
 nc2       = 1+2*double(s>2);
-sigtest   = repmat({NaN(nn,nsims,nr       )},[nm nd]);
-bootsamps = repmat({NaN(nn,nsims,nr,nboots)},[nm nd]);
+sigtest   = repmat({NaN(nn,nsims       )},[nm nd nr]);
+bootsamps = repmat({NaN(nn,nsims,nboots)},[nm nd nr]);
 hyps      = cell(nm,nd,nr);
 
 simfile = 'statsim.mat';
@@ -106,8 +106,8 @@ for d = 1:nd
 end
 
 %% Extract data: collect estimates (e.g., overlaps, distances)
-estimates = repmat({NaN(nn,nsims,nr  )},[nm nd]);
-bootprc   = repmat({NaN(nn,nsims,nr,2)},[nm nd]);
+estimates = repmat({NaN(nn,nsims  )},[nm nd nr]);
+bootprc   = repmat({NaN(nn,nsims,2)},[nm nd nr]);
 for d = 1:nd
    for r = 1:nr
       for n = 1:nn
