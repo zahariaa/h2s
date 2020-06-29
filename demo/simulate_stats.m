@@ -50,57 +50,57 @@ if exist(simfile,'file'), load(simfile); fprintf('Loaded simulations.\n'); end
 DISPLAYED = false;
 for d = 1:nd
    for r = 1:nr
-   % Generate points for the different scenarios
-   groundtruth{s,d,r} = generateScenario(s,ds(d),rs(r));
+      % Generate points for the different scenarios
+      groundtruth{s,d,r} = generateScenario(s,ds(d),rs(r));
 
-   for n = 1:nn
-      if ~exist('hyps','var') || numel(hyps)<s || size(hyps{s},1)<d || size(hyps{s},2)<n || isempty(hyps{s}(d,n,1))
-         if ~DISPLAYED
-            fprintf('Simulating points and estimating hyperspheres...      ')
-            stationarycounter([d n-1],[nd nn])
-            DISPLAYED = true;
+      for n = 1:nn
+         if ~exist('hyps','var') || numel(hyps)<s || size(hyps{s},1)<d || size(hyps{s},2)<n || isempty(hyps{s}(d,n,1))
+            if ~DISPLAYED
+               fprintf('Simulating points and estimating hyperspheres...      ')
+               stationarycounter([d n-1],[nd nn])
+               DISPLAYED = true;
+            end
+            % Simulate points
+            [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
+            hyps{s}(d,n,:) = Hypersphere.estimate(points,groundtruth{s,d,r}.categories,...
+                                                  'raw','independent');%.meanAndMerge(true);
+            % save in-progress fits
+            save(simfile,'hyps','groundtruth','sigtest','bootsamps')
+            stationarycounter([d n],[nd nn])
          end
-         % Simulate points
-         [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
-         hyps{s}(d,n,:) = Hypersphere.estimate(points,groundtruth{s,d,r}.categories,...
-                                               'raw','independent');%.meanAndMerge(true);
-         % save in-progress fits
-         save(simfile,'hyps','groundtruth','sigtest','bootsamps')
-         stationarycounter([d n],[nd nn])
       end
-   end
    end
 end
 
 DISPLAYED = false;
 for d = 1:nd
    for r = 1:nr
-   for n = 1:nn
-      if any(isnan(vectify(sigtest{s,d}(n,:,:))))
-         if ~DISPLAYED
-            fprintf('Significance testing...      ')
-            stationarycounter([d n-1],[nd nn])
-            DISPLAYED = true;
+      for n = 1:nn
+         if any(isnan(vectify(sigtest{s,d}(n,:,:))))
+            if ~DISPLAYED
+               fprintf('Significance testing...      ')
+               stationarycounter([d n-1],[nd nn])
+               DISPLAYED = true;
+            end
+            % regenerate points
+            groundtruth{s,d,r}.resetRandStream
+            [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
+            % Assess significance on samples
+            sigtmp = NaN(nsims,nc2);
+            prctmp = NaN(nsims,2);
+            bootmp = NaN(nboots,nc2,nsims);
+            parfor b = 1:nsims
+               hyptmp = SetOfHyps(hyps{s}(d,n,b)).significance(points(:,:,b),nboots);
+               sigtmp(b,:) = hyptmp.(sigfield{1+double(s>2)}).(mnames{s}(1:2));
+               bootmp(:,:,b) = hyptmp.ci.bootstraps.(mnames{s});
+            end
+            sigtest{s,d}(n,:)     = sigtmp(:,1+2*double(s==3));   % pick 3rd comparison only when s==3
+            bootsamps{s,d}(n,:,:) = bootmp(:,1+2*double(s==3),:); % pick 3rd comparison only when s==3
+            % save in-progress fits
+            save(simfile,'hyps','groundtruth','sigtest','bootsamps')
+            stationarycounter([d n],[nd nn])
          end
-         % regenerate points
-         groundtruth{s,d,r}.resetRandStream
-         [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
-         % Assess significance on samples
-         sigtmp = NaN(nsims,nc2);
-         prctmp = NaN(nsims,2);
-         bootmp = NaN(nboots,nc2,nsims);
-         parfor b = 1:nsims
-            hyptmp = SetOfHyps(hyps{s}(d,n,b)).significance(points(:,:,b),nboots);
-            sigtmp(b,:) = hyptmp.(sigfield{1+double(s>2)}).(mnames{s}(1:2));
-            bootmp(:,:,b) = hyptmp.ci.bootstraps.(mnames{s});
-         end
-         sigtest{s,d}(n,:)     = sigtmp(:,1+2*double(s==3));   % pick 3rd comparison only when s==3
-         bootsamps{s,d}(n,:,:) = bootmp(:,1+2*double(s==3),:); % pick 3rd comparison only when s==3
-         % save in-progress fits
-         save(simfile,'hyps','groundtruth','sigtest','bootsamps')
-         stationarycounter([d n],[nd nn])
       end
-   end
    end
 end
 
