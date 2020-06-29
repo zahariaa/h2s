@@ -1,5 +1,5 @@
 function varargout = plotErrorPatch(varargin)
-% Plots error bars (std) as a patch behind the mean
+% Plots error bars (std as default, sem is an option) as a patch behind the mean
 % 
 % Ex.:
 % plotErrorPatch([],y)
@@ -12,6 +12,7 @@ function varargout = plotErrorPatch(varargin)
 % plotErrorPatch(x,y,false) % plots error (line) bars & dots instead of patch
 % 
 % 2014-01-09 AZ Created
+% 2020-06-29 AZ Asymmetric error bars (e.g. CIs) are now possible
 
 % defaults
 PATCH = true;
@@ -23,12 +24,12 @@ if isstruct(varargin{1}) && isfield(varargin{1},'bins')
    ymean = varargin{1}.respmean;
    ystd  = varargin{1}.respstd;
 else
-   mats2d = cellfun(@(x) (size(x,1)>1 && size(x,2)>1),varargin);
    nums   = cellfun(@isnumeric         ,varargin);
    mats   = cellfun(@ismatrix          ,varargin);
    n      = cellfun(@numel             ,varargin);
    flags  = cellfun(@islogical         ,varargin);
    chars  = cellfun(@ischar            ,varargin);
+   mats2d = cellfun(@(x) all(size(x)>1),varargin);
    
    if any(flags)
       PATCH = varargin{flags};
@@ -72,6 +73,7 @@ else
    elseif isempty(varargin{2}), ymean = 1:size(xmean,2);
    end
    if numel(nums)>2 && nums(3), ystd  =          varargin{3} ;  end
+   if mats2d(3),                ystd  =          varargin{3} ;  end
    if ~exist('xmean','var') || isempty(xmean), xmean = 1:size(ymean,2); end
    
    if     ~exist('ystd','var') && exist('xstd','var'), ystd = 0*ymean;
@@ -85,10 +87,14 @@ dim2flip = find(size(ymean)==max(size(ymean)),1);
 
 %% Cut NaN's
 xmean = xmean(~isnan(ymean));
-if numel(ystd)>1
+if all(size(ystd)>1)  % ystd is 2D (asymmetric). assumes they are CIs. should prob make this an option.
+   if maxix(size(ystd))>1, ystd = ystd'; end
+   ystd  =  ystd(~isnan(ymean),:) - [ymean;ymean]';
+elseif numel(ystd)>1  % ystd is 1D
    ystd  =  ystd(~isnan(ymean));
+   ystd  =  ystd(:)*[-1 1];
 end
-xstd  =  xstd(~isnan(ystd));
+xstd  =  xstd(~isnan(ystd(:,1)));
 ymean = ymean(~isnan(ymean));
 
 %% Plot stuff
@@ -99,12 +105,12 @@ hold on
 
 if PATCH
 patch(cat(dim2flip,xmean+xstd,flip(xmean-xstd,dim2flip)),...
-      cat(dim2flip,ymean+ystd,flip(ymean-ystd,dim2flip)),...
+      cat(dim2flip,ymean+ystd(:,2)',flip(ymean+ystd(:,1)',dim2flip)),...
       color,'EdgeColor','none','FaceAlpha',1/3);
 plot(xmean,ymean,'Color',color,'LineWidth',2);
 else
    for i = 1:numel(xmean)
-      plot([xmean(i)+xstd(i) xmean(i)-xstd(i)], [ymean(i)+ystd(i) ymean(i)-ystd(i)],'-','Color',color,'Tag','phyaxwidth');
+      plot([xmean(i)+xstd(i) xmean(i)-xstd(i)], [ymean(i)+ystd(i,2)' ymean(i)+ystd(i,1)'],'-','Color',color,'Tag','phyaxwidth');
       plot( xmean(i),ymean(i),'o','MarkerFaceColor',color,'LineWidth',2,'Color','w');
    end
 end
