@@ -24,8 +24,6 @@ rs = 2.^(-1:3); % # radii
 
 sigthresh = 0.05;
 
-r  = 2;
-
 sigfield = {'sig',     'sigdiff'};
 measures = {'overlap', 'distance', 'radius difference', ...
             'overlap difference', 'distance difference'};
@@ -39,6 +37,7 @@ mnames   = {'overlap', 'distances2CrossValidated', 'radii', ...
 
 nn = numel(ns);
 nd = numel(ds);
+nr = numel(rs);
 nm = numel(measures);
 
 % Initialize data for saving (could probably change from cell to tensor)
@@ -50,6 +49,7 @@ simfile = 'statsim.mat';
 if exist(simfile,'file'), load(simfile); fprintf('Loaded simulations.\n'); end
 DISPLAYED = false;
 for d = 1:nd
+   for r = 1:nr
    % Generate points for the different scenarios
    groundtruth{s,d,r} = generateScenario(s,ds(d),rs(r));
 
@@ -69,10 +69,12 @@ for d = 1:nd
          stationarycounter([d n],[nd nn])
       end
    end
+   end
 end
 
 DISPLAYED = false;
 for d = 1:nd
+   for r = 1:nr
    for n = 1:nn
       if any(isnan(vectify(sigtest{s,d}(n,:,:))))
          if ~DISPLAYED
@@ -98,6 +100,7 @@ for d = 1:nd
          save(simfile,'hyps','groundtruth','sigtest','bootsamps')
          stationarycounter([d n],[nd nn])
       end
+   end
    end
 end
 
