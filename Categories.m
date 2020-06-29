@@ -173,11 +173,16 @@ classdef Categories
          [p,n] = size(self.vectors); %p=# points, n=# hyps
          vecs  = self.vectors*(1:n)';
          p     = nnz(vecs);
+         if     p < 2^8 , dtype = 'uint8';
+         elseif p < 2^16, dtype = 'uint16';
+         elseif p < 2^32, dtype = 'uint32';
+         else             dtype = 'uint64';
+         end
 
          % Build categories objs with permuted vector identities
          self.ispermuted = true;
          if STRAT_BOOTSTRAP % resample with replacement
-            self.vectors = zeros(p,n);
+            self.vectors = zeros(p,n,dtype);
             objs = repmat(self,[N 1]);
             for i = 1:n
                includedvecs = find(vecs==i);
