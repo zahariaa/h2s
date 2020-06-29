@@ -288,19 +288,19 @@ classdef Hypersphere < handle
          n = numel(self);
          if n > 1 % assumes Hypersphere was bootstrapped
             if exist('FORCE','var') && FORCE
-               cperms = true(n,1);
+               cpermed = true(n,1);
             else
-               cperms = arrayfun(@(x) x.categories.ispermuted,self)';
+               cpermed = arrayfun(@(x) x.categories.ispermuted,self)';
             end
-            ci.bootstraps = self(cperms);
-            ci.centers = prctile(cat(3,self(cperms).centers),[2.5 97.5],3);
-            ci.radii   = prctile(vertcat(self.radii),[2.5 97.5])';
-            if all(cperms) % Do we always want this?
-               self = Hypersphere(mean(cat(3,self(cperms).centers),3),...
-                                  mean(cat(1,self(cperms).radii)),...
+            ci.bootstraps = self(cpermed);
+            ci.centers = prctile(cat(3,self(cpermed).centers),[2.5 97.5],3);
+            ci.radii   = prctile(cat(1,self(cpermed).radii)' ,[2.5 97.5]);
+            if all(cpermed) % Do we always want this?
+               self = Hypersphere(mean(cat(3,self(cpermed).centers),3),...
+                                  mean(cat(1,self(cpermed).radii)),...
                                   self(1).categories);
             else % preserve best (unpermuted) estimate if exists (should be self(1))
-               self = self(find(~cperms,1,'first'));
+               self = self(find(~cpermed,1));
             end
          end
          self = SetOfHyps(self,ci);

@@ -171,8 +171,8 @@ classdef Categories
          end
 
          [p,n] = size(self.vectors); %p=# points, n=# hyps
-         vecs = self.vectors*(1:n)';
-         p    = nnz(vecs);
+         vecs  = self.vectors*(1:n)';
+         p     = nnz(vecs);
 
          % Build categories objs with permuted vector identities
          self.ispermuted = true;
@@ -305,8 +305,8 @@ classdef Categories
             end
          end
          for a = 1:nax
-            axtivate(ax(a));
-            axis equal off;
+            axtivate(ax(a))
+            axis equal off
          end
 
          if nargout, varargout = {ax}; end

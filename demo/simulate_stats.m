@@ -111,7 +111,7 @@ for d = 1:nd
          case {4,5}; estimates{s,d}(n,:) = diff(indexm(vertcat(hyps{3}(d,n,:).(mnames{s})),[],1:2),[],2);
       end
       bootprc{s,d}(n,:,:) = prctile([-Inf(1,nsims);squeeze([bootsamps{s,d}(n,:,:)]);Inf(1,nsims)],...
-                                  [0 100] + [1 -1]*sigthresh*100/2);
+                                    [0 100] + [1 -1]*sigthresh*100/2)';
    end
 end
 
