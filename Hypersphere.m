@@ -92,7 +92,6 @@ classdef Hypersphere < handle
 
          % create dummy object (for initializing multiple objects, e.g. option (5))
          if nargin==0; return; end
-         obj.resetRandStream;
 
          if isa(centers,'SetOfHyps')                           % input option (3)
             obj = Hypersphere(centers.centers,centers.radii,...
