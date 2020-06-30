@@ -94,8 +94,9 @@ classdef Hypersphere < handle
          if nargin==0; return; end
 
          if isa(centers,'SetOfHyps')                           % input option (3)
-            obj = Hypersphere(centers.centers,centers.radii,...
-                              centers.categories);
+            for fn = fieldnames(obj)'
+               obj.(fn{1}) = centers.(fn{1});
+            end
             return;
          elseif isa(centers,'Hypersphere'), obj = centers; return;
          elseif ischar(centers) && strcmpi(centers,'estimate') % input option (2)
