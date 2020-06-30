@@ -124,7 +124,7 @@ if exist('categories','var') && numel(categories.labels)>1
          for i = 1:numel(categories.labels)
             ix = categories.select(i).vectors;
             if categories.ispermuted
-               ix = undeal(2,@() unique(ix)); ix = ix(2:end);
+               [~,ix] = unique(ix); ix = ix(2:end);
             end
             if isnumeric(ix) && ~any(ix>1), ix = ~~ix; end
             p{i} = points(ix,:);
