@@ -218,7 +218,7 @@ classdef SetOfHyps < Hypersphere
          n   = numel(self.radii);
          nc2 = nchoosek(n,2);
          % helper functions
-         ciprctile      = @(x) find(sort([-Inf(1,nc2);x;Inf(1,nc2)])>=0,1)/(N+2);
+         ciprctile      = @(x) (find(sort([-Inf(1,nc2);x;Inf(1,nc2)])>=0,1)-1)/(N+2);
          ciprctileLtail = @(x)                mean(x>0);
          ciprctile2tail = @(x) max(abs(       mean(x>0)+[0 -1]));
          ciprctile2tail2= @(x) max(abs(repmat(mean(x>0),[2 1])+[zeros(1,nc2);-ones(1,nc2)]));
