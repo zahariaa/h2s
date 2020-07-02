@@ -2,11 +2,12 @@ function [sigtest,estimates,hyps,groundtruth] = simulate_stats(s,nsims,nboots,d,
 % simulate_stats: simulate null distributions from different h2s statistical
 %    tests with a few special cases
 
-if ~exist('nsims','var') || isempty(nsims), nsims = 100; end
-if ~exist('s','var') || isempty(s), s = 1;  end       % scenario chosen from the following:
-% Different scenarios needing testing:
+% # of simulations
+if ~exist('nsims' ,'var') || isempty(nsims ), nsims  = 100; end
 % # of bootstraps during statistical testing
 if ~exist('nboots','var') || isempty(nboots), nboots = 100; end
+if ~exist('s'     ,'var') || isempty(   s  ),      s = 1;   end
+% s is the scenario chosen from the following:
 % (1) 2 balls with 0 overlap.
 % (2) 2 balls with 0 distance.
 % (3) 2 balls with same (non-zero) radius.
@@ -137,9 +138,9 @@ for d = 1:nd
    for r = 1:nr
       for n = 1:nn
          switch s
-            case {1,2}; estimates{s,d,r}(n,:) =                     hyps{s,d,r}(n,:).(mnames{s});
-            case 3;     estimates{s,d,r}(n,:) = diff(indexm(vertcat(hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
-            case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(vertcat(hyps{3,d,r}(n,:).(mnames{s})),[],1:2),[],2);
+            case {1,2}; estimates{s,d,r}(n,:) =                   hyps{s,d,r}(n,:).(mnames{s});
+            case 3;     estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
+            case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
          end
          bootprc{s,d,r}(n,:,:) = prctile([-Inf(1,nsims);squeeze([bootsamps{s,d,r}(n,:,:)]);Inf(1,nsims)],...
                                          [0 100] + [1 -1]*sigthresh*100/2)';
