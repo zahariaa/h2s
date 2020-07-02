@@ -163,7 +163,7 @@ end
 %% Plot analyses
 nShown = [1 nn  1 nn];
 dShown = [1  1 nd nd];
-rShown = 1;
+rShown = [1 nr  1 nr];
 
 fh = newfigure([3 4],sprintf('%u%s',s,measures{s}));
 ax = fh.a.h([9 10]);
@@ -221,16 +221,18 @@ for i = 3:4
 end
 matchy(ax)
 
-for i = 2:3
-   plotErrorPatch(log2(ns),estimates{s,dShown(i)}',fh.a.h(7),[0 0 0])%,'sem')
+for d = nd:-1:1
+   plotErrorPatch(log2(rs),squeeze(indexm(cat(3,estimates{s,d,:}),n)),...
+                  fh.a.h(7),[1 d*[1 1]/(nd+1)])%,'sem')
 end
 logAxis(2)
-xlabel('samples')
+xlabel('radius ratio')
 ylabel(measures{s})
-title('Estimate vs n')
+title('Estimate vs r-ratio')
 
-for i = 2:3
-   plotErrorPatch(log2(ds),squeeze(indexm(cat(3,estimates{s,:}),nShown(i))),fh.a.h(8),[0 0 0])%,'sem')
+for r = nr:-1:1
+   plotErrorPatch(log2(ds),squeeze(indexm(cat(3,estimates{s,:,r}),n)),...
+                  fh.a.h(8),[r*[1 1]/(nr+1) 1])%,'sem')
 end
 logAxis(2)
 xlabel('dimensions')
@@ -238,18 +240,20 @@ ylabel(measures{s})
 title('Estimate vs d')
 
 axtivate(11)
-for i = 2:3
-   plot(log2(ns),100*mean(sigtest{s,dShown(i)}<=sigthresh/2,2),'-k','LineWidth',2)
+for d = 1:nd
+   plot(log2(rs),100*squeeze(mean(indexm(cat(3,sigtest{s,d,:}),n)<=sigthresh/2,2)),...
+        '-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
 end
-plot(log2(ns([1 end])),100*sigthresh*[1 1],'--k')
+plot(log2(rs([1 end])),100*sigthresh*[1 1],'--k')
 logAxis(2)
-xlabel('samples')
+xlabel('radius ratio')
 ylabel('False positive rate (%)')
-title('False positive rate vs n')
+title('False positive rate vs r-ratio')
 
 axtivate(12)
-for i = 2:3
-   plot(log2(ds),100*squeeze(mean(indexm(cat(3,sigtest{s,:}),nShown(i))<=sigthresh/2,2)),'-k','LineWidth',2)
+for r = 1:nr
+   plot(log2(ds),100*squeeze(mean(indexm(cat(3,sigtest{s,:,r}),n)<=sigthresh/2,2)),...
+        '-','LineWidth',2,'Color',[[r r]/(nr+1) 1])
 end
 plot(log2(ds([1 end])),100*sigthresh*[1 1],'--k')
 logAxis(2)
