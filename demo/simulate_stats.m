@@ -30,7 +30,7 @@ sigfield = {'sig',     'sigdiff'};
 measures = {'overlap', 'distance', 'radius difference', ...
             'overlap difference', 'distance difference'};
 mnames   = {'overlap', 'distances2CrossValidated', 'radii', ...
-            'overlap', 'distances2CrossValidated'};
+            'overlap', 'dists'};
 % % debug
 % for s = 1:5
 %    testScenario(s,ds,rs,measures,mnames);
