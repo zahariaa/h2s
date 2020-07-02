@@ -1,10 +1,12 @@
-function [sigtest,estimates,hyps,groundtruth] = simulate_stats(s,nsims)
+function [sigtest,estimates,hyps,groundtruth] = simulate_stats(s,nsims,nboots,d,r,n)
 % simulate_stats: simulate null distributions from different h2s statistical
 %    tests with a few special cases
 
 if ~exist('nsims','var') || isempty(nsims), nsims = 100; end
 if ~exist('s','var') || isempty(s), s = 1;  end       % scenario chosen from the following:
 % Different scenarios needing testing:
+% # of bootstraps during statistical testing
+if ~exist('nboots','var') || isempty(nboots), nboots = 100; end
 % (1) 2 balls with 0 overlap.
 % (2) 2 balls with 0 distance.
 % (3) 2 balls with same (non-zero) radius.
@@ -16,7 +18,6 @@ if ~exist('s','var') || isempty(s), s = 1;  end       % scenario chosen from the
 % ... though this gets annoying if playing with r- and n-ratios.
 
 %% TODO: ALL TESTS WITH DIFFERENT ESTIMATORS?
-nboots = 100;   % # of bootstraps during statistical testing
 %% Testing as a function of d, n, n-ratio, and r-ratio:
 ns = 2.^( 6:8); % # samples to test
 ds = 2.^( 1:5); % # dimensions
@@ -44,66 +45,90 @@ nm = numel(measures);
 nc2       = 1+2*double(s>2);
 sigtest   = repmat({NaN(nn,nsims       )},[nm nd nr]);
 bootsamps = repmat({NaN(nn,nsims,nboots)},[nm nd nr]);
-hyps      = cell(nm,nd,nr);
+hyps      = repmat({repmat(Hypersphere(),[nn nsims])},[nm nd nr]);
 
-simfile = 'statsim.mat';
-if exist(simfile,'file'), load(simfile); fprintf('Loaded simulations.\n'); end
+if ~exist('d','var')
+   % maybe input should be ds, etc?
+   % Collect all simulations, make figures
+   [d,r,n]    = deal(1);
+   STANDALONE = false;
+else
+   %% TODO: do only one simulation, don't make figures
+   % ds = ds(d); rs = rs(r); ns = ns(n);
+   % [nd,nr,nn] = deal(1);
+   STANDALONE = true;
+end
+
+simfile = @(s,d,r,n) sprintf('statsim_s%g_d%g_r%g_n%g.mat',...
+                             s,log2(ds(d)),log2(rs(r)),log2(ns(n)));
+% check if existing ns,ds,rs match saved ones
+checkFile(simfile(s,d,r,n),ns,ds,rs)
 DISPLAYED = false;
+FINISHED  = false;
 for d = 1:nd
    for r = 1:nr
       % Generate points for the different scenarios
-      groundtruth{s,d,r} = generateScenario(s,ds(d),rs(r));
+      gt = generateScenario(s,ds(d),rs(r));
 
       for n = 1:nn
-         if ~exist('hyps','var') || any(size(hyps)<[s d r]) || size(hyps{s,d,r},1)<n || isempty(hyps{s,d,r}(n,1))
+         if exist(simfile(s,d,r,n),'file')
+            [hyp,gt,sigtmp,bootmp] = hyp_load(simfile(s,d,r,n),ns,ds,rs,DISPLAYED);
+         else
             if ~DISPLAYED
                fprintf('Simulating points and estimating hyperspheres...      ')
-               stationarycounter([d r n-1],[nd nr nn])
-               DISPLAYED = true;
             end
+            [points,gt] = gt.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
             % Simulate points
-            [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
-            hyps{s,d,r}(n,:) = Hypersphere.estimate(points,groundtruth{s,d,r}.categories,...
-                                                  'raw','independent');%.meanAndMerge(true);
+            hyp = Hypersphere.estimate(points,gt.categories,'independent');%.meanAndMerge(true);
             % save in-progress fits
-            save(simfile,'hyps','groundtruth','sigtest','bootsamps')
+            save(simfile(s,d,r,n),'hyp','gt','ns','ds','rs')
             stationarycounter([d r n],[nd nr nn])
          end
+
+         if ~exist('sigtmp','var') || isempty(sigtmp)
+            if ~DISPLAYED
+               fprintf('\nSignificance testing...      ')
+               DISPLAYED = true;
+            end
+            
+            if ~exist('points','var') % regenerate points
+               gt.resetRandStream
+               [points,gt] = gt.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
+            end
+            % Assess significance on samples
+            sigtmp = NaN(nsims,nc2);
+            bootmp = NaN(nboots,nc2,nsims);
+            parfor b = 1:nsims
+               hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots);
+               sigtmp(b,:) = hyptmp.(sigfield{1+double(s>2)}).(mnames{s}(1:2));
+               bootmp(:,:,b) = cat(1,hyptmp.ci.bootstraps.(mnames{s}));
+            end
+            sigtmp = sigtmp(:,1+2*double(s==3));      % pick 3rd comparison only when s==3
+            switch s
+               case {1,2}; bootmp = bootmp(:,1,:);
+               case 3;     bootmp = diff(bootmp(:,2:3,:),[],2);   % difference of  last two measures
+               case {4,5}; bootmp = diff(bootmp(:,1:2,:),[],2);   % difference of first two measures
+            end
+            % save in-progress fits
+            save(simfile(s,d,r,n),'hyp','gt','sigtmp','bootmp','ns','ds','rs')
+            stationarycounter([d r n],[nd nr nn])
+            FINISHED = true;
+         end
+
+         if STANDALONE && FINISHED
+            return
+         elseif ~STANDALONE % collect data
+            hyps{s,d,r}(n,:)        = hyp;
+            groundtruth{s,d,r}      = gt;
+            sigtest{s,d,r}(n,:)     = sigtmp;
+            bootsamps{s,d,r}(n,:,:) = bootmp;
+         end
+         clear sigtmp
       end
    end
 end
 
-DISPLAYED = false;
-for d = 1:nd
-   for r = 1:nr
-      for n = 1:nn
-         if any(isnan(vectify(sigtest{s,d,r}(n,:,:))))
-            if ~DISPLAYED
-               fprintf('Significance testing...      ')
-               stationarycounter([d r n-1],[nd nr nn])
-               DISPLAYED = true;
-            end
-            % regenerate points
-            groundtruth{s,d,r}.resetRandStream
-            [points,groundtruth{s,d,r}] = groundtruth{s,d,r}.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
-            % Assess significance on samples
-            sigtmp = NaN(nsims,nc2);
-            prctmp = NaN(nsims,2);
-            bootmp = NaN(nboots,nc2,nsims);
-            parfor b = 1:nsims
-               hyptmp = SetOfHyps(hyps{s,d,r}(n,b)).significance(points(:,:,b),nboots);
-               sigtmp(b,:) = hyptmp.(sigfield{1+double(s>2)}).(mnames{s}(1:2));
-               bootmp(:,:,b) = hyptmp.ci.bootstraps.(mnames{s});
-            end
-            sigtest{s,d,r}(n,:)     = sigtmp(:,1+2*double(s==3));   % pick 3rd comparison only when s==3
-            bootsamps{s,d,r}(n,:,:) = bootmp(:,1+2*double(s==3),:); % pick 3rd comparison only when s==3
-            % save in-progress fits
-            save(simfile,'hyps','groundtruth','sigtest','bootsamps')
-            stationarycounter([d r n],[nd nr nn])
-         end
-      end
-   end
-end
+if STANDALONE, return; end
 
 %% Extract data: collect estimates (e.g., overlaps, distances)
 estimates = repmat({NaN(nn,nsims  )},[nm nd nr]);
@@ -137,7 +162,7 @@ end
 %% Plot analyses
 nShown = [1 nn  1 nn];
 dShown = [1  1 nd nd];
-rShown = 2;
+rShown = 1;
 
 fh = newfigure([3 4],sprintf('%u%s',s,measures{s}));
 ax = fh.a.h([9 10]);
@@ -160,7 +185,7 @@ title('Test performance')
 
 axtivate(5)
 plot([0 nsims],[0 0],'k--')
-d=1;n=1;
+d=1;n=1;r=1;
 for i = 1:nsims
    if bootprc{s,d,r}(n,i,1)<0 && bootprc{s,d,r}(n,i,2)>0, linecol = [0.5 0.5 0.5];
    else                                                   linecol = [0   0   0  ];
@@ -173,10 +198,10 @@ xlabel('Simulation #')
 title({'Estimate (red)' 'boostrapped CI (black/grey)'})
 
 axtivate(6)
-barh(bins,counts/(nsims*nboots),'FaceColor',[0 0 0],'EdgeColor',[1 1 1])
-barh(bins,counts/(nsims*nboots),'FaceColor',[1 0 0],'EdgeColor',[1 1 1])
-[counts,bins] = hist(bootsamps{s,d,r}(n,:),100);
 [counts,bins] = hist(estimates{s,d,r}(n,:));
+barh(bins,counts/nsims,'FaceColor',[1 0 0],'EdgeColor','none')%[1 1 1])
+[counts,bins] = hist(bootsamps{s,d,r}(n,:),100);
+barh(bins,counts/(nsims*nboots),'FaceColor',[0 0 0],'EdgeColor','none')%[1 1 1])
 ylabel(measures{s})
 xlabel('frequency')
 title({'Boostrapped estimates from' 'all simulations (black) and' 'true estimates (red)'})
@@ -186,7 +211,7 @@ matchy(fh.a.h(5:6),'y')
 
 for i = 3:4
    axtivate(ax(i-2))
-   [count,bins] = hist(estimates{s,dShown(i),r}(nShown(i),:));
+   [counts,bins] = hist(estimates{s,dShown(i),r}(nShown(i),:));
    bar(bins,counts/nsims,'FaceColor',[0 0 0],'EdgeColor',[1 1 1])
    plot([0 0],[0 0.25],'r-','LineWidth',2)
    xlabel(measures{s})
@@ -286,4 +311,25 @@ function fh = testScenario(s,ds,rs,measures,mnames)
       drawnow
    end
    return
+end
+
+function [hyp,gt,sigtmp,bootmp] = hyp_load(simfile,ns,ds,rs,DISPLAYED)
+   checkFile(simfile,ns,ds,rs)
+   sigtmp = []; bootmp = [];
+
+   load(simfile,'hyp','gt','sigtmp','bootmp');
+   if ~DISPLAYED
+      fprintf('Loaded simulations.\n')
+   end
+end
+
+function checkFile(simfile,ns,ds,rs)
+   if exist(simfile,'file')
+      A = load(simfile,'ns','ds','rs');
+      for fn = fieldnames(A)';fn=fn{1};
+         if eval([fn '(1) ~= A.' fn '(1)'])
+            error('parameter mismatch') % TODO: reconcile instead
+         end
+      end
+   end
 end
