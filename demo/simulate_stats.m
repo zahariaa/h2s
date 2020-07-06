@@ -56,30 +56,26 @@ end
 DISPLAYED = false;
 FINISHED  = false;
 [di,ri,ni]= deal(0);
-for d = ds
-   di = di + 1;
-   ri = 0;
-   for r = rs
-      ri = ri + 1;
+for d = 1:nd
+   for r = 1:nr
       % Generate points for the different scenarios
-      gt = generateScenario(s,2^d,2^r);
+      gt = generateScenario(s,2^ds(d),2^rs(r));
 
-      ni = 0;
-      for n = ns
-         ni = ni + 1;
-         if exist(simfile(s,d,r,n),'file')
-            [hyp,gt,sigtmp,bootmp] = hyp_load(simfile,s,d,r,n,DISPLAYED);
+      for n = 1:nn
+         if exist(simfile(s,ds(d),rs(r),ns(n)),'file')
+            [hyp,gt,sigtmp,bootmp] = hyp_load(simfile,s,ds(d),rs(r),ns(n),DISPLAYED);
             %% TODO: check nboots/nsims
          else
             if ~DISPLAYED
                fprintf('Simulating points and estimating hyperspheres...      ')
             end
-            [points,gt] = gt.sample(2.^[n n*ones(1,1+double(s>2))],nsims);
+            [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
             % Simulate points
             hyp = Hypersphere.estimate(points,gt.categories,'independent');%.meanAndMerge(true);
             % save in-progress fits
-            save(simfile(s,d,r,n),'hyp','gt','n','d','r')
-            stationarycounter([di ri ni],[nd nr nn])
+            savtmp = struct('hyp',hyp,'gt',gt,'n',ns(n),'d',ds(d),'r',rs(r));
+            save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
+            stationarycounter([d r n],[nd nr nn])
          end
 
          if ~exist('sigtmp','var') || isempty(sigtmp)
@@ -90,7 +86,7 @@ for d = ds
             
             if ~exist('points','var') % regenerate points
                gt.resetRandStream
-               [points,gt] = gt.sample(2.^[n n*ones(1,1+double(s>2))],nsims);
+               [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
             end
             % Assess significance on samples
             sigtmp = NaN(nsims,nc2);
@@ -107,8 +103,9 @@ for d = ds
                case {4,5}; bootmp = diff(bootmp(:,1:2,:),[],2);   % difference of first two measures
             end
             % save in-progress fits
-            save(simfile(s,d,r,n),'hyp','gt','sigtmp','bootmp','n','d','r')
-            stationarycounter([di ri ni],[nd nr nn])
+            savtmp = struct('hyp',hyp,'gt',gt,'sigtmp',sigtmp,'bootmp',bootmp,'n',ns(n),'d',ds(d),'r',rs(r));
+            save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
+            stationarycounter([d r n],[nd nr nn])
             FINISHED = true;
          end
 
@@ -116,10 +113,10 @@ for d = ds
             fprintf('Simulations complete.\n');
             return
          elseif ~STANDALONE % collect data
-            hyps{s,di,ri}(ni,:)        = hyp;
-            groundtruth{s,di,ri}       = gt;
-            sigtest{s,di,ri}(ni,:)     = sigtmp;
-            bootsamps{s,di,ri}(ni,:,:) = bootmp;
+            hyps{s,d,r}(n,:)        = hyp;
+            groundtruth{s,d,r}      = gt;
+            sigtest{s,d,r}(n,:)     = sigtmp;
+            bootsamps{s,d,r}(n,:,:) = bootmp;
          end
          clear sigtmp
       end
