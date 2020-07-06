@@ -37,15 +37,15 @@ mnames   = {'overlap', 'distances2CrossValidated', 'radii', ...
 % end
 % keyboard
 
-nn = numel(ns);
-nd = numel(ds);
-nr = numel(rs);
-nm = numel(measures);
+nd  = numel(ds);
+nr  = numel(rs);
+nn  = numel(ns);
+nm  = numel(measures);
+nc2 = 1+2*double(s>2);
 
 simfile = @(s,d,r,n) sprintf('statsim_s%g_d%g_r%g_n%g.mat',s,d,r,n);
 STANDALONE = nargin>3;
 % Initialize data for saving (could probably change from cell to tensor)
-nc2       = 1+2*double(s>2);
 if ~STANDALONE % Collect all simulations, make figures
    sigtest   = repmat({NaN(nn,nsims       )},[nm nd nr]);
    bootsamps = repmat({NaN(nn,nsims,nboots)},[nm nd nr]);
@@ -156,6 +156,7 @@ end
 
 
 %% Plot analyses
+[d,r,n] = deal(1);
 nShown = [1 nn  1 nn];
 dShown = [1  1 nd nd];
 rShown = [1 nr  1 nr];
@@ -181,7 +182,6 @@ title('Test performance')
 
 axtivate(5)
 plot([0 nsims],[0 0],'k--')
-d=1;n=1;r=1;
 for i = 1:nsims
    if bootprc{s,d,r}(n,i,1)<0 && bootprc{s,d,r}(n,i,2)>0, linecol = [0.5 0.5 0.5];
    else                                                   linecol = [0   0   0  ];
