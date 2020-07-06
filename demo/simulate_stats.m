@@ -1,4 +1,4 @@
-function [sigtest,estimates,hyps,groundtruth] = simulate_stats(s,nsims,nboots,d,r,n)
+function [sigtest,estimates,hyps,groundtruth] = simulate_stats(s,nsims,nboots,ds,rs,ns)
 % simulate_stats: simulate null distributions from different h2s statistical
 %    tests with a few special cases
 
@@ -19,10 +19,10 @@ if ~exist('s'     ,'var') || isempty(   s  ),      s = 1;   end
 % ... though this gets annoying if playing with r- and n-ratios.
 
 %% TODO: ALL TESTS WITH DIFFERENT ESTIMATORS?
-%% Testing as a function of d, n, n-ratio, and r-ratio:
-ns = 2.^( 6:8); % # samples to test
-ds = 2.^( 1:5); % # dimensions
-rs = 2.^(-1:3); % # radii
+%% Testing as a function of d, n, n-ratio, and r-ratio (2^these):
+if ~exist('ds') || isempty(ds), ds =  1:5; end % # dimensions
+if ~exist('rs') || isempty(rs), rs = -1:3; end % # radii
+if ~exist('ns') || isempty(ns), ns =  6:8; end % # samples to test 
 
 sigthresh = 0.05;
 
@@ -42,48 +42,44 @@ nd = numel(ds);
 nr = numel(rs);
 nm = numel(measures);
 
+simfile = @(s,d,r,n) sprintf('statsim_s%g_d%g_r%g_n%g.mat',s,d,r,n);
+STANDALONE = nargin>3;
 % Initialize data for saving (could probably change from cell to tensor)
 nc2       = 1+2*double(s>2);
-sigtest   = repmat({NaN(nn,nsims       )},[nm nd nr]);
-bootsamps = repmat({NaN(nn,nsims,nboots)},[nm nd nr]);
-hyps      = repmat({repmat(Hypersphere(),[nn nsims])},[nm nd nr]);
-
-if ~exist('d','var')
-   % maybe input should be ds, etc?
-   % Collect all simulations, make figures
-   [d,r,n]    = deal(1);
-   STANDALONE = false;
-else
-   %% TODO: do only one simulation, don't make figures
-   % ds = ds(d); rs = rs(r); ns = ns(n);
-   % [nd,nr,nn] = deal(1);
-   STANDALONE = true;
+if ~STANDALONE % Collect all simulations, make figures
+   sigtest   = repmat({NaN(nn,nsims       )},[nm nd nr]);
+   bootsamps = repmat({NaN(nn,nsims,nboots)},[nm nd nr]);
+   hyps      = repmat({repmat(Hypersphere(),[nn nsims])},[nm nd nr]);
 end
+% else do only one simulation, don't make figures
 
-simfile = @(s,d,r,n) sprintf('statsim_s%g_d%g_r%g_n%g.mat',...
-                             s,log2(ds(d)),log2(rs(r)),log2(ns(n)));
-% check if existing ns,ds,rs match saved ones
-checkFile(simfile(s,d,r,n),ns,ds,rs)
 DISPLAYED = false;
 FINISHED  = false;
-for d = 1:nd
-   for r = 1:nr
+[di,ri,ni]= deal(0);
+for d = ds
+   di = di + 1;
+   ri = 0;
+   for r = rs
+      ri = ri + 1;
       % Generate points for the different scenarios
-      gt = generateScenario(s,ds(d),rs(r));
+      gt = generateScenario(s,2^d,2^r);
 
-      for n = 1:nn
+      ni = 0;
+      for n = ns
+         ni = ni + 1;
          if exist(simfile(s,d,r,n),'file')
-            [hyp,gt,sigtmp,bootmp] = hyp_load(simfile(s,d,r,n),ns,ds,rs,DISPLAYED);
+            [hyp,gt,sigtmp,bootmp] = hyp_load(simfile,s,d,r,n,DISPLAYED);
+            %% TODO: check nboots/nsims
          else
             if ~DISPLAYED
                fprintf('Simulating points and estimating hyperspheres...      ')
             end
-            [points,gt] = gt.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
+            [points,gt] = gt.sample(2.^[n n*ones(1,1+double(s>2))],nsims);
             % Simulate points
             hyp = Hypersphere.estimate(points,gt.categories,'independent');%.meanAndMerge(true);
             % save in-progress fits
-            save(simfile(s,d,r,n),'hyp','gt','ns','ds','rs')
-            stationarycounter([d r n],[nd nr nn])
+            save(simfile(s,d,r,n),'hyp','gt','n','d','r')
+            stationarycounter([di ri ni],[nd nr nn])
          end
 
          if ~exist('sigtmp','var') || isempty(sigtmp)
@@ -94,7 +90,7 @@ for d = 1:nd
             
             if ~exist('points','var') % regenerate points
                gt.resetRandStream
-               [points,gt] = gt.sample([ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
+               [points,gt] = gt.sample(2.^[n n*ones(1,1+double(s>2))],nsims);
             end
             % Assess significance on samples
             sigtmp = NaN(nsims,nc2);
@@ -111,25 +107,26 @@ for d = 1:nd
                case {4,5}; bootmp = diff(bootmp(:,1:2,:),[],2);   % difference of first two measures
             end
             % save in-progress fits
-            save(simfile(s,d,r,n),'hyp','gt','sigtmp','bootmp','ns','ds','rs')
-            stationarycounter([d r n],[nd nr nn])
+            save(simfile(s,d,r,n),'hyp','gt','sigtmp','bootmp','n','d','r')
+            stationarycounter([di ri ni],[nd nr nn])
             FINISHED = true;
          end
 
          if STANDALONE && FINISHED
+            fprintf('Simulations complete.\n');
             return
          elseif ~STANDALONE % collect data
-            hyps{s,d,r}(n,:)        = hyp;
-            groundtruth{s,d,r}      = gt;
-            sigtest{s,d,r}(n,:)     = sigtmp;
-            bootsamps{s,d,r}(n,:,:) = bootmp;
+            hyps{s,di,ri}(ni,:)        = hyp;
+            groundtruth{s,di,ri}       = gt;
+            sigtest{s,di,ri}(ni,:)     = sigtmp;
+            bootsamps{s,di,ri}(ni,:,:) = bootmp;
          end
          clear sigtmp
       end
    end
 end
 
-if STANDALONE, return; end
+if STANDALONE, fprintf('Simulations complete.\n'); return; end
 
 %% Extract data: collect estimates (e.g., overlaps, distances)
 estimates = repmat({NaN(nn,nsims  )},[nm nd nr]);
@@ -138,7 +135,8 @@ for d = 1:nd
    for r = 1:nr
       for n = 1:nn
          switch s
-            case {1,2}; estimates{s,d,r}(n,:) =                   hyps{s,d,r}(n,:).(mnames{s});
+            case 1;     estimates{s,d,r}(n,:) =min(2^rs(r).^[1 -1])*hyps{s,d,r}(n,:).(mnames{s});
+            case 2;     estimates{s,d,r}(n,:) =                   hyps{s,d,r}(n,:).(mnames{s});
             case 3;     estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
             case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
          end
@@ -170,7 +168,7 @@ ax = fh.a.h([9 10]);
 
 for i = 1:3
    sampsz = (2^(i+4))*ones(1,2+double(s>2));
-   generateScenario(s,2,rs(rShown)).plotSamples(sampsz,fh.a.h(i));
+   generateScenario(s,2,2^rs(rShown(i))).plotSamples(sampsz,fh.a.h(i));
    if s<3, title(sprintf('Samples: n_1= %u, n_2= %u',         sampsz))
    else    title(sprintf('Samples: n_1= %u, n_2= %u, n_3= %u',sampsz))
    end
@@ -217,34 +215,35 @@ for i = 3:4
    plot([0 0],[0 0.25],'r-','LineWidth',2)
    xlabel(measures{s})
    ylabel('frequency')
-   title(sprintf('Estimates (n = %u, d = %u)',ns(nShown(i)),ds(dShown(i))))
+   title(sprintf('Estimates (n = %u, d = %u)',2^ns(nShown(i)),2^ds(dShown(i))))
 end
 matchy(ax)
 
 for d = nd:-1:1
-   plotErrorPatch(log2(rs),squeeze(indexm(cat(3,estimates{s,d,:}),n)),...
+   plotErrorPatch(rs,squeeze(indexm(cat(3,estimates{s,d,:}),n)),...
                   fh.a.h(7),[1 d*[1 1]/(nd+1)])%,'sem')
 end
-logAxis(2)
+axis tight; logAxis(2)
 xlabel('radius ratio')
 ylabel(measures{s})
 title('Estimate vs r-ratio')
 
 for r = nr:-1:1
-   plotErrorPatch(log2(ds),squeeze(indexm(cat(3,estimates{s,:,r}),n)),...
+   plotErrorPatch(ds,squeeze(indexm(cat(3,estimates{s,:,r}),n)),...
                   fh.a.h(8),[r*[1 1]/(nr+1) 1])%,'sem')
 end
-logAxis(2)
+axis tight; logAxis(2)
 xlabel('dimensions')
 ylabel(measures{s})
 title('Estimate vs d')
 
 axtivate(11)
 for d = 1:nd
-   plot(log2(rs),100*squeeze(mean(indexm(cat(3,sigtest{s,d,:}),n)<=sigthresh/2,2)),...
+   a = permute(indexm(cat(3,sigtest{s,d,:}),n),[2 3 1]);
+   plot(rs,100*mean(min(cat(3,1-a,a),[],3)<=sigthresh/2),...
         '-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
 end
-plot(log2(rs([1 end])),100*sigthresh*[1 1],'--k')
+plot(rs([1 end]),100*sigthresh*[1 1],'--k')
 logAxis(2)
 xlabel('radius ratio')
 ylabel('False positive rate (%)')
@@ -252,17 +251,18 @@ title('False positive rate vs r-ratio')
 
 axtivate(12)
 for r = 1:nr
-   plot(log2(ds),100*squeeze(mean(indexm(cat(3,sigtest{s,:,r}),n)<=sigthresh/2,2)),...
+   a = permute(indexm(cat(3,sigtest{s,:,r}),n),[2 3 1]);
+   plot(ds,100*mean(min(cat(3,1-a,a),[],3)<=sigthresh/2),...
         '-','LineWidth',2,'Color',[[r r]/(nr+1) 1])
 end
-plot(log2(ds([1 end])),100*sigthresh*[1 1],'--k')
+plot(ds([1 end]),100*sigthresh*[1 1],'--k')
 logAxis(2)
 xlabel('dimensions')
 ylabel('False positive rate (%)')
 title('False positive rate vs d')
 printFig;
 
-keyboard
+% keyboard
 return
 end
 
@@ -318,21 +318,21 @@ function fh = testScenario(s,ds,rs,measures,mnames)
    return
 end
 
-function [hyp,gt,sigtmp,bootmp] = hyp_load(simfile,ns,ds,rs,DISPLAYED)
-   checkFile(simfile,ns,ds,rs)
+function [hyp,gt,sigtmp,bootmp] = hyp_load(simfile,s,d,r,n,DISPLAYED)
+   checkFile(simfile(s,d,r,n),d,r,n)
    sigtmp = []; bootmp = [];
 
-   load(simfile,'hyp','gt','sigtmp','bootmp');
+   load(simfile(s,d,r,n),'hyp','gt','sigtmp','bootmp');
    if ~DISPLAYED
       fprintf('Loaded simulations.\n')
    end
 end
 
-function checkFile(simfile,ns,ds,rs)
+function checkFile(simfile,d,r,n)
    if exist(simfile,'file')
-      A = load(simfile,'ns','ds','rs');
+      A = load(simfile,'d','r','n');
       for fn = fieldnames(A)';fn=fn{1};
-         if eval([fn '(1) ~= A.' fn '(1)'])
+         if eval([fn ' ~= A.' fn])
             error('parameter mismatch') % TODO: reconcile instead
          end
       end
