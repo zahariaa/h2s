@@ -43,7 +43,7 @@ nn  = numel(ns);
 nm  = numel(measures);
 nc2 = 1+2*double(s>2);
 
-simfile = @(s,d,r,n) sprintf('statsim_s%g_d%g_r%g_n%g.mat',s,d,r,n);
+simfile = @(s,d,r,n) sprintf('data%sstatsim%ss%g_d%g_r%g_n%g.mat',filesep,filesep,s,d,r,n);
 STANDALONE = nargin>3;
 % Initialize data for saving (could probably change from cell to tensor)
 if ~STANDALONE % Collect all simulations, make figures
