@@ -11,7 +11,8 @@ classdef cvindex
          obj.rp  = reshape_sloppy(randperm(n),nCV);
       end
       function ix = train(obj,i)        % Output training set for i'th fold
-         ix = vectify(obj.rp(:,setdiff(1:obj.nCV,i)));
+         a = 1:obj.nCV;
+         ix = vectify(obj.rp(:,a(~ismembc(a,i)))); % faster than setdiff(a,i))
          ix = ix(~isnan(ix));
       end
       function ix = test(obj,i)         % Output test set for i'th fold
