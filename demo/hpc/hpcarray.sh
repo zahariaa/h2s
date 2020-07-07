@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # 2020-07-07 AZ Created from allcells.sh
 # first argument is name of function. it will be run on instances from 1 to second argument
 # third argument (and beyond) are passed to function
@@ -37,27 +37,26 @@ fi
 
 # distribute extra input arguments to matlab function
 extraargs=""
-jextra=""
 for var in "$@"
 do
-   if [ $var == $1 ]; then
-      : # do nothing
-   elif [ $var == $2 ]; then
-      if [ $(echo $var | grep -e "-") ]; then
-    firstcell=${var%-*}
-    ncells=${var##*-}
-      else
-    ncells=$var
-      fi
-   elif [ $var == $3 ]; then
-      extraargs="$extraargs,$var"
-      jextra="${var:1:1}"
-   elif [ ! -z $var ];  then
-      extraargs="$extraargs,$var"
-   fi
+   case $var in
+      $1) # do nothing
+         ;;
+      $2)
+         if [ $(echo $var | grep -e "-") ]; then
+            firstcell=${var%-*}
+            ncells=${var##*-}
+         else
+            ncells=$var
+         fi
+         ;;
+      *)
+         extraargs="$extraargs,$var"
+         ;;
+   esac
+   #echo $extraargs
 done
-jextra="$jextra${var:1:-1}"
-echo $jextra
+#echo $firstcell-$ncells
 
 ######### LOOP ALL CELLS
 jobname=$1$3
