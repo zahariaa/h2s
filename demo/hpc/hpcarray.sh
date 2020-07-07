@@ -59,7 +59,7 @@ done
 #echo $firstcell-$ncells
 
 ######### LOOP ALL CELLS
-jobname=$1$3
+jobname=$function$3
 mfilebase="${scriptdir}m/$jobname"
 for ((  icell = $firstcell ;  icell <= $ncells;  icell++  ))
 do
@@ -80,27 +80,27 @@ do
 done
 
 ######### construct SLURM (job array) script
-# jfile="${scriptdir}/$jobname.s"
+jfile="${scriptdir}/$jobname.s"
 
-# pbtxt1="#!/bin/bash\n#"
-# pbtxt2="#SBATCH --account=nklab\n#SBATCH --job-name=$jobname"
-# pbtxt3="#SBATCH --nodes=1\n#SBATCH --cpus-per-task=$numnodes"
-# pbtxt4="#SBATCH --time=$walltime"
-# pbtxt5="#SBATCH --mem-per-cpu=$memory"
-# pbtxt8="#SBATCH --output=${scriptdir}/o/${jobname}%a.txt"
-# pbtxt9="#SBATCH --error=${scriptdir}/e/${jobname}%a.txt"
-# pbtxt9a="\nmodule load matlab/$matlabver\n"
+pbtxt1="#!/bin/bash\n#"
+pbtxt2="#SBATCH --account=nklab\n#SBATCH --job-name=$jobname"
+pbtxt3="#SBATCH --nodes=1\n#SBATCH --cpus-per-task=$numnodes"
+pbtxt4="#SBATCH --time=$walltime"
+pbtxt5="#SBATCH --mem-per-cpu=$memory"
+pbtxt8="#SBATCH --output=${scriptdir}o/${jobname}%a.txt"
+pbtxt9="#SBATCH --error=${scriptdir}e/${jobname}%a.txt"
+pbtxt9a="\nmodule load matlab/$matlabver\n"
 
-# # MAIN MATLAB EXECUTION PBS line
-# #Command to execute Matlab code
-# pbtxt11="matlab -nodisplay < $mfilebase\$SLURM_ARRAY_TASK_ID.m > ${scriptdir}/r/$jobname\$SLURM_ARRAY_TASK_ID.txt"
-# pbtxt10=""
-# pbtxt12=""
+# MAIN MATLAB EXECUTION PBS line
+#Command to execute Matlab code
+pbtxt11="matlab -nodisplay < $mfilebase\$SLURM_ARRAY_TASK_ID.m > ${scriptdir}r/$jobname\$SLURM_ARRAY_TASK_ID.txt"
+pbtxt10=""
+pbtxt12=""
 
-# # WRITE SLURM SCRIPT
-# echo -e "${pbtxt1}\n${pbtxt2}\n${pbtxt3}\n${pbtxt4}\n${pbtxt5}\n${pbtxt8}\n${pbtxt9}\n${pbtxt9a}\n\n${pbtxt10}\n${pbtxt11}\n${pbtxt12}\n" > ${jfile}
+# WRITE SLURM SCRIPT
+echo -e "${pbtxt1}\n${pbtxt2}\n${pbtxt3}\n${pbtxt4}\n${pbtxt5}\n${pbtxt8}\n${pbtxt9}\n${pbtxt9a}\n\n${pbtxt10}\n${pbtxt11}\n${pbtxt12}\n" > ${jfile}
 
-# # submit array job
-# jid=`sbatch --array=$firstcell-$ncells $jfile`
-# echo $jid
+# submit array job
+jid=`sbatch --array=$firstcell-$ncells $jfile`
+echo $jid
 
