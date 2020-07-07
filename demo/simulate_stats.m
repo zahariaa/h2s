@@ -3,10 +3,10 @@ function [sigtest,estimates,hyps,groundtruth] = simulate_stats(drn,s,nsims,nboot
 %    tests with a few special cases
 
 % # of simulations
-if ~exist('nsims' ,'var') || isempty(nsims ), nsims  = 100; end
+if ~exist('nsims' ,'var') || isempty(nsims ), nsims  = 1000; end
 % # of bootstraps during statistical testing
-if ~exist('nboots','var') || isempty(nboots), nboots = 100; end
-if ~exist('s'     ,'var') || isempty(   s  ),      s = 1;   end
+if ~exist('nboots','var') || isempty(nboots), nboots = 1000; end
+if ~exist('s'     ,'var') || isempty(   s  ),      s = 1;    end
 % s is the scenario chosen from the following:
 % (1) 2 balls with 0 overlap.
 % (2) 2 balls with 0 distance.
