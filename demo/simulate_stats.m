@@ -1,4 +1,4 @@
-function [sigtest,estimates,hyps,groundtruth] = simulate_stats(s,nsims,nboots,ds,rs,ns)
+function [sigtest,estimates,hyps,groundtruth] = simulate_stats(drn,s,nsims,nboots)
 % simulate_stats: simulate null distributions from different h2s statistical
 %    tests with a few special cases
 
@@ -20,11 +20,27 @@ if ~exist('s'     ,'var') || isempty(   s  ),      s = 1;   end
 
 %% TODO: ALL TESTS WITH DIFFERENT ESTIMATORS?
 %% Testing as a function of d, n, n-ratio, and r-ratio (2^these):
-if ~exist('ds') || isempty(ds), ds =  1:5; end % # dimensions
-if ~exist('rs') || isempty(rs), rs = -1:3; end % # radii
-if ~exist('ns') || isempty(ns), ns =  6:8; end % # samples to test 
-
 sigthresh = 0.05;
+ds =  1:5; % # of dimensions
+rs = -1:3; % radius ratios
+ns =  6:8; % # of samples to test 
+nd = numel(ds);
+nr = numel(rs);
+nn = numel(ns);
+
+STANDALONE = exist('drn','var') && ~isempty(drn);
+if     ~STANDALONE % do nothing
+elseif isnumeric(drn) && numel(drn)==1
+   [n,r,d] = ind2sub([nn nr nd],drn);
+   ds = ds(d);
+   ns = ns(n);
+   rs = rs(r);
+else
+   [ds,rs,ns] = dealvec(drn);
+end
+nd = numel(ds);
+nr = numel(rs);
+nn = numel(ns);
 
 sigfield = {'sig',     'sigdiff'};
 measures = {'overlap', 'distance', 'radius difference', ...
@@ -37,14 +53,10 @@ mnames   = {'overlap', 'distances2CrossValidated', 'radii', ...
 % end
 % keyboard
 
-nd  = numel(ds);
-nr  = numel(rs);
-nn  = numel(ns);
 nm  = numel(measures);
 nc2 = 1+2*double(s>2);
 
 simfile = @(s,d,r,n) sprintf('data%sstatsim%ss%g_d%g_r%g_n%g.mat',filesep,filesep,s,d,r,n);
-STANDALONE = nargin>3;
 % Initialize data for saving (could probably change from cell to tensor)
 if ~STANDALONE % Collect all simulations, make figures
    sigtest   = repmat({NaN(nn,nsims       )},[nm nd nr]);
@@ -335,3 +347,4 @@ function checkFile(simfile,d,r,n)
       end
    end
 end
+
