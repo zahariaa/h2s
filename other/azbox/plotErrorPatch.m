@@ -73,7 +73,7 @@ else
    elseif isempty(varargin{2}), ymean = 1:size(xmean,2);
    end
    if numel(nums)>2 && nums(3), ystd  =          varargin{3} ;  end
-   if mats2d(3),                ystd  =          varargin{3} ;  end
+   if numel(mats2d)>2 && mats2d(3),ystd=         varargin{3} ;  end
    if ~exist('xmean','var') || isempty(xmean), xmean = 1:size(ymean,2); end
    
    if     ~exist('ystd','var') && exist('xstd','var'), ystd = 0*ymean;
