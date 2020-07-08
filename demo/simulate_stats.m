@@ -237,7 +237,7 @@ for d = nd:-1:1
                      .*(ones(nsims,1)*arrayfun(normfactor,1:nr)),...
                   fh.a.h(7),[1 d*[1 1]/(nd+1)])%,'sem')
 end
-axis tight; logAxis(2)
+xlim(rs([1 end])); xticks(rs); xticklabels(2.^rs);
 xlabel('radius ratio')
 ylabel(measures{s})
 title('Estimate vs r-ratio')
@@ -246,7 +246,7 @@ for r = nr:-1:1
    plotErrorPatch(ds,squeeze(indexm(cat(3,estimates{s,:,r}),n))*normfactor(r),...
                   fh.a.h(8),[r*[1 1]/(nr+1) 1])%,'sem')
 end
-axis tight; logAxis(2)
+xlim(ds([1 end])); xticks(ds); xticklabels(2.^ds);
 xlabel('dimensions')
 ylabel(measures{s})
 title('Estimate vs d')
@@ -258,7 +258,7 @@ for d = 1:nd
         '-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
 end
 plot(rs([1 end]),100*sigthresh*[1 1],'--k')
-logAxis(2)
+xlim(rs([1 end])); xticks(rs); xticklabels(2.^rs);
 xlabel('radius ratio')
 ylabel('False positive rate (%)')
 title('False positive rate vs r-ratio')
@@ -270,7 +270,7 @@ for r = 1:nr
         '-','LineWidth',2,'Color',[[r r]/(nr+1) 1])
 end
 plot(ds([1 end]),100*sigthresh*[1 1],'--k')
-logAxis(2)
+xlim(ds([1 end])); xticks(ds); xticklabels(2.^ds);
 xlabel('dimensions')
 ylabel('False positive rate (%)')
 title('False positive rate vs d')
