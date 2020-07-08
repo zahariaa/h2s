@@ -144,15 +144,19 @@ for d = 1:nd
    for r = 1:nr
       for n = 1:nn
          switch s
-            case 1;     estimates{s,d,r}(n,:) =min(2^rs(r).^[1 -1])*hyps{s,d,r}(n,:).(mnames{s});
-            case 2;     estimates{s,d,r}(n,:) =                   hyps{s,d,r}(n,:).(mnames{s});
-            case 3;     estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
+            case {1,2}; estimates{s,d,r}(n,:) =             cat(1,hyps{s,d,r}(n,:).(mnames{s}));
+            case   3  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
             case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
          end
          bootprc{s,d,r}(n,:,:) = prctile([-Inf(1,nsims);squeeze([bootsamps{s,d,r}(n,:,:)]);Inf(1,nsims)],...
                                          [0 100] + [1 -1]*sigthresh*100/2)';
       end
    end
+end
+switch s
+   case {1,4}; normfactor = @(r) min(2^rs(r).^[1 -1]);
+   case {2,5}; normfactor = @(r) min(2^rs(r).^[0 -1]);
+   case   3  ; normfactor = @(r)     2^-rs(r);
 end
 
 %% Are the signifiance tests significantly performing correctly?
@@ -206,12 +210,12 @@ xlabel('Simulation #')
 title({'Estimate (red)' 'boostrapped CI (black/grey)'})
 
 axtivate(6)
-[counts,bins] = hist(estimates{s,d,r}(n,:));
-barh(bins,counts/nsims,'FaceColor',[1 0 0],'EdgeColor','none')%[1 1 1])
-[counts,bins] = hist(bootsamps{s,d,r}(n,:),100);
-barh(bins,counts/(nsims*nboots),'FaceColor',[0 0 0],'EdgeColor','none')%[1 1 1])
+hb = histogram(bootsamps{s,d,r}(n,:),100,'Normalization','pdf',...
+               'Orientation','horizontal','FaceColor',[0 0 0],'EdgeColor','none');
+he = histogram(estimates{s,d,r}(n,:),'BinEdges',hb.BinEdges,'Normalization','pdf',...
+               'Orientation','horizontal','FaceColor',[1 0 0],'EdgeColor','none');
 ylabel(measures{s})
-xlabel('frequency')
+xlabel('pdf')
 title({'Boostrapped estimates from' 'all simulations (black) and' 'true estimates (red)'})
 matchy(fh.a.h(5:6),'y')
 
@@ -229,7 +233,8 @@ end
 matchy(ax)
 
 for d = nd:-1:1
-   plotErrorPatch(rs,squeeze(indexm(cat(3,estimates{s,d,:}),n)),...
+   plotErrorPatch(rs,squeeze(indexm(cat(3,estimates{s,d,:}),n)) ...
+                     .*(ones(nsims,1)*arrayfun(normfactor,1:nr)),...
                   fh.a.h(7),[1 d*[1 1]/(nd+1)])%,'sem')
 end
 axis tight; logAxis(2)
@@ -238,7 +243,7 @@ ylabel(measures{s})
 title('Estimate vs r-ratio')
 
 for r = nr:-1:1
-   plotErrorPatch(ds,squeeze(indexm(cat(3,estimates{s,:,r}),n)),...
+   plotErrorPatch(ds,squeeze(indexm(cat(3,estimates{s,:,r}),n))*normfactor(r),...
                   fh.a.h(8),[r*[1 1]/(nr+1) 1])%,'sem')
 end
 axis tight; logAxis(2)
