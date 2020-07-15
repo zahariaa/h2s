@@ -1,4 +1,4 @@
-function [sigtest,estimates,hyps,groundtruth] = simulate_stats(drn,s,nsims,nboots)
+function [sigtest,estimates,hyps,groundtruth] = simulate_stats(drn,estimator,s,nsims,nboots)
 % simulate_stats: simulate null distributions from different h2s statistical
 %    tests with a few special cases
 
@@ -7,6 +7,7 @@ if ~exist('nsims' ,'var') || isempty(nsims ), nsims  = 1000; end
 % # of bootstraps during statistical testing
 if ~exist('nboots','var') || isempty(nboots), nboots = 1000; end
 if ~exist('s'     ,'var') || isempty(   s  ),      s = 1;    end
+if ~exist('estimator','var') || isempty(estimator),estimator=[]; end
 % s is the scenario chosen from the following:
 % (1) 2 balls with 0 overlap.
 % (2) 2 balls with 0 distance.
@@ -49,14 +50,15 @@ mnames   = {'overlap', 'dists', 'radii', ...
             'overlap', 'dists'};
 % % debug
 % for s = 1:5
-%    testScenario(s,ds,rs,measures,mnames);
+%    testScenario(s,2.^ds,2.^rs,measures,mnames);
 % end
 % keyboard
 
 nm  = numel(measures);
 nc2 = 1+2*double(s>2);
 
-simfile = @(s,d,r,n) sprintf('data%sstatsim%ss%g_d%g_r%g_n%g.mat',filesep,filesep,s,d,r,n);
+simfile = @(s,d,r,n) sprintf('data%sstatsim%s%ss%g_d%g_r%g_n%g.mat',...
+                             filesep,filesep,estimator,s,d,r,n);
 % Initialize data for saving (could probably change from cell to tensor)
 if ~STANDALONE % Collect all simulations, make figures
    sigtest   = repmat({NaN(nn,nsims       )},[nm nd nr]);
@@ -83,7 +85,7 @@ for d = 1:nd
             end
             [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
             % Simulate points
-            hyp = Hypersphere.estimate(points,gt.categories,'independent');%.meanAndMerge(true);
+            hyp = Hypersphere.estimate(points,gt.categories,'independent',estimator);%.meanAndMerge(true);
             % save in-progress fits
             savtmp = struct('hyp',hyp,'gt',gt,'n',ns(n),'d',ds(d),'r',rs(r));
             save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
