@@ -61,7 +61,7 @@ classdef SetOfHyps < Hypersphere
       %    centers    - [n x d] matrix: n centers of d-dimensional hyperspheres
       %    radii      - [1 x n] vector: radii of each of n hyperspheres
       %    categories - a Categories object (see help Categories)
-      %    distances2CrossValidated - (protected) false or vector of squared cross-validated distances
+      %    distsCV - (protected) false or vector of cross-validated distances
       % Properties:
       %    volume     - volume of hypersphere(s) (auto-computed)
       %    dists      - distances between centers of hyperspheres (auto-computed)
@@ -162,7 +162,7 @@ classdef SetOfHyps < Hypersphere
          self.volume = Hypersphere.calcVolume(self.centers,self.radii);
       end
       function self = set.dists(self,~)    % Compute distance between two hyperspheres
-         self.dists = Hypersphere.calcDists(self.centers,self.distances2CrossValidated);
+         self.dists = Hypersphere.calcDists(self.centers,self.distsCV);
       end
       function self = set.margins(self,~)
          self.margins = Hypersphere.calcMargins(self.radii,self.dists);
@@ -210,7 +210,7 @@ classdef SetOfHyps < Hypersphere
             self.ci = boots.ci;
          end
 
-         dist_boot    = cat(1,self.ci.bootstraps.distances2CrossValidated);
+         dist_boot    = cat(1,self.ci.bootstraps.dists);
          radii_boot   = cat(1,self.ci.bootstraps.radii);
          margin_boot  =       self.ci.bootstraps.margins;
 
@@ -802,8 +802,8 @@ classdef SetOfHyps < Hypersphere
             if ~any(isnan(self.error))
                warning(['SetOfHyps object updated, but obj.errors/ci/sig/sigdiff '...
                         'are out of sync']);
-            elseif self.distances2CrossValidated
-               warning(['SetOfHyps object updated, but self.distances2CrossValidated, '...
+            elseif self.distsCV
+               warning(['SetOfHyps object updated, but self.distsCV, '...
                         'and thus self.dists, are out of sync'])
             end
          end

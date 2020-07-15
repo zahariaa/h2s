@@ -5,7 +5,7 @@ classdef Hypersphere < handle
       categories(1,1) % a Categories object (see help Categories)
    end
    properties (SetAccess = protected)
-      distances2CrossValidated = false; % false or vector of squared cross-validated distances
+      distsCV = false; % false or vector of cross-validated distances
    end
    properties (GetAccess = private, SetAccess = private)
       stream     % random stream for controlled sampling
@@ -50,7 +50,7 @@ classdef Hypersphere < handle
       %       centers/radii.
       %    (6) cvdists is an (n choose 2)-vector of cross-validated distances
       %       computed in estimateHypersphere. Must be preceded by string
-      %       'cvdists'. These are placed in hyp.distances2CrossValidated, which
+      %       'cvdists'. These are placed in hyp.distsCV, which
       %       overrides hyp.dists. If 'cvdists' string argument is used with
       %       'estimate' option, the vector of distances will be computed in
       %       estimateHypersphere (and any cvdists numeric argument to
@@ -65,7 +65,7 @@ classdef Hypersphere < handle
       %    centers    - [n x d] matrix: n centers of d-dimensional hyperspheres
       %    radii      - [1 x n] vector: radii of each of n hyperspheres
       %    categories - a Categories object (see help Categories)
-      %    distances2CrossValidated (protected) - false or vector of cross-validated distances
+      %    distsCV (protected) - false or vector of cross-validated distances
       % 
       % Methods:
       %   Hypersphere.resetRandStream
@@ -139,7 +139,7 @@ classdef Hypersphere < handle
                obj.categories = varargin{v};
             elseif ischar(varargin{v}) && strcmpi(varargin{v},'cvdists')
                % Save cross-validated distances
-               obj.distances2CrossValidated = varargin{v+1};
+               obj.distsCV = varargin{v+1};
             end
          end
          % Auto-generate dummy Categories if none exists by now
@@ -645,7 +645,7 @@ classdef Hypersphere < handle
             D = cell2mat_concat(arrayfun(@dists,self,'UniformOutput',false));
             return
          end
-         D = self.calcDists(self.centers,self.distances2CrossValidated);
+         D = self.calcDists(self.centers,self.distsCV);
       end
 
       function M = margins(self)
@@ -754,10 +754,10 @@ classdef Hypersphere < handle
 
       function D = calcDists(centers,CROSSVAL)
       % Compute distances between pairs of hyperspheres (along center-connection
-      %    lines). Or take square root of squared cross-validated distances, if
-      %    they exist.
+      %    lines). Or take the non-negative cross-validated distances, if they
+      %    exist.
          if exist('CROSSVAL','var') && CROSSVAL(1)
-            D = sqrt(abs(CROSSVAL));
+            D = max(0,CROSSVAL);
             return
          end
 
