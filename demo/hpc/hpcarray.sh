@@ -11,7 +11,7 @@
 #for (( v = 1448325; v<=1448366; v++)) do qrls $v; done
 
 # parameters
-matlabver="2017b" #2018b doesn't have parpool for whatever reason
+matlabver="2019b" #2018b doesn't have parpool for whatever reason
 walltime="00:19:00"
 memory="1500MB" # PER CPU
 numnodes=12
@@ -66,7 +66,7 @@ do
    mfile="$mfilebase$icell.m"
    
    ##### write matlab runfile code
-   mcode="addpath(genpath('~/msubs'));addpath(genpath('~/h2s'));"
+   mcode="addpath(genpath('~/h2s'));"
    if $parfor;       then
       # PARFOR VERSION
       mcode="$mcode\n\nparpool('local',$numnodes)"
@@ -89,7 +89,7 @@ pbtxt4="#SBATCH --time=$walltime"
 pbtxt5="#SBATCH --mem-per-cpu=$memory"
 pbtxt8="#SBATCH --output=${scriptdir}o/${jobname}%a.txt"
 pbtxt9="#SBATCH --error=${scriptdir}e/${jobname}%a.txt"
-pbtxt9a="\nmodule load matlab/$matlabver\n"
+pbtxt9a="\nmodule load matlab/$matlabver\nif [ "'"$SLURM_JOBTMP" == ""'" ]; then\n    export SLURM_JOBTMP=~/.tmp/\$\$\n    mkdir -p \$SLURM_JOBTMP\nfi\n\nexport MATLAB_PREFDIR=\$(mktemp -d \$SLURM_JOBTMP/matlab-XXXX)"
 
 # MAIN MATLAB EXECUTION PBS line
 #Command to execute Matlab code
