@@ -198,9 +198,12 @@ for i = 1:3
 end
 
 axtivate(4)
-plot(log2(ns),100*squeeze(ptests(:,:,r,s)))
-plot(log2(ns([1 end])),100*sigthresh*[1 1],'--k')
-logAxis(2)
+plot(ns,100*squeeze(ptests(:,:,r,s)),'-o')
+plot(ns([1 end]),100*sigthresh*[1 1],'--k')
+if numel(ns)>1
+   xlim(ns([1 end])); logAxis(2)
+end
+ylim([0 max(ylim)])
 xlabel('samples')
 ylabel('Significance of false positives compared to 5%')
 title('Test performance')
@@ -219,24 +222,28 @@ xlabel('Simulation #')
 title({'Estimate (red)' 'boostrapped CI (black/grey)'})
 
 axtivate(6)
-hb = histogram(bootsamps{s,d,r}(n,:),100,'Normalization','pdf',...
+hb = histogram(bootsamps{s,d,r}(n,:,:),100,'Normalization','pdf',...
                'Orientation','horizontal','FaceColor',[0 0 0],'EdgeColor','none');
 he = histogram(estimates{s,d,r}(n,:),'BinEdges',hb.BinEdges,'Normalization','pdf',...
                'Orientation','horizontal','FaceColor',[1 0 0],'EdgeColor','none');
 ylabel(measures{s})
 xlabel('pdf')
-title({'Boostrapped estimates from' 'all simulations (black) and' 'true estimates (red)'})
+title({'Boostrapped estimates from' 'all simulations (black) and' 'estimates (red)'})
 matchy(fh.a.h(5:6),'y')
 
 %% TODO: different colors for different conditions
 
 for i = 3:4
    axtivate(ax(i-2))
-   [counts,bins] = hist(estimates{s,dShown(i),r}(nShown(i),:));
-   bar(bins,counts/nsims,'FaceColor',[0 0 0],'EdgeColor',[1 1 1])
-   plot([0 0],[0 0.25],'r-','LineWidth',2)
+   % histogram of all estimates (newly calculated for new dimensionality)
+   hb = histogram(bootsamps{s,dShown(i),r}(nShown(i),1,:),...
+               'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
+   he = histogram(estimates{s,dShown(i),r}(nShown(i),:),'BinEdges',hb.BinEdges,...
+               'Normalization','probability','FaceColor',[1 0 0],'EdgeColor','none');
+   plot([1 1]*estimates{s,dShown(i),r}(nShown(i),1),[0 0.25],'w-' ,'LineWidth',3)
+   plot([1 1]*estimates{s,dShown(i),r}(nShown(i),1),[0 0.25],'r--','LineWidth',2)
    xlabel(measures{s})
-   ylabel('frequency')
+   ylabel('probability')
    title(sprintf('Estimates (n = %u, d = %u)',2^ns(nShown(i)),2^ds(dShown(i))))
 end
 matchy(ax)
