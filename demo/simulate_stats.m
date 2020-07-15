@@ -45,7 +45,7 @@ nn = numel(ns);
 sigfield = {'sig',     'sigdiff'};
 measures = {'overlap', 'distance', 'radius difference', ...
             'overlap difference', 'distance difference'};
-mnames   = {'overlap', 'distances2CrossValidated', 'radii', ...
+mnames   = {'overlap', 'dists', 'radii', ...
             'overlap', 'dists'};
 % % debug
 % for s = 1:5
@@ -148,8 +148,12 @@ for d = 1:nd
             case   3  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
             case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
          end
+         if s==2 % 1-tailed CI
+         bootprc{s,d,r}(n,:,:) = prctile([squeeze([bootsamps{s,d,r}(n,:,:)])],100*[sigthresh 1])';
+         else    % 2-tailed CI
          bootprc{s,d,r}(n,:,:) = prctile([-Inf(1,nsims);squeeze([bootsamps{s,d,r}(n,:,:)]);Inf(1,nsims)],...
                                          [0 100] + [1 -1]*sigthresh*100/2)';
+         end
       end
    end
 end
@@ -164,8 +168,13 @@ ptests = NaN(nd,nn,nr,nm);
 for d = 1:nd
    for r = 1:nr
       for n = 1:nn
-         sigcount = [nsims 0] + [-1 1]*sum(1-sigtest{s,d,r}(n,:)<=sigthresh/2);
-         ptests(d,n,r,s) = testCountDistribution_chi2(sigcount,[1-sigthresh/2 sigthresh/2]);
+         if s==2 % 1-tailed
+            sigcount = [nsims 0] + [-1 1]*sum(sigtest{s,d,r}(n,:)<=sigthresh);
+         else    % 2-tailed
+            sigcount = [nsims 0] + [-1 1]*...
+               sum(min(cat(1,sigtest{s,d,r}(n,:),1-sigtest{s,d,r}(n,:)))<=sigthresh/2);
+         end
+         ptests(d,n,r,s) = testCountDistribution_chi2(sigcount,[1-sigthresh sigthresh]);
       end
    end
 end
@@ -199,8 +208,8 @@ title('Test performance')
 axtivate(5)
 plot([0 nsims],[0 0],'k--')
 for i = 1:nsims
-   if bootprc{s,d,r}(n,i,1)<0 && bootprc{s,d,r}(n,i,2)>0, linecol = [0.5 0.5 0.5];
-   else                                                   linecol = [0   0   0  ];
+   if bootprc{s,d,r}(n,i,1)>0 || bootprc{s,d,r}(n,i,2)<0, linecol = [0   0   0  ];
+   else                                                   linecol = [0.5 0.5 0.5];
    end
    plot([i i],squeeze(bootprc{s,d,r}(n,i,:)),'-','Color',linecol,'LineWidth',4)
    plot(i,estimates{s,d,r}(n,i),'wo','MarkerFaceColor','r','LineWidth',1.5)
@@ -251,11 +260,20 @@ xlabel('dimensions')
 ylabel(measures{s})
 title('Estimate vs d')
 
+% make sure proper test is applied when computing false positive rate
+switch s
+   case 1    % 2-tailed test unsigned
+      falsepos = @(a) 100*mean(min(cat(3,1-a,a),[],3)<=sigthresh/2);
+   case 2    % 1-tailed test
+      falsepos = @(a) 100*mean(a<=sigthresh);
+   otherwise % 2-tailed test signed
+      falsepos = @(a) 100*mean(a<=sigthresh/2);
+end
+
 axtivate(11)
 for d = 1:nd
    a = permute(indexm(cat(3,sigtest{s,d,:}),n),[2 3 1]);
-   plot(rs,100*mean(min(cat(3,1-a,a),[],3)<=sigthresh/2),...
-        '-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
+   plot(rs,falsepos(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
 end
 plot(rs([1 end]),100*sigthresh*[1 1],'--k')
 xlim(rs([1 end])); xticks(rs); xticklabels(2.^rs);
@@ -266,8 +284,7 @@ title('False positive rate vs r-ratio')
 axtivate(12)
 for r = 1:nr
    a = permute(indexm(cat(3,sigtest{s,:,r}),n),[2 3 1]);
-   plot(ds,100*mean(min(cat(3,1-a,a),[],3)<=sigthresh/2),...
-        '-','LineWidth',2,'Color',[[r r]/(nr+1) 1])
+   plot(ds,falsepos(a),'-','LineWidth',2,'Color',[[r r]/(nr+1) 1])
 end
 plot(ds([1 end]),100*sigthresh*[1 1],'--k')
 xlim(ds([1 end])); xticks(ds); xticklabels(2.^ds);
