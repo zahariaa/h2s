@@ -214,19 +214,20 @@ classdef SetOfHyps < Hypersphere
          radii_boot   = cat(1,self.ci.bootstraps.radii);
          margin_boot  =       self.ci.bootstraps.margins;
 
-         %% COMPUTE SIGNIFICANCE
+         %% COMPUTE SIGNIFICANCE (smaller values more significant)
          n   = numel(self.radii);
          nc2 = nchoosek(n,2);
          % helper functions
-         ciprctile      = @(x) (find(sort([-Inf(1,nc2);x;Inf(1,nc2)])>=0,1)-1)/(N+2);
-         ciprctile2tail = @(x) max(abs(       mean(x>0)+[0 -1]));
+         smallertail     = @(x) min(cat(3,1-x,x),[],3);
+         ciprctile       = @(x) sum([-Inf(1,size(x,2));x;Inf(1,size(x,2))]>0)/(size(x,1)+2);
+         ciprctileSmTail = @(x) smallertail(ciprctile(x));
          % What percentile confidence interval of bootstrapped margins contains 0?
-         self.sig.ma = ciprctile(margin_boot);
+         self.sig.ma = 1-ciprctile(margin_boot);
          % What percentile confidence interval of bootstrapped overlap/margins contains 0?
          self.sig.ov = 1-self.sig.ma;
          self.sig.ra = [];
-         % What percentile confidence interval of bootstrapped distances contains 0?
-         self.sig.di = ciprctile(dist_boot);
+         % At what percentile confidence interval of bootstrapped distances does 0 occur?
+         self.sig.di = 1-ciprctile(dist_boot);
 
          %% SECOND-ORDER COMPARISONS
          % compute indices of radii corresponding to overlaps
@@ -239,13 +240,13 @@ classdef SetOfHyps < Hypersphere
          self.sigdiff = struct('ra',NaN(1,nc2),...
                                'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2),'di',NaN(1,nc2c2));
          for i = 1:nc2
-            self.sigdiff.ra(i) = ciprctile2tail(diff(  radii_boot(:,  ix(:,i)),[],2));
+            self.sigdiff.ra(i) = ciprctileSmTail(diff(  radii_boot(:,  ix(:,i)),[],2));
          end
          for i = 1:nc2c2
-            self.sigdiff.ov(i) = ciprctile2tail(diff(-margin_boot(:,ixc2(:,i)),[],2));
-            self.sigdiff.di(i) = ciprctile2tail(diff(   dist_boot(:,ixc2(:,i)),[],2));
+            self.sigdiff.ov(i) = ciprctileSmTail(diff(-margin_boot(:,ixc2(:,i)),[],2));
+            self.sigdiff.di(i) = ciprctileSmTail(diff(   dist_boot(:,ixc2(:,i)),[],2));
          end
-         self.sigdiff.ma = 1-self.sigdiff.ov;
+         self.sigdiff.ma = self.sigdiff.ov;
 
          % %% DEBUG distances
          % fh = newfigure([nc2 1]);
