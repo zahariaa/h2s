@@ -242,6 +242,6 @@ function cvdists = cvCenters2cvSqDists(loc_cv)
                       *(loc_cv{a}(2,:)-loc_cv{b}(2,:))';
       end
    end
-   % cvdists = sqrt(cvdists);
+   cvdists = sign(cvdists).*sqrt(abs(cvdists));
    return
 end
