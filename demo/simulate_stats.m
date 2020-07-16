@@ -1,4 +1,4 @@
-function [sigtest,estimates,hyps,groundtruth] = simulate_stats(drn,estimator,s,nsims,nboots)
+function [sigtest,estimates,hyps,groundtruth] = simulate_stats(drn,s,estimator,nsims,nboots)
 % simulate_stats: simulate null distributions from different h2s statistical
 %    tests with a few special cases
 
@@ -22,7 +22,7 @@ if ~exist('estimator','var') || isempty(estimator),estimator=[]; end
 %% TODO: ALL TESTS WITH DIFFERENT ESTIMATORS?
 %% Testing as a function of d, n, n-ratio, and r-ratio (2^these):
 sigthresh = 0.05;
-ds =  1:5; % # of dimensions
+ds =  1:7; % # of dimensions
 rs = -1:3; % radius ratios
 ns =  6:8; % # of samples to test 
 nd = numel(ds);
