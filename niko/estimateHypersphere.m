@@ -172,7 +172,16 @@ switch(ESTIMATOR)
       % points here are actually distances
       rad = mean(points)/expDistPerRad(d);
    case 'mcmc'
-      [loc,rad] = inferHyperspherePosterior(points,nBootstraps,DBUGPLOT,VERBOSE);
+      [loc,rad,llh] = inferHyperspherePosterior(points,nBootstraps,DBUGPLOT,VERBOSE);
+      loc_cv    = cv.crossvalidate(@inferHyperspherePosterior,...
+                                            points,nBootstraps,DBUGPLOT,VERBOSE);
+      loc_cv    = squeeze(mat2cell(permute(cell2mat_concat(loc_cv,3),[2 3 1]),...
+                                   d,2,ones(numel(rad),1)));
+      % just take the best estimate
+      ix     = maxix(llh);
+      loc    = loc(ix,:);
+      rad    = rad(ix);
+      loc_cv = loc_cv{ix};
    case 'meandist'
       % dists = pdist(points,'Euclidean');
       % cv = cvindex(n,10);
