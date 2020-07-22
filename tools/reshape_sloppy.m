@@ -12,7 +12,10 @@ end
 
 %% RESHAPE!
 newrows = prod(oldsz)-prod(newsz);
-if newrows>0
+if newrows==0
+   slop = reshape(x,newsz)';
+   return
+elseif newrows>0
    newsz(1) = newsz(1) + ceil(newrows/oldsz(1));
 end
 slop = NaN(newsz);
