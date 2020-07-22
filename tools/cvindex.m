@@ -31,15 +31,22 @@ classdef cvindex
 
          % Density-based expansion of indices (re-applying bootstrap)
          if exist('density','var')
-            rp = cellfun(@(r) cell2mat_concat(...
-                 arrayfun(@(x) x*ones(density(x),1),r,'UniformOutput',false)...
-                                                 ),rp,'UniformOutput',false);
+            obj.rp = cellfun(@(x) NaN(sum(density(x)),1),rp,'UniformOutput',false);
+            for iCV = 1:nCV
+               ix = density(rp{iCV});
+               j = 1;
+               for i = 1:numel(ix)
+                  obj.rp{iCV}(j:j+ix(i)-1) = rp{iCV}(i)*ones(ix(i),1);
+                  j = j+ix(i);
+               end
+            end
+         else
+            obj.rp = rp;
          end
 
          % Populate object
          obj.nCV = nCV;
          obj.n   = n;
-         obj.rp  = rp;
       end
       function ix = train(obj,i)        % Output training set for i'th fold
          a = 1:obj.nCV;
