@@ -28,6 +28,8 @@ for v = 1:numel(varargin)
    if isa(varargin{v},'Categories')
       categories  = varargin{v};
       varargin{v} = [];
+   elseif isa(varargin{v},'cvindex')
+      cv = varargin{v};
    elseif isnumeric(varargin{v}) && numel(varargin{v})==1
       nBootstraps = varargin{v};
       varargin{v} = [];
@@ -130,9 +132,16 @@ if exist('categories','var') && numel(categories.labels)>1
             p{i} = points(ix,:);
          end
       end
+      % Generate cross-validation objects for center bootstraps that makes sure
+      %    bootstrap resamplings keep points in each fold independent
+      if categories.ispermuted
+         cvs = arrayfun(@(i) cvindex(categories.select(i).vectors,2,true),1:nCats);
+      else
+         cvs = repmat({[]},[1 nCats]);
+      end
       % Recursive call
-      [hyp,loc_cv] = cellfun(@(x) estimateHypersphere(x,'raw',nBootstraps,varargin{:}),...
-                                  p,'UniformOutput',false);
+      [hyp,loc_cv] = cellfun(@(x,cv) estimateHypersphere(x,'raw',nBootstraps,cv,varargin{:}),...
+                                  p,num2cell(cvs),'UniformOutput',false);
       % Compute cross-validated distances
       if CVDISTS, cvdists = cvCenters2cvSqDists(loc_cv); end
 
@@ -154,7 +163,9 @@ if exist('categories','var') && numel(categories.labels)>1
 end
 
 %% DO THE ACTUAL ESTIMATION
-cv     = cvindex(n,2); % for cross-validated centers estimation
+if ~exist('cv','var')
+   cv = cvindex(n,2); % for cross-validated centers estimation
+end
 
 %% estimate location, re-center points
 switch(ESTIMATOR)
