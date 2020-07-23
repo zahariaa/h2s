@@ -12,7 +12,7 @@
 
 # parameters
 matlabver="2019b" #2018b doesn't have parpool for whatever reason
-walltime="00:19:00"
+walltime="00:19:59"
 memory="1500MB" # PER CPU
 numnodes=12
 parfor=true #false
@@ -93,8 +93,8 @@ pbtxt9a="\nmodule load matlab/$matlabver\nif [ "'"$SLURM_JOBTMP" == ""'" ]; then
 
 # MAIN MATLAB EXECUTION PBS line
 #Command to execute Matlab code
-pbtxt10="function clean_up {\n  echo \$SLURM_JOBTMP\n  exit\n}"
-pbtxt11="trap 'clean_up' EXIT"
+pbtxt10="# To delete temporary files created above\nfunction clean_up {\n  rm -f \$SLURM_JOBTMP\n  exit\n}\n"
+pbtxt11="\ntrap 'clean_up' EXIT\n"
 pbtxt12="matlab -nodisplay < $mfilebase\$SLURM_ARRAY_TASK_ID.m > ${scriptdir}r/$jobname\$SLURM_ARRAY_TASK_ID.txt"
 
 # WRITE SLURM SCRIPT
