@@ -93,9 +93,9 @@ pbtxt9a="\nmodule load matlab/$matlabver\nif [ "'"$SLURM_JOBTMP" == ""'" ]; then
 
 # MAIN MATLAB EXECUTION PBS line
 #Command to execute Matlab code
-pbtxt11="matlab -nodisplay < $mfilebase\$SLURM_ARRAY_TASK_ID.m > ${scriptdir}r/$jobname\$SLURM_ARRAY_TASK_ID.txt"
-pbtxt10=""
-pbtxt12=""
+pbtxt10="function clean_up {\n  echo \$SLURM_JOBTMP\n  exit\n}"
+pbtxt11="trap 'clean_up' EXIT"
+pbtxt12="matlab -nodisplay < $mfilebase\$SLURM_ARRAY_TASK_ID.m > ${scriptdir}r/$jobname\$SLURM_ARRAY_TASK_ID.txt"
 
 # WRITE SLURM SCRIPT
 echo -e "${pbtxt1}\n${pbtxt2}\n${pbtxt3}\n${pbtxt4}\n${pbtxt5}\n${pbtxt8}\n${pbtxt9}\n${pbtxt9a}\n\n${pbtxt10}\n${pbtxt11}\n${pbtxt12}\n" > ${jfile}
@@ -103,4 +103,3 @@ echo -e "${pbtxt1}\n${pbtxt2}\n${pbtxt3}\n${pbtxt4}\n${pbtxt5}\n${pbtxt8}\n${pbt
 # submit array job
 jid=`sbatch --array=$firstcell-$ncells $jfile`
 echo $jid
-
