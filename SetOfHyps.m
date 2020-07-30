@@ -646,7 +646,7 @@ classdef SetOfHyps < Hypersphere
 
          % Convert to sigmas significance, maxed to nSig(=3) and floored
          % Use False Discovery Rate correction for significance computation
-         sigThresh = structfun(@(x) fdr_bh(1-x,1-0.95),sig,'UniformOutput',false);
+         sigThresh = structfun(@(x) fdr_bh(x,0.05),sig,'UniformOutput',false);
          % Compute increasing levels of significance
          for i = 2:nSigLevs
             for f = fieldnames(sig)'; f=f{1};
