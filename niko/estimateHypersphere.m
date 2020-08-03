@@ -238,9 +238,9 @@ end
 
 function r = expDistPerRad(d)
 % by interpolation among estimates precomputed in QT_expectedDistBetweenTwoPointsWithinHypersphere
-expectedDists = [0.9067    1.1037    1.2402    1.3215    1.3660    1.3902    1.4018    1.4081    1.4112  1.4126    1.4134    1.4138];
+expectedDists = [0.6673 0.9039 1.1043 1.2407 1.3230 1.3657 1.3898 1.4020 1.4081 1.4111 1.4127 1.4134 1.4138];
 
-if d<4097,   r = interp1(2.^(1:12),expectedDists,d);
+if d<4097,   r = interp1(2.^(0:12),expectedDists,d);
 else         r = sqrt(2);
 end
 return

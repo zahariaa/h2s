@@ -11,8 +11,9 @@
 
 %% control variables
 Rs=(0:3)/3;
-ds= [1 2 3 5 8 15 30 60 100 1000];
-n=1000;
+% ds= [1 2 3 5 8 15 30 60 100 1000];
+ds=2.^(0:12);
+n=10000;
 
 samplingStyle='polarAdjusted';
 %samplingStyle='rejection';
@@ -26,7 +27,6 @@ for dI=1:numel(ds)
     for RI=1:numel(Rs)
         R=Rs(RI);
         d=ds(dI);
-
 
         % monte carlo
         switch samplingStyle
@@ -45,8 +45,6 @@ for dI=1:numel(ds)
         
         nSamplesAccepted(dI,RI) = size(data,1);
         avgDists(dI,RI) = mean(pdist(data,'Euclidean'));
-        
-        
     end
 end
 
@@ -68,16 +66,12 @@ legend({'d=1','d=2','d=3','...'},'Location','SouthEast');
 
 
 %% plot expected distance between two points drawn uniformly from a hypersphere as a function of the dimension
-n = 1000;
-i=1;
-expectedDists=[];
+n = 10000;
+expectedDists = NaN(1,numel(ds));
 
-for d = ds
-    
-    points = randsphere(n,d,1);
-    expectedDists(i) = mean(pdist(points,'Euclidean'));
-
-    i=i+1;
+for dI = 1:numel(ds)
+    points = randsphere(n,ds(dI),1);
+    expectedDists(dI) = mean(pdist(points,'Euclidean'));
 end
 
 subplot(2,1,2);
