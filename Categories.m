@@ -194,11 +194,11 @@ classdef Categories
          else
             self.vectors = false(p,n);
             objs = repmat(self,[N 1]);
+            includedvecs = find(vecs);
             for i = 1:N
-               includedvecs = find(vecs);
                ivec = vecs(includedvecs(randperm(p)));
-               for j = 1:p
-                  objs(i).vectors(includedvecs(j),ivec(j)) = true;
+               for j = 1:n
+                  objs(i).vectors(ivec==j,j) = true;
                end
             end
          end

@@ -173,7 +173,7 @@ classdef SetOfHyps < Hypersphere
 
 
       %% HIGHER ORDER FUNCTIONS
-      function self = significance(self,points,N)
+      function self = significance(self,points,N,varargin)
       % SetOfHyps.significance: tests 'statistics of interest' (distances,
       %    margins/overlaps, radii), and their pairwise differences, for
       %    significance. It uses bootstrapped SetOfHyps or Hypersphere objects
@@ -206,7 +206,7 @@ classdef SetOfHyps < Hypersphere
          else
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
             boots   = Hypersphere('estimate',points,self.categories,N,...
-                                  'stratified').meanAndMerge;
+                                  'stratified',varargin{:}).meanAndMerge;
             self.ci = boots.ci;
          end
 
