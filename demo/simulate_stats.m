@@ -57,8 +57,9 @@ mnames   = {'overlap', 'distsCV', 'radii', ...
 nm  = numel(measures);
 nc2 = 1+2*double(s>2);
 
-simfile = @(s,d,r,n) sprintf('data%sstatsim%s%ss%g_d%g_r%g_n%g.mat',...
-                             filesep,filesep,estimator,s,d,r,n);
+simfolder = '';%['20200723' filesep];
+simfile = @(s,d,r,n) sprintf('data%sstatsim%s%s%ss%g_d%g_r%g_n%g.mat',...
+                             filesep,filesep,simfolder,estimator,s,d,r,n);
 % Initialize data for saving (could probably change from cell to tensor)
 if ~STANDALONE % Collect all simulations, make figures
    sigtest   = repmat({NaN(nn,nsims       )},[nm nd nr]);
@@ -106,7 +107,7 @@ for d = 1:nd
             sigtmp = NaN(nsims,nc2);
             bootmp = NaN(nboots,nc2,nsims);
             parfor b = 1:nsims
-               hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots);
+               hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,estimator);
                sigtmp(b,:) = hyptmp.(sigfield{1+double(s>2)}).(mnames{s}(1:2));
                bootmp(:,:,b) = cat(1,hyptmp.ci.bootstraps.(mnames{s}));
             end
