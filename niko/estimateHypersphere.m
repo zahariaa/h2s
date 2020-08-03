@@ -125,7 +125,7 @@ if exist('categories','var') && numel(categories.labels)>1
       else
          for i = 1:nCats
             ix = categories.select(i).vectors;
-            if categories.ispermuted
+            if categories.ispermuted && isnumeric(ix)
                [~,ix] = uniquenz(ix);% ix = ix(2:end);
             end
             if isnumeric(ix) && ~any(ix>1), ix = ~~ix; end
