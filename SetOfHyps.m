@@ -61,7 +61,7 @@ classdef SetOfHyps < Hypersphere
       %    centers    - [n x d] matrix: n centers of d-dimensional hyperspheres
       %    radii      - [1 x n] vector: radii of each of n hyperspheres
       %    categories - a Categories object (see help Categories)
-      %    distsCV - (protected) false or vector of cross-validated distances
+      %    distsCV - (protected) false or vector of squared cross-validated distances
       % Properties:
       %    volume     - volume of hypersphere(s) (auto-computed)
       %    dists      - distances between centers of hyperspheres (auto-computed)

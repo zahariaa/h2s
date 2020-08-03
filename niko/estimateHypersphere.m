@@ -123,10 +123,10 @@ if exist('categories','var') && numel(categories.labels)>1
             p{i} = points( categories.select(i).vectorsForDistanceMatrix );
          end
       else
-         for i = 1:numel(categories.labels)
+         for i = 1:nCats
             ix = categories.select(i).vectors;
             if categories.ispermuted
-               [~,ix] = unique(ix); ix = ix(2:end);
+               [~,ix] = uniquenz(ix);% ix = ix(2:end);
             end
             if isnumeric(ix) && ~any(ix>1), ix = ~~ix; end
             p{i} = points(ix,:);
@@ -262,6 +262,6 @@ function cvdists = cvCenters2cvSqDists(loc_cv)
                       *(loc_cv{a}(2,:)-loc_cv{b}(2,:))';
       end
    end
-   cvdists = sign(cvdists).*sqrt(abs(cvdists));
+   % cvdists = sign(cvdists).*sqrt(abs(cvdists));
    return
 end
