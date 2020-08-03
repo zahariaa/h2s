@@ -193,6 +193,15 @@ switch(ESTIMATOR)
       loc    = loc(ix,:);
       rad    = rad(ix);
       loc_cv = loc_cv{ix};
+   case 'jointml'
+      tol  = 10^(-7-log2(d));
+      opts = optimoptions('fminunc','TolX',tol,'TolFun',tol,'Algorithm','quasi-newton',...
+                          'Display','off','GradObj','on');%,'DerivativeCheck','on');
+      % search for the center that minimizes the maximum radius, starting at centroid
+      loc0      =  mean(points,1);
+      objfcn    = @(points) fminunc(@(m) maxRadiusGivenCenter(m,points),loc0,opts);
+      [loc,rad] = objfcn(points);
+      loc_cv    = cell2mat_concat(cv.crossvalidate(objfcn,points));
    case 'meandist'
       % dists = pdist(points,'Euclidean');
       % cv = cvindex(n,10);
@@ -234,6 +243,18 @@ expectedDists = [0.9067    1.1037    1.2402    1.3215    1.3660    1.3902    1.4
 if d<4097,   r = interp1(2.^(1:12),expectedDists,d);
 else         r = sqrt(2);
 end
+return
+end
+
+%% Objective function to optimize, with gradient
+function [fval,grad] = maxRadiusGivenCenter(m,X)
+
+grad = X - repmat(m(:)',[size(X,1) 1]);
+fval = sqrt(sum(grad.^2,2));
+
+% Apply max function
+[fval,ix] = max(fval);
+grad = -grad(ix,:)/fval;
 return
 end
 
