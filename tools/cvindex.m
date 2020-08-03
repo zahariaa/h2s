@@ -13,7 +13,12 @@ classdef cvindex
          end
 
          if numel(n) > 1 % bootstrappedIndices passed as first input
-            bootstrappedIndices = n(~~n); % strip zeros
+            if islogical(n)
+               bootstrappedIndices = find(n);
+               n = numel(bootstrappedIndices);
+            else
+               bootstrappedIndices = n(~~n); % strip zeros
+            end
             hh = hist(bootstrappedIndices,single(min(bootstrappedIndices):max(bootstrappedIndices)));
             if obj.uniquedata
                density = hh(~~hh);
