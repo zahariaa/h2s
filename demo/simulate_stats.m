@@ -57,9 +57,10 @@ mnames   = {'overlap', 'distsCV', 'radii', ...
 nm  = numel(measures);
 nc2 = 1+2*double(s>2);
 
-simfolder = '';%['20200723' filesep];
-simfile = @(s,d,r,n) sprintf('data%sstatsim%s%s%ss%g_d%g_r%g_n%g.mat',...
-                             filesep,filesep,simfolder,estimator,s,d,r,n);
+basedir = '/moto/nklab/users/az2522/';
+simfolder = '20200806/';
+simfile = @(s,d,r,n) sprintf('%sdata/statsim/%s%ss%g_d%g_r%g_n%g.mat',...
+                             basedir,simfolder,estimator,s,d,r,n);
 % Initialize data for saving (could probably change from cell to tensor)
 if ~STANDALONE % Collect all simulations, make figures
    sigtest   = repmat({NaN(nn,nsims       )},[nm nd nr]);
