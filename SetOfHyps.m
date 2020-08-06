@@ -173,7 +173,7 @@ classdef SetOfHyps < Hypersphere
 
 
       %% HIGHER ORDER FUNCTIONS
-      function self = significance(self,points,N,varargin)
+      function [self,loc_cv] = significance(self,points,N,varargin)
       % SetOfHyps.significance: tests 'statistics of interest' (distances,
       %    margins/overlaps, radii), and their pairwise differences, for
       %    significance. It uses bootstrapped SetOfHyps or Hypersphere objects
@@ -196,6 +196,7 @@ classdef SetOfHyps < Hypersphere
       % hyps = hyps.significance           % works only if hyps.ci is populated
       % 
       % SEE ALSO ESTIMATEHYPERSPHERE, HYPERSPHERE.MEANANDMERGE
+         loc_cv = [];
          if ~exist('N','var') || isempty(N), N=100; end
          if ~exist('points','var') && isstruct(self.ci) && ~isempty(self.ci.bootstraps)
             % then use self.ci.bootstraps
@@ -205,8 +206,9 @@ classdef SetOfHyps < Hypersphere
             error('self.categories.vectors needs to index points');
          else
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
-            boots   = Hypersphere('estimate',points,self.categories,N,...
-                                  'stratified',varargin{:}).meanAndMerge;
+            [boots,loc_cv]= Hypersphere.estimate(points,self.categories,N,...
+                                  'stratified',varargin{:});%.meanAndMerge;
+            boots = boots.meanAndMerge;
             self.ci = boots.ci;
          end
 

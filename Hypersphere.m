@@ -785,8 +785,11 @@ classdef Hypersphere < handle
    end
 
    methods(Static)
-      function newobj = estimate(points,varargin)
-         newobj = estimateHypersphere(points,varargin{:});
+      function varargout = estimate(points,varargin)
+         switch nargout
+            case 1; varargout{1} = estimateHypersphere(points,varargin{:});
+            case 2; [varargout{1},varargout{2}] = estimateHypersphere(points,varargin{:});
+         end
       end
    end
 end
