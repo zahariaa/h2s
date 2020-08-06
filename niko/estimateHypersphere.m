@@ -276,6 +276,7 @@ function cvdists = cvCenters2cvSqDists(loc_cv)
       return
    end
 
+   cvdists = NaN(nchoosek(n,2),1);
    i=0;
    for a = 1:n-1
       for b = a+1:n, i=i+1;
