@@ -63,6 +63,7 @@ classdef Categories
       %    Categories.select
       %    Categories.internalrepmat
       %    Categories.permute
+      %    Categories.slice
       %    Categories.vectorsForDistanceMatrix
       %    Categories.legend
       %    Categories.plotSamples
@@ -202,6 +203,18 @@ classdef Categories
                end
             end
          end
+      end
+
+      function slicedpoints = slice(self,points)
+      % Categories.slice: slices points based on self.vectors
+         if self.ispermuted
+            ix = @(i) self.vectors(~~self.vectors(:,i),i);
+         else
+            ix = @(i) self.vectors(:,i);
+         end
+
+         slicedpoints = arrayfun(@(i) points(ix(i),:,:),...
+                                 1:size(self.vectors,2),'UniformOutput',false);
       end
 
       function ix = vectorsForDistanceMatrix(self)
