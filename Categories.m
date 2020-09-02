@@ -205,10 +205,19 @@ classdef Categories
          end
       end
 
-      function slicedpoints = slice(self,points)
+      function slicedpoints = slice(self,points,UNIQUE)
       % Categories.slice: slices points based on self.vectors
+         if exist('UNIQUE','var') && ~isempty(UNIQUE) && strcmpi(UNIQUE,'unique')
+            UNIQUE = true;
+         else
+            UNIQUE = false;
+         end
+
          if self.ispermuted
             ix = @(i) self.vectors(~~self.vectors(:,i),i);
+            if UNIQUE
+               ix = @(i) unique(ix(i));
+            end
          else
             ix = @(i) self.vectors(:,i);
          end
