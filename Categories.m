@@ -205,7 +205,7 @@ classdef Categories
          end
       end
 
-      function slicedpoints = slice(self,points,UNIQUE)
+      function [slicedpoints,newindices] = slice(self,points,UNIQUE)
       % Categories.slice: slices points based on self.vectors
          if exist('UNIQUE','var') && ~isempty(UNIQUE) && strcmpi(UNIQUE,'unique')
             UNIQUE = true;
@@ -222,8 +222,18 @@ classdef Categories
             ix = @(i) self.vectors(:,i);
          end
 
-         slicedpoints = arrayfun(@(i) points(ix(i),:,:),...
-                                 1:size(self.vectors,2),'UniformOutput',false);
+         [p,n] = size(self.vectors);
+         for i = 1:n
+            newindices{i} = ix(i);
+            slicedpoints{i} = points(newindices{i},:,:);
+         end
+         if nargout>1
+            if islogical(newindices{1})
+               newindices = cellfun(@(x) x(~~x),newindices,'UniformOutput',false);
+            else
+               newindices = cellfun(@(x) x-min(x)+mod(min(x),numel(x)),newindices,'UniformOutput',false);
+            end
+         end
       end
 
       function ix = vectorsForDistanceMatrix(self)
