@@ -3,30 +3,20 @@ classdef cvindex
       nCV     % number of folds
       n       % number of samples
       rp      % cell of random permutation of indices organized by fold
-      uniquedata = false; % whether indexing is applied to unique data or not
    end
    methods
-      function obj = cvindex(n,nCV,uniquedata) % Constructor
+      function obj = cvindex(n,nCV) % Constructor
       % Note: can pass bootstrappedIndices in first argument instead of n
-         if exist('uniquedata','var') && ~isempty(uniquedata)
-            obj.uniquedata = uniquedata;
-         end
-
          if numel(n) > 1 % bootstrappedIndices passed as first input
             if islogical(n)
                bootstrappedIndices = find(n);
-               n = numel(bootstrappedIndices);
             else
                bootstrappedIndices = n(~~n); % strip zeros
             end
-            hh = hist(bootstrappedIndices,single(min(bootstrappedIndices):max(bootstrappedIndices)));
-            if obj.uniquedata
-               density = hh(~~hh);
-               % New n
-               n = numel(density); %same as sum(~~unique(bootstrappedIndices));
-            else
-               density = hh;
-            end
+
+            uniquebi = unique(bootstrappedIndices);
+            density  = hist(bootstrappedIndices,single(uniquebi));
+            n        = numel(uniquebi);
          end
 
          % Construct random permutations (rp) of indices and separate into nCV folds
@@ -36,14 +26,20 @@ classdef cvindex
 
          % Density-based expansion of indices (re-applying bootstrap)
          if exist('density','var')
+            % Initialize density-based expanded indices
             obj.rp = cellfun(@(x) NaN(sum(density(x)),1),rp,'UniformOutput',false);
+            % Fill in indices
             for iCV = 1:nCV
                ix = density(rp{iCV});
                j = 1;
                for i = 1:numel(ix)
-                  obj.rp{iCV}(j:j+ix(i)-1) = rp{iCV}(i)*ones(ix(i),1);
+                  obj.rp{iCV}(j:j+ix(i)-1) = uniquebi(rp{iCV}(i));
                   j = j+ix(i);
                end
+            end
+            % unit test
+            if any(intersect(obj.rp{:}))
+               error('same bootstrap index appears in multiple folds')
             end
          else
             obj.rp = rp;
