@@ -30,19 +30,16 @@ for isim = 1:nsims
    %dists(isim)     = Hypersphere.calcDists(centers(:,isim));
 
    % 2-fold cross-validated distances
-   for i = 1:2
-      loc_cv{isim,i} = cvCenters(points(gt.categories.vectors(:,i),:,isim),nCVs);
-   end
+   loc_cv(isim,:) = cvCenters(points(:,:,isim),nCVs,gt.categories);
 
    %% SIGNIFICANCE via bootstrapping
    bs = gt.categories.permute(nboots,true);
    %if isim==1
    parfor iboot = 1:nboots
-      bspoints = bs(iboot).slice(points(:,:,isim));
       bscenters(:,isim,iboot) = calcCenters(points(:,:,isim),bs(iboot));
 
       % 2-fold cross-validated distances
-      bsloc_cv(isim,iboot,:) = cellfun(@(x) cvCenters(x,nCVs),bspoints,'UniformOutput',false);
+      bsloc_cv(isim,iboot,:) = cvCenters(points(:,:,isim),nCVs,bs(iboot));
    end
    %end
    stationarycounter(isim,nsims)
@@ -85,7 +82,8 @@ matchy('x')
 %% SIGNIFICANCE TESTING
 h=NaN(1,nsims);p=NaN(1,nsims);
 for i=1:nsims
-   p(i) = ciprctile(squeeze(bsdists(:,i,:)));
+   %p(i) = ciprctile(squeeze(bsdists(:,i,:)));
+   p(i) = ciprctile(bsdistsCV(i,:)');
 end
 h = p<=0.05;
 mean(h)
@@ -100,14 +98,21 @@ function centers = calcCenters(points,cat)
 end
 
 
-function loc_cv = cvCenters(points,nCVs)
-   [n,d,f] = size(points);
-   loc_cv  = NaN(2,1,nCVs);
+function loc_cv = cvCenters(points,nCVs,cat)
+   %pointsorig=points;
+   %points = cat.slice(points,'unique');
+
+   nCats   = size(cat.vectors,2);
+   loc_cv  = repmat({NaN(2,1,nCVs)},[1 nCats]);
+   
+   for i = 1:nCats
    for icv = 1:nCVs
-      cv(icv) = cvindex(n,2);
-      loc_cv(:,:,icv) = [mean(points(cv(icv).train(1),:));
-                         mean(points(cv(icv).train(2),:)) ];
-      %loc_cv(:,:,icv) = cellify(cvindex(n,2).crossvalidate(@mean,points));
+      cv = cvindex(cat.select(i).vectors,2);
+      %loc_cv{i}(:,:,icv) = [mean(points(cv.train(1),:));
+      %                      mean(points(cv.train(2),:)) ];
+      loc_cv{i}(:,:,icv) = cellify(cv.crossvalidate(@mean,points));
+      %keyboard
+   end
    end
 end
 
