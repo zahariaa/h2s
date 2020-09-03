@@ -4,6 +4,7 @@ function bootstrap_test
 
 nsims  = 1000;
 nboots = 1000;
+d      = 0;%1;
 n      = 5;    % 2^n = number of samples
 nCVs   = 1;    % # of CV folds to average over for CV distance estimation
 
@@ -14,19 +15,19 @@ ciprctileSmTail = @(x) smallertail(ciprctile(x));
 
 
 %% Set up simulations
-gt = Hypersphere([0;0],[1 1]);
+gt = Hypersphere(zeros(2,2.^d),[1 1]);
 [points,gt] = gt.sample(2.^[n n],nsims);
 
 %% Initialize
-centers   = NaN(2,nsims);
-loc_cv    = repmat({NaN(2,1,nCVs)},[nsims 2]);
-bscenters = NaN(2,nsims,nboots);
-bsloc_cv  = repmat({NaN(2,1,nCVs)},[nsims nboots 2]);
+centers   = NaN(2,2^d,nsims);
+loc_cv    = repmat({NaN(2,2^d,nCVs)},[nsims 2]);
+bscenters = NaN(2,2^d,nsims,nboots);
+bsloc_cv  = repmat({NaN(2,2^d,nCVs)},[nsims nboots 2]);
 
 %% Run simulations
 for isim = 1:nsims
    %hyps(isim) = Hypersphere.estimate(points,gt.categories);
-   centers(:,isim) = calcCenters(points(:,:,isim),gt.categories);
+   centers(:,:,isim) = calcCenters(points(:,:,isim),gt.categories);
    %dists(isim)     = Hypersphere.calcDists(centers(:,isim));
 
    % 2-fold cross-validated distances
@@ -36,7 +37,7 @@ for isim = 1:nsims
    bs = gt.categories.permute(nboots,true);
    %if isim==1
    parfor iboot = 1:nboots
-      bscenters(:,isim,iboot) = calcCenters(points(:,:,isim),bs(iboot));
+      bscenters(:,:,isim,iboot) = calcCenters(points(:,:,isim),bs(iboot));
 
       % 2-fold cross-validated distances
       bsloc_cv(isim,iboot,:) = cvCenters(points(:,:,isim),nCVs,bs(iboot));
@@ -46,13 +47,21 @@ for isim = 1:nsims
 end
 % full data measures
 dists     = diff(centers);
-dists2    = sign(dists).*(dists.^2);
-distsCV   = cellify(cvCenters2cvSqDists(loc_cv));
+if d==0
+   dists2 = squeeze(sign(dists).*(dists.^2));
+else
+   dists2 = squeeze(sum(dists.^2));
+end
+distsCV   = cell2mat_concat(cvCenters2cvSqDists(loc_cv));
 %distsCV   = sign(distsCV).*sqrt(abs(distsCV));
 
 % bootstrapped measures
 bsdists   = diff(bscenters);
-bsdists2  = sign(bsdists).*(bsdists.^2);
+if d==0
+   bsdists2  = squeeze(sign(bsdists).*(bsdists.^2));
+else
+   bsdists2  = squeeze(sum(bsdists.^2));
+end
 bsdistsCV = cellify(cvCenters2cvSqDists(reshape(bsloc_cv,[nsims*nboots 2])));
 bsdistsCV = reshape(bsdistsCV,[nsims nboots]);
 %bsdistsCV = sign(bsdistsCV).*sqrt(abs(bsdistsCV));
@@ -67,7 +76,7 @@ hda = histogram(  dists       ,'Normalization','probability','FaceColor',[1 0 0]
                 'BinEdges',hdb.BinEdges);
 xlabel('center diffs');
 axtivate([2 1]);
-hd2b = histogram(bsdists2(:,i,:),'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
+hd2b = histogram(bsdists2(i,:),'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
 hd2a = histogram(  dists2     ,'Normalization','probability','FaceColor',[1 0 0],'EdgeColor','none',...
                  'BinEdges',hd2b.BinEdges);
 xlabel('signed center distances')
@@ -82,7 +91,7 @@ matchy('x')
 %% SIGNIFICANCE TESTING
 h=NaN(1,nsims);p=NaN(1,nsims);
 for i=1:nsims
-   %p(i) = ciprctile(squeeze(bsdists(:,i,:)));
+   %p(i) = ciprctile(bsdists(i,:)');
    p(i) = ciprctile(bsdistsCV(i,:)');
 end
 h = p<=0.05;
@@ -94,7 +103,7 @@ end
 
 %% MORE HELPER FUNCTIONS
 function centers = calcCenters(points,cat)
-   centers = cellfun(@mean,cat.slice(points))';
+   centers = cell2mat_concat(cellfun(@mean,cat.slice(points),'UniformOutput',false));
 end
 
 
@@ -102,15 +111,16 @@ function loc_cv = cvCenters(points,nCVs,cat)
    %pointsorig=points;
    %points = cat.slice(points,'unique');
 
+   d       = size(points,2);
    nCats   = size(cat.vectors,2);
-   loc_cv  = repmat({NaN(2,1,nCVs)},[1 nCats]);
+   loc_cv  = repmat({NaN(2,d,nCVs)},[1 nCats]);
    
    for i = 1:nCats
    for icv = 1:nCVs
       cv = cvindex(cat.select(i).vectors,2);
       %loc_cv{i}(:,:,icv) = [mean(points(cv.train(1),:));
       %                      mean(points(cv.train(2),:)) ];
-      loc_cv{i}(:,:,icv) = cellify(cv.crossvalidate(@mean,points));
+      loc_cv{i}(:,:,icv) = cell2mat_concat(cv.crossvalidate(@mean,points));
       %keyboard
    end
    end
@@ -129,17 +139,17 @@ function cvdists = cvCenters2cvSqDists(loc_cv)
       return
    end
 
-   cvdists = NaN(nchoosek(n,2),1,nCVs);
+   cvdists = NaN(nchoosek(n,2),nCVs);
    i=0;
    for a = 1:n-1
       for b = a+1:n, i=i+1;
          for icv = 1:nCVs
-            cvdists(i,:,icv) =  (loc_cv{a}(1,:,icv)-loc_cv{b}(1,:,icv))...
-                               *(loc_cv{a}(2,:,icv)-loc_cv{b}(2,:,icv))';
+            cvdists(i,icv) =  (loc_cv{a}(1,:,icv)-loc_cv{b}(1,:,icv))...
+                             *(loc_cv{a}(2,:,icv)-loc_cv{b}(2,:,icv))';
          end
       end
    end
-   cvdists = mean(cvdists,3);
+   cvdists = mean(cvdists,2);
    % cvdists = sign(cvdists).*sqrt(abs(cvdists));
    return
 end
