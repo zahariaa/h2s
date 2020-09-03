@@ -56,7 +56,7 @@ distsCV   = cell2mat_concat(cvCenters2cvSqDists(loc_cv));
 %distsCV   = sign(distsCV).*sqrt(abs(distsCV));
 
 % bootstrapped measures
-bsdists   = diff(bscenters);
+bsdists   = squeeze(diff(bscenters));
 if d==0
    bsdists2  = squeeze(sign(bsdists).*(bsdists.^2));
 else
@@ -70,20 +70,11 @@ bsdistsCV = reshape(bsdistsCV,[nsims nboots]);
 %% PLOT
 i=1;
 newfigure('dists',[3 1]);
-axtivate([1 1]);
-hdb = histogram(bsdists(:,i,:),'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
-hda = histogram(  dists       ,'Normalization','probability','FaceColor',[1 0 0],'EdgeColor','none',...
-                'BinEdges',hdb.BinEdges);
+axtivate([1 1]); histcompare(bsdists(:,i,:),dists);
 xlabel('center diffs');
-axtivate([2 1]);
-hd2b = histogram(bsdists2(i,:),'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
-hd2a = histogram(  dists2     ,'Normalization','probability','FaceColor',[1 0 0],'EdgeColor','none',...
-                 'BinEdges',hd2b.BinEdges);
+axtivate([2 1]); histcompare(bsdists2(i,:),dists2);
 xlabel('signed center distances')
-axtivate([3 1]);
-hcvb = histogram(bsdistsCV(i,:),'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
-hcva = histogram(  distsCV     ,'Normalization','probability','FaceColor',[1 0 0],'EdgeColor','none',...
-                 'BinEdges',hcvb.BinEdges);
+axtivate([3 1]); histcompare(bsdistsCV(i,:),distsCV);
 xlabel('cross-validated distances')
 
 matchy('x')
@@ -151,6 +142,14 @@ function cvdists = cvCenters2cvSqDists(loc_cv)
    end
    cvdists = mean(cvdists,2);
    % cvdists = sign(cvdists).*sqrt(abs(cvdists));
-   return
+end
+
+
+function histhandles = histcompare(black,red)
+   histhandles(1) = histogram(black,'Normalization','probability','FaceColor',...
+                             [0 0 0],'EdgeColor','none');
+   histhandles(2) = histogram( red ,'Normalization','probability','FaceColor',...
+                             [1 0 0],'EdgeColor','none','BinEdges',...
+                             histhandles(1).BinEdges);
 end
 
