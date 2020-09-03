@@ -4,13 +4,13 @@ function bootstrap_test
 
 nsims  = 1000;
 nboots = 1000;
-d      = 0;%1;
+d      = 1;
 n      = 5;    % 2^n = number of samples
 nCVs   = 1;    % # of CV folds to average over for CV distance estimation
 
 %% helper functions
 smallertail     = @(x) min(cat(3,1-x,x),[],3);
-ciprctile       = @(x) sum([-Inf(1,size(x,2));x;Inf(1,size(x,2))]>0)/(size(x,1)+2);
+ciprctile       = @(x,N) sum([-Inf(1,size(x,2));x;Inf(1,size(x,2))]>N)/(size(x,1)+2);
 ciprctileSmTail = @(x) smallertail(ciprctile(x));
 
 
@@ -34,7 +34,7 @@ for isim = 1:nsims
    loc_cv(isim,:) = cvCenters(points(:,:,isim),nCVs,gt.categories);
 
    %% SIGNIFICANCE via bootstrapping
-   bs = gt.categories.permute(nboots,true);
+   bs = gt.categories.permute(nboots,false);
    %if isim==1
    parfor iboot = 1:nboots
       bscenters(:,:,isim,iboot) = calcCenters(points(:,:,isim),bs(iboot));
@@ -82,8 +82,8 @@ matchy('x')
 %% SIGNIFICANCE TESTING
 h=NaN(1,nsims);p=NaN(1,nsims);
 for i=1:nsims
-   %p(i) = ciprctile(bsdists(i,:)');
-   p(i) = ciprctile(bsdistsCV(i,:)');
+   %p(i) = ciprctile(bsdists2(i,:)',dists2(i));
+   p(i) = ciprctile(bsdistsCV(i,:)',distsCV(i));
 end
 h = p<=0.05;
 mean(h)
