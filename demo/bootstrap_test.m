@@ -26,7 +26,7 @@ bsloc_cv  = repmat({NaN(2,2^d,nCVs)},[nsims nboots 2]);
 
 %% Run simulations
 for isim = 1:nsims
-   %hyps(isim) = Hypersphere.estimate(points,gt.categories);
+   %hyps(isim) = Hypersphere.estimate(points(:,:,isim),gt.categories);
    centers(:,:,isim) = calcCenters(points(:,:,isim),gt.categories);
    %dists(isim)     = Hypersphere.calcDists(centers(:,isim));
 
@@ -94,7 +94,9 @@ end
 
 %% MORE HELPER FUNCTIONS
 function centers = calcCenters(points,cat)
-   centers = cell2mat_concat(cellfun(@mean,cat.slice(points),'UniformOutput',false));
+   %centers = cell2mat_concat(cellfun(@mean,cat.slice(points),'UniformOutput',false));
+   hyps = cellfun(@Hypersphere.estimate,cat.slice(points));
+   centers = vertcat(hyps.centers);
 end
 
 
