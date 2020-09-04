@@ -5,8 +5,9 @@ classdef cvindex
       rp      % cell of random permutation of indices organized by fold
    end
    methods
-      function obj = cvindex(n,nCV) % Constructor
+      function obj = cvindex(n,nCV,DEBUG) % Constructor
       % Note: can pass bootstrappedIndices in first argument instead of n
+         if ~exist('DEBUG','var') || isempty(DEBUG), DEBUG = true; end
          if numel(n) > 1 % bootstrappedIndices passed as first input
             if islogical(n)
                bootstrappedIndices = find(n);
@@ -38,7 +39,7 @@ classdef cvindex
                end
             end
             % unit test
-            if any(intersect(obj.rp{:}))
+            if DEBUG && any(intersect(obj.rp{:}))
                error('same bootstrap index appears in multiple folds')
             end
          else
