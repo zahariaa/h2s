@@ -123,23 +123,15 @@ if exist('categories','var') && numel(categories.labels)>1
          for i = 1:nCats
             p{i} = points( categories.select(i).vectorsForDistanceMatrix );
          end
+         
+         % Generate cross-validation objects for center bootstraps that makes sure
+         %    bootstrap resamplings keep points in each fold independent
+         cvs = arrayfun(@(i) cvindex(categories.select(i).vectorsForDistanceMatrix,2),1:nCats);
       else
-         for i = 1:nCats
-            ix = categories.select(i).vectors;
-            if categories.ispermuted && isnumeric(ix)
-               [~,ix] = uniquenz(ix);% ix = ix(2:end);
-            end
-            if isnumeric(ix) && ~any(ix>1), ix = ~~ix; end
-            p{i} = points(ix,:);
-         end
+         [p,ix] = categories.slice(points);
+         cvs = cellfun(@(i) cvindex(i,2),ix);
       end
-      % Generate cross-validation objects for center bootstraps that makes sure
-      %    bootstrap resamplings keep points in each fold independent
-      if categories.ispermuted
-         cvs = arrayfun(@(i) cvindex(categories.select(i).vectors,2,true),1:nCats);
-      else
-         cvs = repmat({[]},[1 nCats]);
-      end
+
       % Recursive call
       [hyp,loc_cv] = cellfun(@(x,cv) estimateHypersphere(x,'raw',nBootstraps,cv,varargin{:}),...
                                   p,num2cell(cvs),'UniformOutput',false);
@@ -172,8 +164,9 @@ end
 switch(ESTIMATOR)
    case {'distance','mcmc','jointml'} % do nothing
    otherwise
-      loc_cv = [mean(points(cv.train(1),:));
-                mean(points(cv.train(2),:)) ];
+      % loc_cv = [mean(points(cv.train(1),:));
+      %           mean(points(cv.train(2),:)) ];
+      loc_cv = cell2mat_concat(cv.crossvalidate(@mean,points));
       loc    =  mean(points,1); % optimises L2 cost (same as L1 force equilibrium)
       points = points - repmat(loc,[n 1]);
 end
