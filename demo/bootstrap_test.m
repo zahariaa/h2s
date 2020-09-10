@@ -21,31 +21,24 @@ gt = Hypersphere(zeros(2,2.^d),[1 1]);
 %% Initialize
 centers   = NaN(2,2^d,nsims);
 loc_cv    = repmat({NaN(2,2^d,nCVs)},[nsims 2]);
-bscenters = NaN(2,2^d,nsims,nboots);
 bsloc_cv  = repmat({NaN(2,2^d,nCVs)},[nsims nboots 2]);
 
 %% Run simulations
 for isim = 1:nsims
-   %hyps(isim) = Hypersphere.estimate(points(:,:,isim),gt.categories);
-   centers(:,:,isim) = calcCenters(points(:,:,isim),gt.categories);
-   %dists(isim)     = Hypersphere.calcDists(centers(:,isim));
-
-   % 2-fold cross-validated distances
-   loc_cv(isim,:) = cvCenters(points(:,:,isim),nCVs,gt.categories);
+   [hyps(isim),loc_cv(isim,:)] = Hypersphere.estimate(points(:,:,isim),gt.categories);
 
    %% SIGNIFICANCE via bootstrapping
    bs = gt.categories.permute(nboots,false);
    %if isim==1
    parfor iboot = 1:nboots
-      bscenters(:,:,isim,iboot) = calcCenters(points(:,:,isim),bs(iboot));
-
-      % 2-fold cross-validated distances
-      bsloc_cv(isim,iboot,:) = cvCenters(points(:,:,isim),nCVs,bs(iboot));
+      [bootstraps(isim,iboot),bsloc_cv(isim,iboot,:)] = ...
+         Hypersphere.estimate(points(:,:,isim),bs(iboot));
    end
    %end
    stationarycounter(isim,nsims)
 end
 % full data measures
+centers = cat(3,hyps.centers);
 dists     = diff(centers);
 if d==0
    dists2 = squeeze(sign(dists).*(dists.^2));
@@ -56,6 +49,7 @@ distsCV   = cell2mat_concat(cvCenters2cvSqDists(loc_cv));
 %distsCV   = sign(distsCV).*sqrt(abs(distsCV));
 
 % bootstrapped measures
+bscenters = permute(reshape(cat(3,bootstraps.centers),[2 2^d nsims nboots]),[1 2 4 3]);
 bsdists   = squeeze(diff(bscenters));
 if d==0
    bsdists2  = squeeze(sign(bsdists).*(bsdists.^2));
