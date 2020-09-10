@@ -162,7 +162,7 @@ classdef SetOfHyps < Hypersphere
          self.volume = Hypersphere.calcVolume(self.centers,self.radii);
       end
       function self = set.dists(self,~)    % Compute distance between two hyperspheres
-         self.dists = Hypersphere.calcDists(self.centers,self.distsCV);
+         self.dists = Hypersphere.calcDists(self.centers);
       end
       function self = set.margins(self,~)
          self.margins = Hypersphere.calcMargins(self.radii,self.dists);

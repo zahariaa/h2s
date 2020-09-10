@@ -645,7 +645,7 @@ classdef Hypersphere < handle
             D = cell2mat_concat(arrayfun(@dists,self,'UniformOutput',false));
             return
          end
-         D = self.calcDists(self.centers,self.distsCV);
+         D = self.calcDists(self.centers);
       end
 
       function M = margins(self)
@@ -752,15 +752,8 @@ classdef Hypersphere < handle
          V = (radii.^d).*(pi.^(d/2))./gamma((d/2)+1);
       end
 
-      function D = calcDists(centers,CROSSVAL)
+      function D = calcDists(centers)
       % Compute distances between pairs of hyperspheres (along center-connection
-      %    lines). Or take the non-negative cross-validated distances, if they
-      %    exist.
-%          if exist('CROSSVAL','var') && CROSSVAL(1)
-%             D = sqrt(max(0,CROSSVAL));
-%             return
-%          end
-
          n = size(centers,1);
          D = zeros(1,(n^2-n)/2);
          i=0;
