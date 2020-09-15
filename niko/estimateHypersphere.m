@@ -36,7 +36,7 @@ for v = 1:numel(varargin)
    elseif ischar(   varargin{v})
       switch( lower(varargin{v}) )
          case 'permute';     STRATIFIED = false;
-         case 'stratified';  STRATIFIED = true;
+         case {'bootstrap','stratified'};  STRATIFIED = true;
          case 'calcstats';   STRATIFIED = [true false];
          case 'normalize';   NORMALIZE  = true;  varargin{v} = [];
          case 'raw';         NORMALIZE  = false; varargin{v} = [];

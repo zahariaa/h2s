@@ -23,7 +23,7 @@ pout = NaN(nsims,nchoosek(2,2));
 
 %% Run simulations
 for isim = 1:nsims
-   hyps(isim) = Hypersphere.estimate(points(:,:,isim),gt.categories,nboots,'calcStats').meanAndMerge;
+   hyps(isim) = Hypersphere.estimate(points(:,:,isim),gt.categories,nboots,'permute').meanAndMerge;
    pout(isim,:) = hyps(isim).sig.di;
    stationarycounter(isim,nsims)
 end

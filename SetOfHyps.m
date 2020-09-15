@@ -197,6 +197,16 @@ classdef SetOfHyps < Hypersphere
       % 
       % SEE ALSO ESTIMATEHYPERSPHERE, HYPERSPHERE.MEANANDMERGE
          loc_cv = [];
+         testtype = 'calcStats';
+         for v = 1:numel(varargin)
+            if ischar(varargin{v})
+               switch lower(varargin{v})
+                  case{'calcstats','permute','stratified','bootstrap'}
+                     testtype = varargin{v};
+                     varargin{v} = [];
+               end
+            end
+         end
          if ~exist('N','var') || isempty(N), N=100; end
          if ~exist('points','var') && isstruct(self.ci) && ~isempty(self.ci.bootstraps)
             % then use self.ci.bootstraps
@@ -206,8 +216,9 @@ classdef SetOfHyps < Hypersphere
             error('self.categories.vectors needs to index points');
          else
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
-            [boots,loc_cv] = Hypersphere.estimate(points,self.categories,N,'calcStats',varargin{:});
-            self.ci = boots.meanAndMerge.ci;
+            [bootsNperms,loc_cv] = Hypersphere.estimate(points,self.categories,N,...
+                                                        testtype,varargin{:});
+            self.ci = bootsNperms.meanAndMerge.ci;
          end
          %% set up significance measures
          n   = numel(self.radii);
