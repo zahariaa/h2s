@@ -254,7 +254,7 @@ classdef SetOfHyps < Hypersphere
          % helper functions
          smallertail     = @(x) min(cat(3,1-x,x),[],3);
          ciprctile       = @(x,t) sum([-Inf(1,size(x,2));x;Inf(1,size(x,2))]>t)/(size(x,1)+2);
-         ciprctileSmTail = @(x) smallertail(ciprctile(x,0));
+         ciprctileSmTail = @(x,t) smallertail(ciprctile(x,t));
          % What percentile confidence interval of bootstrapped margins contains 0?
 
          if numel(self.ci.bootstraps)>0
@@ -265,22 +265,22 @@ classdef SetOfHyps < Hypersphere
          self.sig.ra = [];
          if numel(self.ci.permutations)>0
             % At what percentile confidence interval of bootstrapped distances does 0 occur?
-            self.sig.di = 1-ciprctile(dist_boot,self.distsCV);
+            self.sig.di = 1-ciprctileSmTail(dist_boot,self.distsCV);
          end
 
          %% SECOND-ORDER COMPARISONS
          if numel(self.ci.bootstraps)>0
             for i = 1:nc2
-               self.sigdiff.ra(i) = ciprctileSmTail(diff(  radii_boot(:,  ix(:,i)),[],2));
+               self.sigdiff.ra(i) = ciprctileSmTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
             end
             for i = 1:nc2c2
-               self.sigdiff.ov(i) = ciprctileSmTail(diff(-margin_boot(:,ixc2(:,i)),[],2));
+               self.sigdiff.ov(i) = ciprctileSmTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
             end
             self.sigdiff.ma = self.sigdiff.ov;
          end
          if numel(self.ci.permutations)>0
             for i = 1:nc2c2
-               self.sigdiff.di(i) = ciprctileSmTail(diff(   dist_boot(:,ixc2(:,i)),[],2));
+               self.sigdiff.di(i) = ciprctileSmTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
             end
          end
 
