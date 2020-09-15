@@ -79,7 +79,7 @@ for d = 1:nd
 
       for n = 1:nn
          if exist(simfile(s,ds(d),rs(r),ns(n)),'file')
-            [hyp,gt,sigtmp,bootmp,loc_cv,loc_cvboo,centers] = hyp_load(simfile,s,ds(d),rs(r),ns(n),DISPLAYED);
+            [hyp,gt,sigtmp,bootmp] = hyp_load(simfile,s,ds(d),rs(r),ns(n),DISPLAYED);
             %% TODO: check nboots/nsims
          else
             if ~DISPLAYED
@@ -87,16 +87,9 @@ for d = 1:nd
             end
             [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
             % Simulate points
-            if s==2
-            [hyp,loc_cv] = Hypersphere.estimate(points,gt.categories,'independent',estimator);%.meanAndMerge(true);
-            % loc_cv is [nCats x nsims x 2cv x ndims]
-            loc_cv = permute(reshape(cell2mat_concat(loc_cv',3),[2+double(s>2) 2^ds(d) 2 nsims]),[1 4 3 2]);
-            else
             hyp = Hypersphere.estimate(points,gt.categories,'independent',estimator);%.meanAndMerge(true);
-            loc_cv = [];
-            end
             % save in-progress fits
-            savtmp = struct('hyp',hyp,'gt',gt,'n',ns(n),'d',ds(d),'r',rs(r),'loc_cv',loc_cv);
+            savtmp = struct('hyp',hyp,'gt',gt,'n',ns(n),'d',ds(d),'r',rs(r));
             save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
             stationarycounter([d r n],[nd nr nn])
          end
@@ -114,20 +107,11 @@ for d = 1:nd
             % Assess significance on samples
             sigtmp = NaN(nsims,nc2);
             bootmp = NaN(nboots,nc2,nsims);
-            if s==2, loc_cvboo = NaN(2,nboots,2,2^ds(d),nsims);
-                     centers   = NaN(2,nboots,2^ds(d),nsims);
-            else     loc_cvboo = []; centers = [];
-            end
             parfor b = 1:nsims
-               if s==2
-               [hyptmp,loc_cvtmp] = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,estimator);
-               else
                hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,estimator);
-               end
                sigtmp(b,:) = hyptmp.(sigfield{1+double(s>2)}).(mnames{s}(1:2));
                bootmp(:,:,b) = cat(1,hyptmp.ci.bootstraps.(mnames{s}));
-               loc_cvboo(:,:,:,:,b) = permute(reshape(cell2mat_concat(cell2mat_concat(loc_cvtmp(2:end),3),3),[2+double(s>2) 2^ds(d) 2 nboots]),[1 4 2 3]);
-               centers(:,:,:,b) = [hyptmp.ci.bootstraps.centers];
+               stationarycounter(b,nsims)
             end
             sigtmp = sigtmp(:,1+2*double(s==3));      % pick 3rd comparison only when s==3
             switch s
@@ -136,7 +120,7 @@ for d = 1:nd
                case {4,5}; bootmp = diff(bootmp(:,1:2,:),[],2);   % difference of first two measures
             end
             % save in-progress fits
-            savtmp = struct('hyp',hyp,'gt',gt,'sigtmp',sigtmp,'bootmp',bootmp,'n',ns(n),'d',ds(d),'r',rs(r),'loc_cv',loc_cv,'loc_cvboo',loc_cvboo,'centers',centers);
+            savtmp = struct('hyp',hyp,'gt',gt,'sigtmp',sigtmp,'bootmp',bootmp,'n',ns(n),'d',ds(d),'r',rs(r));
             save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
             stationarycounter([d r n],[nd nr nn])
             FINISHED = true;
@@ -152,40 +136,10 @@ for d = 1:nd
             bootsamps{s,d,r}(n,:,:) = bootmp;
          end
          clear sigtmp
-newfigure('loccv1D');
-hb = histogram(diff(mean(reshape(permute(loc_cvboo,[1 2 5 3 4]),[2 nsims*nboots 2 2^ds(d)]),3)),...
-      'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
-he = histogram(diff(mean(loc_cv,3)),'BinEdges',hb.BinEdges,...
-      'Normalization','probability','FaceColor',[1 0 0],'EdgeColor','none');
-axis([-0.04 0.04 0 0.08])
-xlabel('1D CV center location difference')
-ylabel('probability')
-title({'Grey: bootstrapped across all simulations';...
-       'Red: all data single simulation'})
-
-newfigure('centercomp');
-h1 = histogram(vectify(centers(1,:,:,:)),...
-      'Normalization','probability','FaceColor',[0 0 1],'EdgeColor','none');
-h2 = histogram(vectify(centers(2,:,:,:)),'BinEdges',h1.BinEdges,...
-      'Normalization','probability','FaceColor',[0 1 0],'EdgeColor','none');
-xlabel('1D center locations')
-ylabel('probability')
-
-newfigure('centerdiff1D');
-hb = histogram(vectify(diff(centers)),...
-      'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
-he = histogram(diff([hyp.centers]),'BinEdges',hb.BinEdges,...
-      'Normalization','probability','FaceColor',[1 0 0],'EdgeColor','none');
-xlim([-0.15 0.15])
-xlabel('1D center location difference')
-ylabel('probability')
-title({'Grey: bootstrapped across all simulations';...
-       'Red: all data single simulation'})
-%printFig;
+%       keyboard
       end
    end
 end
-
 if STANDALONE, fprintf('Simulations complete.\n'); return; end
 
 %% Extract data: collect estimates (e.g., overlaps, distances)
@@ -407,11 +361,11 @@ function fh = testScenario(s,ds,rs,measures,mnames)
    return
 end
 
-function [hyp,gt,sigtmp,bootmp,loc_cv,loc_cvboo,centers] = hyp_load(simfile,s,d,r,n,DISPLAYED)
+function [hyp,gt,sigtmp,bootmp] = hyp_load(simfile,s,d,r,n,DISPLAYED)
    checkFile(simfile(s,d,r,n),d,r,n)
-   sigtmp = []; bootmp = []; loc_cv = []; loc_cvboo = []; centers = []; 
+   sigtmp = []; bootmp = [];
 
-   load(simfile(s,d,r,n),'hyp','gt','sigtmp','bootmp','loc_cv','loc_cvboo','centers');
+   load(simfile(s,d,r,n),'hyp','gt','sigtmp','bootmp');
    if ~DISPLAYED
       fprintf('Loaded simulations.\n')
    end
