@@ -48,6 +48,8 @@ measures = {'overlap', 'distance', 'radius difference', ...
             'overlap difference', 'distance difference'};
 mnames   = {'overlap', 'distsCV', 'radii', ...
             'overlap', 'dists'};
+testtype = {'bootstrap' ,'permute'     ,'bootstrap' ,'bootstrap' ,'bootstrap' };
+testrslt = {'bootstraps','permutations','bootstraps','bootstraps','bootstraps'};
 % % debug
 % for s = 1:5
 %    testScenario(s,2.^ds,2.^rs,measures,mnames);
@@ -57,10 +59,11 @@ mnames   = {'overlap', 'distsCV', 'radii', ...
 nm  = numel(measures);
 nc2 = 1+2*double(s>2);
 
-basedir = '/moto/nklab/users/az2522/';
-simfolder = '20200806/';
-simfile = @(s,d,r,n) sprintf('%sdata/statsim/%s%ss%g_d%g_r%g_n%g.mat',...
-                             basedir,simfolder,estimator,s,d,r,n);
+basedir = '';%'/moto/nklab/users/az2522/';
+simfolder = '20200915/';
+simfolder = [basedir 'data/statsim/' simfolder];
+if ~exist(simfolder,'dir'), mkdir(simfolder); end
+simfile = @(s,d,r,n) sprintf('%s%ss%g_d%g_r%g_n%g.mat',simfolder,estimator,s,d,r,n);
 % Initialize data for saving (could probably change from cell to tensor)
 if ~STANDALONE % Collect all simulations, make figures
    sigtest   = repmat({NaN(nn,nsims       )},[nm nd nr]);
@@ -107,10 +110,10 @@ for d = 1:nd
             % Assess significance on samples
             sigtmp = NaN(nsims,nc2);
             bootmp = NaN(nboots,nc2,nsims);
-            parfor b = 1:nsims
-               hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,estimator);
+            for b = 1:nsims
+               hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,testtype{s},estimator);
                sigtmp(b,:) = hyptmp.(sigfield{1+double(s>2)}).(mnames{s}(1:2));
-               bootmp(:,:,b) = cat(1,hyptmp.ci.bootstraps.(mnames{s}));
+               bootmp(:,:,b) = cat(1,hyptmp.ci.(testrslt{s}).(mnames{s}));
                stationarycounter(b,nsims)
             end
             sigtmp = sigtmp(:,1+2*double(s==3));      % pick 3rd comparison only when s==3
