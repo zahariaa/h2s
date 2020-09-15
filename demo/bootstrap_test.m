@@ -12,19 +12,24 @@ n      = 5;    % 2^n = number of samples
 nCVs   = 1;    % # of CV folds to average over for CV distance estimation
 
 %% helper functions
+smallertail     = @(x) min(cat(3,1-x,x),[],3);
 ciprctile       = @(x,t) sum([-Inf(1,size(x,2));x;Inf(1,size(x,2))]>t)/(size(x,1)+2);
+ciprctileSmTail = @(x,t) smallertail(ciprctile(x,t));
 
 
 %% Set up simulations
 gt = Hypersphere(zeros(2,2.^d),[1 1]);
 [points,gt] = gt.sample(2.^[n n],nsims);
-hyps = repmat(SetOfHyps(),[nsims 1]);
+bhyptmp = repmat(Hypersphere(),[nsims nboots]);
 pout = NaN(nsims,nchoosek(2,2));
 
 %% Run simulations
+hyps = Hypersphere.estimate(points,gt.categories,'independent');
+
 for isim = 1:nsims
-   hyps(isim) = Hypersphere.estimate(points(:,:,isim),gt.categories,nboots,'permute').meanAndMerge;
-   pout(isim,:) = hyps(isim).sig.di;
+   hyptmp = SetOfHyps(hyps(isim)).significance(points(:,:,isim),nboots,'permute');
+   pout(isim,:) = hyptmp.sig.di;
+   bhyptmp(isim,:) = hyptmp.ci.permutations;
    stationarycounter(isim,nsims)
 end
 
@@ -39,16 +44,14 @@ end
 distsCV   = [hyps.distsCV];
 
 % bootstrapped measures
-bhyptmp = arrayfun(@(c) c.permutations,[hyps.ci],'UniformOutput',false);
-% bscenters: [2 x 2^d x nsims x nboots]
-bscenters = cell2mat_concat(cellfun(@(h) cat(4,h.centers),bhyptmp,'UniformOutput',false),3);
+bscenters = reshape(cat(3,bhyptmp.centers),[2 2^d nsims nboots]);
 bsdists   = squeeze(diff(bscenters));
 if d==0
    bsdists2  = squeeze(sign(bsdists).*(bsdists.^2));
 else
    bsdists2  = squeeze(sum(bsdists.^2));
 end
-bsdistsCV = cell2mat_concat(cellfun(@(h) [h.distsCV],bhyptmp,'UniformOutput',false));
+bsdistsCV = reshape(cat(3,bhyptmp.distsCV),[nsims nboots]);
 
 
 %% PLOT
@@ -66,12 +69,12 @@ matchy('x')
 %% SIGNIFICANCE TESTING
 h=NaN(1,nsims);p=NaN(1,nsims);
 for i=1:nsims
-   %p(i) = ciprctile(bsdists2(i,:)',dists2(i));
-   p(i) = ciprctile(bsdistsCV(i,:)',distsCV(i));
+   %p(i) = ciprctileSmTail(bsdists2(i,:)',dists2(i));
+   p(i) = ciprctileSmTail(bsdistsCV(i,:)',distsCV(i));
 end
-h = p<=0.05;
+h = p<=0.05/2;
 mean(h)
-mean(pout<=0.05)
+mean(pout<=0.05/2)
 
 %keyboard
 end
