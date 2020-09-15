@@ -18,17 +18,13 @@ ciprctile       = @(x,t) sum([-Inf(1,size(x,2));x;Inf(1,size(x,2))]>t)/(size(x,1
 %% Set up simulations
 gt = Hypersphere(zeros(2,2.^d),[1 1]);
 [points,gt] = gt.sample(2.^[n n],nsims);
-bhyps = repmat(Hypersphere(),[nsims nboots]);
+hyps = repmat(SetOfHyps(),[nsims 1]);
 pout = NaN(nsims,nchoosek(2,2));
 
 %% Run simulations
 for isim = 1:nsims
-   hyptmp = Hypersphere.estimate(points(:,:,isim),gt.categories);%,nboots,'calcStats');
-   hyps(isim) = hyptmp(1);
-   
-   aa = SetOfHyps(hyptmp(1)).significance(points(:,:,isim),nboots);
-   bhyps(isim,:) = aa.ci.permutations;
-   pout(isim,:) = aa.sig.di;
+   hyps(isim) = Hypersphere.estimate(points(:,:,isim),gt.categories,nboots,'calcStats').meanAndMerge;
+   pout(isim,:) = hyps(isim).sig.di;
    stationarycounter(isim,nsims)
 end
 
@@ -43,14 +39,16 @@ end
 distsCV   = [hyps.distsCV];
 
 % bootstrapped measures
-bscenters = permute(reshape(cat(3,bhyps.centers),[2 2^d nsims nboots]),[1 2 4 3]);
+bhyptmp = arrayfun(@(c) c.permutations,[hyps.ci],'UniformOutput',false);
+% bscenters: [2 x 2^d x nsims x nboots]
+bscenters = cell2mat_concat(cellfun(@(h) cat(4,h.centers),bhyptmp,'UniformOutput',false),3);
 bsdists   = squeeze(diff(bscenters));
 if d==0
    bsdists2  = squeeze(sign(bsdists).*(bsdists.^2));
 else
    bsdists2  = squeeze(sum(bsdists.^2));
 end
-bsdistsCV = reshape([bhyps.distsCV],[nsims nboots]);
+bsdistsCV = cell2mat_concat(cellfun(@(h) [h.distsCV],bhyptmp,'UniformOutput',false));
 
 
 %% PLOT
