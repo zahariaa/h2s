@@ -169,6 +169,9 @@ classdef Categories
          elseif N < 2,                       objs=self; return; end
          if ~exist('STRAT_BOOTSTRAP','var') || isempty(STRAT_BOOTSTRAP)
             STRAT_BOOTSTRAP = false;
+         elseif numel(STRAT_BOOTSTRAP)==2
+            objs = [self.permute(N,STRAT_BOOTSTRAP(1)); self.permute(N,STRAT_BOOTSTRAP(2))];
+            return
          end
 
          [p,n] = size(self.vectors); %p=# points, n=# hyps

@@ -286,21 +286,26 @@ classdef Hypersphere < handle
          ci = [];
          % uses 1st object's categories
          n = numel(self);
-         if n > 1 % assumes Hypersphere was bootstrapped
+         if n > 1
             if exist('FORCE','var') && FORCE
                cpermed = true(n,1);
             else
-               cpermed = arrayfun(@(x) x.categories.ispermuted,self)';
+               cfull   = ~arrayfun(@(x) x.categories.ispermuted,self)';
+               cbooted = ~arrayfun(@(x) islogical(x.categories.vectors),self)'; 
+               cpermed = ~cfull & ~cbooted;
             end
-            ci.bootstraps = self(cpermed);
-            ci.centers = prctile(cat(3,self(cpermed).centers),[2.5 97.5],3);
-            ci.radii   = prctile(cat(1,self(cpermed).radii)' ,[2.5 97.5]);
-            if all(cpermed) % Do we always want this?
-               self = Hypersphere(mean(cat(3,self(cpermed).centers),3),...
-                                  mean(cat(1,self(cpermed).radii)),...
+            ci.bootstraps   = self(cbooted);
+            ci.permutations = self(cpermed);
+            if any(cbooted)
+               ci.centers = prctile(cat(3,self(cbooted).centers),[2.5 97.5],3);
+               ci.radii   = prctile(cat(1,self(cbooted).radii)  ,[2.5 97.5]);
+            end
+            if ~any(cfull) % Do we always want this? (this is the only part that means vs merges)
+               self = Hypersphere(mean(cat(3,self(cbooted).centers),3),...
+                                  mean(cat(1,self(cbooted).radii)),...
                                   self(1).categories);
             else % preserve best (unpermuted) estimate if exists (should be self(1))
-               self = self(find(~cpermed,1));
+               self = self(find(cfull,1));
             end
          end
          self = SetOfHyps(self,ci);

@@ -37,6 +37,7 @@ for v = 1:numel(varargin)
       switch( lower(varargin{v}) )
          case 'permute';     STRATIFIED = false;
          case 'stratified';  STRATIFIED = true;
+         case 'calcstats';   STRATIFIED = [true false];
          case 'normalize';   NORMALIZE  = true;  varargin{v} = [];
          case 'raw';         NORMALIZE  = false; varargin{v} = [];
          case 'nocvdists';     CVDISTS  = false;
@@ -101,9 +102,9 @@ if exist('categories','var') && numel(categories.labels)>1
    if nBootstraps > 1 && ~strcmp(ESTIMATOR,'mcmc')
       catperm = [categories; categories.permute(nBootstraps,STRATIFIED)];
       % Recursive call
-      [hyp,loc_cv] = arrayfun(@(c) estimateHypersphere(points,c,'raw',varargin{:}),...
-                                   catperm,'UniformOutput',false);
-      hyp = cell2mat_concat(hyp);
+      parfor iboot = 1:numel(catperm)
+         [hyp(iboot),loc_cv{iboot}] = estimateHypersphere(points,catperm(iboot),'raw',varargin{:});
+      end
    else % mcmc or single sample (of bootstrap or not)
       if DISTMATRIX
          % build inter-category mean distance matrix

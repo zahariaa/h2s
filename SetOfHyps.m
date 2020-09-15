@@ -206,32 +206,12 @@ classdef SetOfHyps < Hypersphere
             error('self.categories.vectors needs to index points');
          else
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
-            [boots,loc_cv]= Hypersphere.estimate(points,self.categories,N,...
-                                  'stratified',varargin{:});%.meanAndMerge;
-            boots = boots.meanAndMerge;
-            self.ci = boots.ci;
+            [boots,loc_cv] = Hypersphere.estimate(points,self.categories,N,'calcStats',varargin{:});
+            self.ci = boots.meanAndMerge.ci;
          end
-
-         dist_boot    = cat(1,self.ci.bootstraps.dists);
-         radii_boot   = cat(1,self.ci.bootstraps.radii);
-         margin_boot  =       self.ci.bootstraps.margins;
-
-         %% COMPUTE SIGNIFICANCE (smaller values more significant)
+         %% set up significance measures
          n   = numel(self.radii);
          nc2 = nchoosek(n,2);
-         % helper functions
-         smallertail     = @(x) min(cat(3,1-x,x),[],3);
-         ciprctile       = @(x) sum([-Inf(1,size(x,2));x;Inf(1,size(x,2))]>0)/(size(x,1)+2);
-         ciprctileSmTail = @(x) smallertail(ciprctile(x));
-         % What percentile confidence interval of bootstrapped margins contains 0?
-         self.sig.ma = 1-ciprctile(margin_boot);
-         % What percentile confidence interval of bootstrapped overlap/margins contains 0?
-         self.sig.ov = 1-self.sig.ma;
-         self.sig.ra = [];
-         % At what percentile confidence interval of bootstrapped distances does 0 occur?
-         self.sig.di = 1-ciprctile(dist_boot);
-
-         %% SECOND-ORDER COMPARISONS
          % compute indices of radii corresponding to overlaps
          ix = nchoosek_ix(n);
          if n < 3, nc2c2 = 0;
@@ -239,16 +219,51 @@ classdef SetOfHyps < Hypersphere
                    ixc2  = nchoosek_ix(nc2);
          end
 
+         self.sig = struct('ra',[],'ma',[],'ov',[],'di',[]);
          self.sigdiff = struct('ra',NaN(1,nc2),...
                                'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2),'di',NaN(1,nc2c2));
-         for i = 1:nc2
-            self.sigdiff.ra(i) = ciprctileSmTail(diff(  radii_boot(:,  ix(:,i)),[],2));
+
+         %% Collect relevant permutations/bootstraps
+         if numel(self.ci.permutations)>0
+            dist_boot    = cat(1,self.ci.permutations.dists);
          end
-         for i = 1:nc2c2
-            self.sigdiff.ov(i) = ciprctileSmTail(diff(-margin_boot(:,ixc2(:,i)),[],2));
-            self.sigdiff.di(i) = ciprctileSmTail(diff(   dist_boot(:,ixc2(:,i)),[],2));
+         if numel(self.ci.bootstraps)>0
+            radii_boot   = cat(1,self.ci.bootstraps.radii);
+            margin_boot  =       self.ci.bootstraps.margins;
          end
-         self.sigdiff.ma = self.sigdiff.ov;
+         %% COMPUTE SIGNIFICANCE (smaller values more significant)
+         % helper functions
+         smallertail     = @(x) min(cat(3,1-x,x),[],3);
+         ciprctile       = @(x,t) sum([-Inf(1,size(x,2));x;Inf(1,size(x,2))]>t)/(size(x,1)+2);
+         ciprctileSmTail = @(x) smallertail(ciprctile(x,0));
+         % What percentile confidence interval of bootstrapped margins contains 0?
+
+         if numel(self.ci.bootstraps)>0
+            self.sig.ma = 1-ciprctile(margin_boot,0);
+            % What percentile confidence interval of bootstrapped overlap/margins contains 0?
+            self.sig.ov = 1-self.sig.ma;
+         end
+         self.sig.ra = [];
+         if numel(self.ci.permutations)>0
+            % At what percentile confidence interval of bootstrapped distances does 0 occur?
+            self.sig.di = 1-ciprctile(dist_boot,self.dists);
+         end
+
+         %% SECOND-ORDER COMPARISONS
+         if numel(self.ci.bootstraps)>0
+            for i = 1:nc2
+               self.sigdiff.ra(i) = ciprctileSmTail(diff(  radii_boot(:,  ix(:,i)),[],2));
+            end
+            for i = 1:nc2c2
+               self.sigdiff.ov(i) = ciprctileSmTail(diff(-margin_boot(:,ixc2(:,i)),[],2));
+            end
+            self.sigdiff.ma = self.sigdiff.ov;
+         end
+         if numel(self.ci.permutations)>0
+            for i = 1:nc2c2
+               self.sigdiff.di(i) = ciprctileSmTail(diff(   dist_boot(:,ixc2(:,i)),[],2));
+            end
+         end
 
          % %% DEBUG distances
          % fh = newfigure([nc2 1]);
