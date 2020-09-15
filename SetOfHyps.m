@@ -176,22 +176,30 @@ classdef SetOfHyps < Hypersphere
       function [self,loc_cv] = significance(self,points,N,varargin)
       % SetOfHyps.significance: tests 'statistics of interest' (distances,
       %    margins/overlaps, radii), and their pairwise differences, for
-      %    significance. It uses bootstrapped SetOfHyps or Hypersphere objects
-      %    found in self.ci.bootstraps, or if they don't exist, does the
-      %    bootstrapping on inputted points, and saves the bootstraps (and 95%
-      %    confidence intervals) in self.ci. Alternatively, the ci struct can be
-      %    passed as an input and embedded into the SetOfHyps object.
+      %    significance. It uses bootstrapped and permuted SetOfHyps or
+      %    Hypersphere objects found in self.ci.bootstraps and
+      %    self.ci.permutations or if they don't exist, does the bootstrapping
+      %    /permutation on inputted points, and saves the bootstraps/permutations
+      %    (and 95% confidence intervals) in self.ci. Alternatively, the ci
+      %    struct can be passed as an input and embedded into the SetOfHyps
+      %    object. One can choose to run only permutation- or bootstrap-based
+      %    tests with the 'permute' or 'bootstrap'/'stratified' input options.
       % 
       %    Significance testing is based on the percentile confidence interval
       %    that contains 0 (for primary significance tests)*. Significant
       %    difference testing involves computing the percentile confidence
       %    interval (two-tailed) of the difference of two of the same type of
-      %    statistics of interest from different hyperspheres.
+      %    statistics of interest from different hyperspheres. This is true for
+      %    all tests except (first-order) distance significance, which is a
+      %    permutation-based test asking if the distance computed on the
+      %    unpermuted data is within the 95% confidnece interval of the
+      %    permuted distances.
       %    *Radii are always significant by definition.
       % 
       % e.g.:
       % hyps = hyps.significance(points)
       % hyps = hyps.significance(points,N)
+      % hyps = hyps.significance(points,N,'permute') % only runs permutation tests
       % hyps = hyps.significance(ci)
       % hyps = hyps.significance           % works only if hyps.ci is populated
       % 
@@ -236,7 +244,7 @@ classdef SetOfHyps < Hypersphere
 
          %% Collect relevant permutations/bootstraps
          if numel(self.ci.permutations)>0
-            dist_boot    = cat(1,self.ci.permutations.dists);
+            dist_boot    = cat(1,self.ci.permutations.distsCV);
          end
          if numel(self.ci.bootstraps)>0
             radii_boot   = cat(1,self.ci.bootstraps.radii);
@@ -257,7 +265,7 @@ classdef SetOfHyps < Hypersphere
          self.sig.ra = [];
          if numel(self.ci.permutations)>0
             % At what percentile confidence interval of bootstrapped distances does 0 occur?
-            self.sig.di = 1-ciprctile(dist_boot,self.dists);
+            self.sig.di = 1-ciprctile(dist_boot,self.distsCV);
          end
 
          %% SECOND-ORDER COMPARISONS
