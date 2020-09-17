@@ -61,8 +61,8 @@ planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
    axtivate(2) 
    sh = draw3dEllipsoid(v{itype+1},...
             arrayfun(@(x) eye(3)*x^2,r{itype+1},'UniformOutput',false),...
-   draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*planelim); view(40,22);
             orig.categories.colors(1:nCats,:),0.5);
+   draw3Daxes([0 0 0],[-1 1 -1 1 -1 1]*planelim); view(40,22);
    match3D(fh.a.h(1),fh.a.h(2));
    set(fh.f,'Renderer','openGL');
    axis(fh.a.h(3),'off');
@@ -153,7 +153,7 @@ end
 low.stressUpdate(orig);
 new  = low.h2s(orig,2)%orig.h2s
 % Calculate significance
-orig = orig.significance(points{itype+1},400);
+orig = orig.significance(points{itype+1},2000);
 % Plot
 fh = newfigure([3 2],'compare'); low.show(fh.a.h(1));
                                  new.show(fh.a.h(2));
