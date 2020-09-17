@@ -226,7 +226,11 @@ classdef SetOfHyps < Hypersphere
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
             [bootsNperms,loc_cv] = Hypersphere.estimate(points,self.categories,N,...
                                                         testtype,varargin{:});
-            self.ci = bootsNperms.meanAndMerge.ci;
+            bootsNperms = bootsNperms.meanAndMerge;
+            self.ci = bootsNperms.ci;
+            if islogical(self.distsCV)
+               self.distsCV = bootsNperms.distsCV;
+            end
          end
          %% set up significance measures
          n   = numel(self.radii);
@@ -238,7 +242,7 @@ classdef SetOfHyps < Hypersphere
                    ixc2  = nchoosek_ix(nc2);
          end
 
-         self.sig = struct('ra',[],'ma',[],'ov',[],'di',[]);
+         self.sig = struct('ra',[],'ma',NaN(1,nc2),'ov',NaN(1,nc2),'di',NaN(1,nc2));
          self.sigdiff = struct('ra',NaN(1,nc2),...
                                'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2),'di',NaN(1,nc2c2));
 
@@ -258,14 +262,16 @@ classdef SetOfHyps < Hypersphere
          % What percentile confidence interval of bootstrapped margins contains 0?
 
          if numel(self.ci.bootstraps)>0
-            self.sig.ma = 1-ciprctile(margin_boot,0);
+            self.sig.ma = ciprctile(margin_boot,0);
             % What percentile confidence interval of bootstrapped overlap/margins contains 0?
             self.sig.ov = 1-self.sig.ma;
          end
-         self.sig.ra = [];
          if numel(self.ci.permutations)>0
-            % At what percentile confidence interval of bootstrapped distances does 0 occur?
-            self.sig.di = 1-ciprctileSmTail(dist_boot,self.distsCV);
+            % At what percentile confidence interval of permuted distances does
+            % the unpermuted distance estimate occur?
+            for i = 1:nc2
+               self.sig.di(i) = ciprctileSmTail(dist_boot(:,i),self.distsCV(i));
+            end
          end
 
          %% SECOND-ORDER COMPARISONS
@@ -679,14 +685,19 @@ classdef SetOfHyps < Hypersphere
          end
 
          nSigLevs = self.nSigLevs; % 3 means [0.95 0.99 0.999] levels
+         sigLevs = [0.05 10.^(-2:-1:-nSigLevs)];
 
          % Convert to sigmas significance, maxed to nSig(=3) and floored
          % Use False Discovery Rate correction for significance computation
-         sigThresh = structfun(@(x) fdr_bh(x,0.05),sig,'UniformOutput',false);
+         fn = fieldnames(sig)';
+         sigThresh = structfun(@(x) zeros(1,numel(x)),sig,'UniformOutput',false);
          % Compute increasing levels of significance
-         for i = 2:nSigLevs
-            for f = fieldnames(sig)'; f=f{1};
-               sigThresh.(f) = sigThresh.(f) + double(fdr_bh(1-sig.(f),10^-i));
+         for i = 1:nSigLevs
+            for f = fn; f=f{1};
+               if ~strcmpi(DIFF,'sig') && ~strcmpi(f,'di'), this_sigLev = sigLevs(i);
+               else                                         this_sigLev = sigLevs(i)/2;
+               end
+               sigThresh.(f) = sigThresh.(f) + double(fdr_bh(sig.(f),this_sigLev));
             end
          end
          sigThresh = structfun(@(x) max(0,x/nSigLevs-1e-5),sigThresh,'UniformOutput',false);

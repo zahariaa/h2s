@@ -139,7 +139,7 @@ classdef Hypersphere < handle
                obj.categories = varargin{v};
             elseif ischar(varargin{v}) && strcmpi(varargin{v},'cvdists')
                % Save cross-validated distances
-               obj.distsCV = varargin{v+1};
+               obj.distsCV = varargin{v+1}(:)';
             end
          end
          % Auto-generate dummy Categories if none exists by now
