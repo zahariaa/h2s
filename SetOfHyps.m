@@ -684,23 +684,18 @@ classdef SetOfHyps < Hypersphere
             return
          end
 
-         nSigLevs = self.nSigLevs; % 3 means [0.95 0.99 0.999] levels
-         sigLevs = [0.05 10.^(-2:-1:-nSigLevs)];
+         nSigLevs = self.nSigLevs; % 3 means [0.05 0.01 0.001] levels
+         sigLevs  = [0.05 10.^(-2:-1:-nSigLevs)];
 
          % Convert to sigmas significance, maxed to nSig(=3) and floored
          % Use False Discovery Rate correction for significance computation
-         fn = fieldnames(sig)';
-         sigThresh = structfun(@(x) zeros(1,numel(x)),sig,'UniformOutput',false);
-         % Compute increasing levels of significance
-         for i = 1:nSigLevs
-            for f = fn; f=f{1};
-               if ~strcmpi(DIFF,'sig') && ~strcmpi(f,'di'), this_sigLev = sigLevs(i);
-               else                                         this_sigLev = sigLevs(i)/2;
-               end
-               sigThresh.(f) = sigThresh.(f) + double(fdr_bh(sig.(f),this_sigLev));
+         sigThresh = arrayfun(@(t) SetOfHyps.nullHypothesisRejected(sig,t),sigLevs);
+         for i = 2:nSigLevs
+            for fn = fieldnames(sigThresh)';fn=fn{1};
+               sigThresh(1).(fn) = sigThresh(1).(fn) + sigThresh(i).(fn);
             end
          end
-         sigThresh = structfun(@(x) max(0,x/nSigLevs-1e-5),sigThresh,'UniformOutput',false);
+         sigThresh = structfun(@(x) max(0,x/nSigLevs-1e-5),sigThresh(1),'UniformOutput',false);
 
          n = numel(self.radii);
          % Time to get a-plottin'
@@ -1203,5 +1198,24 @@ classdef SetOfHyps < Hypersphere
          axis equal ij off
       end
    end % hidden methods
+
+   methods(Hidden = true, Static = true)
+      function sigThresh = nullHypothesisRejected(sig,thresh)
+         % Convert to sigmas significance, maxed to nSig(=3) and floored
+         % Use False Discovery Rate correction for significance computation
+         if ~exist('thresh','var') || isempty(thresh), thresh = 0.05; end
+
+         fn = fieldnames(sig)';
+         DIFF = ~isempty(sig.ra);
+
+         sigThresh = structfun(@(x) zeros(1,numel(x)),sig,'UniformOutput',false);
+         % Compute increasing levels of significance
+         for f = fn; f=f{1};
+            if DIFF || strcmpi(f,'di'), thresh = thresh/2;
+            end
+            sigThresh.(f) = sigThresh.(f) + double(fdr_bh(sig.(f),thresh));
+         end
+      end
+   end
 end
 
