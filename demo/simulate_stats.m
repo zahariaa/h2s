@@ -156,12 +156,8 @@ for d = 1:nd
             case   3  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
             case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
          end
-         if s==2 % 1-tailed CI
-         bootprc{s,d,r}(n,:,:) = prctile([squeeze([bootsamps{s,d,r}(n,:,:)])],100*[sigthresh 1])';
-         else    % 2-tailed CI
          bootprc{s,d,r}(n,:,:) = prctile([-Inf(1,nsims);squeeze([bootsamps{s,d,r}(n,:,:)]);Inf(1,nsims)],...
                                          [0 100] + [1 -1]*sigthresh*100/2)';
-         end
       end
    end
 end
@@ -176,12 +172,8 @@ ptests = NaN(nd,nn,nr,nm);
 for d = 1:nd
    for r = 1:nr
       for n = 1:nn
-         if s==2 % 1-tailed
-            sigcount = [nsims 0] + [-1 1]*sum(sigtest{s,d,r}(n,:)<=sigthresh);
-         else    % 2-tailed
-            sigcount = [nsims 0] + [-1 1]*...
+         sigcount = [nsims 0] + [-1 1]*...
                sum(min(cat(1,sigtest{s,d,r}(n,:),1-sigtest{s,d,r}(n,:)))<=sigthresh/2);
-         end
          ptests(d,n,r,s) = testCountDistribution_chi2(sigcount,[1-sigthresh sigthresh]);
       end
    end
@@ -279,8 +271,6 @@ title('Estimate vs d')
 switch s
    case 1    % 2-tailed test unsigned
       falsepos = @(a) 100*mean(min(cat(3,1-a,a),[],3)<=sigthresh/2);
-   case 2    % 1-tailed test
-      falsepos = @(a) 100*mean(a<=sigthresh);
    otherwise % 2-tailed test signed
       falsepos = @(a) 100*mean(a<=sigthresh/2);
 end
