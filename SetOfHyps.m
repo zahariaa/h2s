@@ -248,7 +248,8 @@ classdef SetOfHyps < Hypersphere
 
          %% Collect relevant permutations/bootstraps
          if numel(self.ci.permutations)>0
-            dist_boot    = cat(1,self.ci.permutations.distsCV);
+            distCV_boot  = cat(1,self.ci.permutations.distsCV);
+            dist_boot    = cat(1,self.ci.permutations.dists);
          end
          if numel(self.ci.bootstraps)>0
             radii_boot   = cat(1,self.ci.bootstraps.radii);
@@ -270,7 +271,7 @@ classdef SetOfHyps < Hypersphere
             % At what percentile confidence interval of permuted distances does
             % the unpermuted distance estimate occur?
             for i = 1:nc2
-               self.sig.di(i) = ciprctileSmTail(dist_boot(:,i),self.distsCV(i));
+               self.sig.di(i) = ciprctileSmTail(distCV_boot(:,i),self.distsCV(i));
             end
          end
 
