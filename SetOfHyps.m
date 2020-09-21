@@ -12,7 +12,9 @@ classdef SetOfHyps < Hypersphere
       ci         = [];  % confidence intervals, with raw bootstrap data
       error      = NaN; % [n-choose-2 x 1] vector of errors for each summary stat
       sig        = [];  % significance tests results
+      sigp       = [];  % significance tests p-values
       sigdiff    = [];  % significant differences tests results
+      sigdiffp   = [];  % significant differences tests p-values
       msflips    = [];  % margin sign flips
    end
    properties (Dependent, SetAccess = protected)
@@ -116,7 +118,7 @@ classdef SetOfHyps < Hypersphere
                   obj.ci = radii; % assumes merged Hypersphere object
                end
             else
-               obj = SetOfHyps(centers.meanAndMerge(true),varargin{:});
+               obj = SetOfHyps(centers.meanAndMerge,varargin{:});
             end
          else                                           % input options (1-2,4-6)
             % Use Hypersphere constructor to handle other possible inputs
@@ -194,6 +196,11 @@ classdef SetOfHyps < Hypersphere
       %    permutation-based test asking if the distance computed on the
       %    unpermuted data is within the 95% confidnece interval of the
       %    permuted distances.
+      %
+      %    p-values are stored in self.sigp and self.sigdiffp, and logicals
+      %    indicating whether the null hypothesis was rejected (true) in self.sig
+      %    and self.sigdiff.
+      %
       %    *Radii are always significant by definition.
       % 
       % e.g.:
@@ -203,7 +210,8 @@ classdef SetOfHyps < Hypersphere
       % hyps = hyps.significance(ci)
       % hyps = hyps.significance           % works only if hyps.ci is populated
       % 
-      % SEE ALSO ESTIMATEHYPERSPHERE, HYPERSPHERE.MEANANDMERGE
+      % SEE ALSO ESTIMATEHYPERSPHERE, HYPERSPHERE.MEANANDMERGE,
+      %    SETOFHYPS.NULLHYPOTHESISREJECTED
          loc_cv = [];
          testtype = 'calcStats';
          for v = 1:numel(varargin)
@@ -242,8 +250,8 @@ classdef SetOfHyps < Hypersphere
                    ixc2  = nchoosek_ix(nc2);
          end
 
-         self.sig = struct('ra',[],'ma',NaN(1,nc2),'ov',NaN(1,nc2),'di',NaN(1,nc2));
-         self.sigdiff = struct('ra',NaN(1,nc2),...
+         self.sigp = struct('ra',[],'ma',NaN(1,nc2),'ov',NaN(1,nc2),'di',NaN(1,nc2));
+         self.sigdiffp = struct('ra',NaN(1,nc2),...
                                'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2),'di',NaN(1,nc2c2));
 
          %% Collect relevant permutations/bootstraps
@@ -263,33 +271,36 @@ classdef SetOfHyps < Hypersphere
          % What percentile confidence interval of bootstrapped margins contains 0?
 
          if numel(self.ci.bootstraps)>0
-            self.sig.ma = ciprctile(margin_boot,0);
+            self.sigp.ma = 1-ciprctile(margin_boot,0);
             % What percentile confidence interval of bootstrapped overlap/margins contains 0?
-            self.sig.ov = 1-self.sig.ma;
+            self.sigp.ov = 1-self.sigp.ma;
          end
          if numel(self.ci.permutations)>0
             % At what percentile confidence interval of permuted distances does
             % the unpermuted distance estimate occur?
             for i = 1:nc2
-               self.sig.di(i) = ciprctileSmTail(distCV_boot(:,i),self.distsCV(i));
+               self.sigp.di(i) = ciprctileSmTail(distCV_boot(:,i),self.distsCV(i));
             end
          end
 
          %% SECOND-ORDER COMPARISONS
          if numel(self.ci.bootstraps)>0
             for i = 1:nc2
-               self.sigdiff.ra(i) = ciprctileSmTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
+               self.sigdiffp.ra(i) = ciprctileSmTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
             end
             for i = 1:nc2c2
-               self.sigdiff.ov(i) = ciprctileSmTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
+               self.sigdiffp.ov(i) = ciprctileSmTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
             end
-            self.sigdiff.ma = self.sigdiff.ov;
+            self.sigdiffp.ma = self.sigdiffp.ov;
          end
          if numel(self.ci.permutations)>0
             for i = 1:nc2c2
-               self.sigdiff.di(i) = ciprctileSmTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
+               self.sigdiffp.di(i) = ciprctileSmTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
             end
          end
+
+         self.sig     = SetOfHyps.nullHypothesisRejected(self.sigp,0.05);
+         self.sigdiff = SetOfHyps.nullHypothesisRejected(self.sigdiffp,0.05);
 
          % %% DEBUG distances
          % fh = newfigure([nc2 1]);
@@ -485,7 +496,7 @@ classdef SetOfHyps < Hypersphere
       end
 
 
-      function errlines = plotOverlapErrors(self,thresh)
+      function errlines = plotOverlapErrors(self)
       % SetOfHyps.plotOverlapErrors: plots a line where a true overlap is
       %    visualized as a margin, or a true margin is visualized as an
       %    overlap, but *ONLY IF THE TRUE OVERLAP/MARGIN is SIGNIFICANT*. Uses
@@ -495,19 +506,10 @@ classdef SetOfHyps < Hypersphere
       % 
       % e.g.:
       % hyps.plotOverlapErrors
-      % hyps.plotOverlapErrors(thresh)
-      % 
-      % Optional input:
-      %    thresh (DEFAULT = 0.95): significance threshold for an error to be
-      %       plotted
       % 
       % SEE ALSO HYPERSPHERE.SHOW, SETOFHYPS.SIGNIFICANCE
-         if ~exist('thresh','var') || iesmpty(thresh)
-            thresh = 0.95;
-         end
-
          if isempty(self.sig), sigov = true(1,numel(self.margins));
-         else                  sigov = sum([self.sig.ov;self.sig.ma] > thresh);
+         else                  sigov = sum([self.sig.ov;self.sig.ma]);
          end
          if isempty(self.msflips), self.msflips = zeros(size(sigov));
          end
@@ -661,20 +663,20 @@ classdef SetOfHyps < Hypersphere
             elseif ischar(varargin{v})
                switch lower(varargin{v})
                   case 'legend';            LGND = varargin{v};
-                  case 'sig';               sig  = self.sig;
+                  case 'sig';               sig  = self.sigp;
                                             DIFF = lower(varargin{v});
-                  case {'sigdiff', 'diff'}; sig  = self.sigdiff;
+                  case {'sigdiff', 'diff'}; sig  = self.sigdiffp;
                                             DIFF = lower(varargin{v});
                end
             end
          end
          if ~exist('ax'  ,'var') || isempty(ax)  , ax   = gca;        end
-         if ~exist('sig' ,'var') || isempty(sig) , sig  = self.sig;
+         if ~exist('sig' ,'var') || isempty(sig) , sig  = self.sigp;
                                                    DIFF = 'sig';      end
          if ~exist('LGND','var') || isempty(LGND), LGND = 'nolegend'; end
 
          if isempty(sig)
-            error(['need to populate obj.sig/sigdiff first,'...
+            error(['need to populate obj.sigp/sigdiffp first,'...
                    ' e.g. with:\nobj = obj.significance(points);']);
          end
 
@@ -686,16 +688,10 @@ classdef SetOfHyps < Hypersphere
          end
 
          nSigLevs = self.nSigLevs; % 3 means [0.05 0.01 0.001] levels
-         sigLevs  = [0.05 10.^(-2:-1:-nSigLevs)];
 
          % Convert to sigmas significance, maxed to nSig(=3) and floored
          % Use False Discovery Rate correction for significance computation
-         sigThresh = arrayfun(@(t) SetOfHyps.nullHypothesisRejected(sig,t),sigLevs);
-         for i = 2:nSigLevs
-            for fn = fieldnames(sigThresh)';fn=fn{1};
-               sigThresh(1).(fn) = sigThresh(1).(fn) + sigThresh(i).(fn);
-            end
-         end
+         sigThresh = SetOfHyps.nullHypothesisRejected(sig,[0.05 10.^(-2:-1:-nSigLevs)]);
          sigThresh = structfun(@(x) max(0,x/nSigLevs-1e-5),sigThresh(1),'UniformOutput',false);
 
          n = numel(self.radii);
@@ -1201,20 +1197,27 @@ classdef SetOfHyps < Hypersphere
    end % hidden methods
 
    methods(Hidden = true, Static = true)
-      function sigThresh = nullHypothesisRejected(sig,thresh)
+      function sigThresh = nullHypothesisRejected(sig,threshes)
+      % SEE ALSO SETOFHYPS.SIGNIFICANCE
          % Convert to sigmas significance, maxed to nSig(=3) and floored
          % Use False Discovery Rate correction for significance computation
-         if ~exist('thresh','var') || isempty(thresh), thresh = 0.05; end
+         if ~exist('threshes','var') || isempty(threshes), threshes = 0.05; end
 
          fn = fieldnames(sig)';
          DIFF = ~isempty(sig.ra);
 
-         sigThresh = structfun(@(x) zeros(1,numel(x)),sig,'UniformOutput',false);
+         sigThresh = structfun(@(x) false(1,numel(x)),sig,'UniformOutput',false);
          % Compute increasing levels of significance
-         for f = fn; f=f{1};
-            if DIFF || strcmpi(f,'di'), thresh = thresh/2;
+         for t = threshes
+            for f = fn; f=f{1};
+               if DIFF || strcmpi(f,'di'), t = t/2;
+               end
+               if numel(threshes)>1
+                  sigThresh.(f) = sigThresh.(f) + double(fdr_bh(sig.(f),t));
+               else
+                  sigThresh.(f) = fdr_bh(sig.(f),t);
+               end
             end
-            sigThresh.(f) = sigThresh.(f) + double(fdr_bh(sig.(f),thresh));
          end
       end
    end
