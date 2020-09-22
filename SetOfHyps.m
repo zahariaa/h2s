@@ -271,7 +271,9 @@ classdef SetOfHyps < Hypersphere
          % What percentile confidence interval of bootstrapped margins contains 0?
 
          if numel(self.ci.bootstraps)>0
-            self.sigp.ma = 1-ciprctile(margin_boot,0);
+            for i = 1:nc2
+               self.sigp.ma(i) = 1-ciprctile(margin_boot(:,i),self.margins(i));
+            end
             % What percentile confidence interval of bootstrapped overlap/margins contains 0?
             self.sigp.ov = 1-self.sigp.ma;
          end
