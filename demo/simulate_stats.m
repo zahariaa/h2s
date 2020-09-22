@@ -113,7 +113,7 @@ for d = 1:nd
             for b = 1:nsims
                hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,testtype{s},estimator);
                sigtmp(b,:) = hyptmp.(sigfield{1+double(s>2)}).(mnames{s}(1:2));
-               bootmp(b,:,:) = cat(1,hyptmp.ci.(testrslt{s}).(mnames{s}));
+               bootmp(b,:,:) = cat(1,hyptmp.ci.(testrslt{s}).(mnames{s}))';
                stationarycounter(b,nsims)
             end
             sigtmp = sigtmp(:,1+2*double(s==3));      % pick 3rd comparison only when s==3
@@ -215,7 +215,7 @@ title('Test performance')
 axtivate(5)
 plot([0 nsims],[0 0],'k--')
 for i = 1:nsims
-   if sigtest{s,d,r}(n,i), linecol = [0   0   0  ]; keyboard
+   if sigtest{s,d,r}(n,i), linecol = [0   0   0  ];
    else                    linecol = [0.5 0.5 0.5];
    end
    plot([i i],squeeze(bootprc{s,d,r}(n,i,:)),'-','Color',linecol,'LineWidth',4)
