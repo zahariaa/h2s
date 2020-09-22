@@ -293,7 +293,7 @@ classdef SetOfHyps < Hypersphere
             for i = 1:nc2c2
                self.sigdiffp.ov(i) = ciprctileSmTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
             end
-            self.sigdiffp.ma = self.sigdiffp.ov;
+            self.sigdiffp.ma = 1-self.sigdiffp.ov;
          end
          if numel(self.ci.permutations)>0
             for i = 1:nc2c2
