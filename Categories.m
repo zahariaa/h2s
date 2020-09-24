@@ -147,8 +147,13 @@ classdef Categories
          obj.labels  = repmat(self.labels,[1 N]);
          obj.colors  = repmat(self.colors,[N 1]);
          % Replicate vectors on block diagonal
-         cmd = ['obj.vectors = blkdiag(' repmat('self.vectors,',1,N)];
-         eval([cmd(1:end-1) ');']);
+         if ~islogical(self.vectors)
+            X = repmat({self.vectors},[N 1]);
+         else
+            X = repmat({sparse(self.vectors)},[N 1]);
+         end
+         obj.vectors = blkdiag(X{:});
+         obj.vectors = cast(obj.vectors,class(self.vectors));
          % Put it all together
          obj = Categories(obj);
       end
