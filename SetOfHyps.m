@@ -252,16 +252,17 @@ classdef SetOfHyps < Hypersphere
 
          self.sigp = struct('ra',[],'ma',NaN(1,nc2),'ov',NaN(1,nc2),'di',NaN(1,nc2));
          self.sigdiffp = struct('ra',NaN(1,nc2),...
-                               'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2),'di',NaN(1,nc2c2));
+                                'ma',NaN(1,nc2c2),'ov',NaN(1,nc2c2),'di',NaN(1,nc2c2));
 
          %% Collect relevant permutations/bootstraps
          if numel(self.ci.permutations)>0
-            distCV_boot  = cat(1,self.ci.permutations.distsCV);
-            dist_boot    = cat(1,self.ci.permutations.dists);
+            distCV_perm  = cat(1,self.ci.permutations.distsCV);
+            %dist_perm    = cat(1,self.ci.permutations.dists);
          end
          if numel(self.ci.bootstraps)>0
             radii_boot   = cat(1,self.ci.bootstraps.radii);
             margin_boot  =       self.ci.bootstraps.margins;
+            dist_boot    = cat(1,self.ci.bootstraps.dists);
          end
          %% COMPUTE SIGNIFICANCE (smaller values more significant)
          % helper functions
@@ -272,7 +273,7 @@ classdef SetOfHyps < Hypersphere
 
          if numel(self.ci.bootstraps)>0
             for i = 1:nc2
-               self.sigp.ma(i) = 1-ciprctile(margin_boot(:,i),self.margins(i));
+               self.sigp.ma(i) = ciprctile(margin_boot(:,i),0);
             end
             % What percentile confidence interval of bootstrapped overlap/margins contains 0?
             self.sigp.ov = 1-self.sigp.ma;
@@ -281,7 +282,7 @@ classdef SetOfHyps < Hypersphere
             % At what percentile confidence interval of permuted distances does
             % the unpermuted distance estimate occur?
             for i = 1:nc2
-               self.sigp.di(i) = ciprctileSmTail(distCV_boot(:,i),self.distsCV(i));
+               self.sigp.di(i) = ciprctileSmTail(distCV_perm(:,i),self.distsCV(i));
             end
          end
 
@@ -292,13 +293,9 @@ classdef SetOfHyps < Hypersphere
             end
             for i = 1:nc2c2
                self.sigdiffp.ov(i) = ciprctileSmTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
-            end
-            self.sigdiffp.ma = 1-self.sigdiffp.ov;
-         end
-         if numel(self.ci.permutations)>0
-            for i = 1:nc2c2
                self.sigdiffp.di(i) = ciprctileSmTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
             end
+            self.sigdiffp.ma = self.sigdiffp.ov; % Margin/overlap sigdiff is same bc smaller tail
          end
 
          self.sig     = SetOfHyps.nullHypothesisRejected(self.sigp,0.05);
@@ -1210,9 +1207,10 @@ classdef SetOfHyps < Hypersphere
 
          sigThresh = structfun(@(x) false(1,numel(x)),sig,'UniformOutput',false);
          % Compute increasing levels of significance
-         for t = threshes
+         for this_thresh = threshes
             for f = fn; f=f{1};
-               if DIFF || strcmpi(f,'di'), t = t/2;
+               if DIFF || strcmpi(f,'di'), t = this_thresh/2;
+               else                        t = this_thresh;
                end
                if numel(threshes)>1
                   sigThresh.(f) = sigThresh.(f) + double(fdr_bh(sig.(f),t));

@@ -60,7 +60,7 @@ nm  = numel(measures);
 nc2 = 1+2*double(s>2);
 
 basedir = '';%'/moto/nklab/users/az2522/';
-simfolder = '20200922/';
+simfolder = '20200924/';
 simfolder = [basedir 'data/statsim/' simfolder];
 if ~exist(simfolder,'dir'), mkdir(simfolder); end
 simfile = @(s,d,r,n) sprintf('%s%ss%g_d%g_r%g_n%g.mat',simfolder,estimator,s,d,r,n);
