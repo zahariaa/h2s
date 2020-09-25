@@ -266,9 +266,9 @@ classdef SetOfHyps < Hypersphere
          end
          %% COMPUTE SIGNIFICANCE (smaller values more significant)
          % helper functions
-         smallertail     = @(x) min(cat(3,1-x,x),[],3);
-         ciprctile       = @(x,t) sum([-Inf(1,size(x,2));x;Inf(1,size(x,2))]<=t)/(size(x,1)+2);
-         ciprctileSmTail = @(x,t) smallertail(ciprctile(x,t));
+         furthertail     = @(x) min(cat(3,1-x,x),[],3);
+         ciprctile       = @(x,t) sum([-Inf(1,size(x,2));x;Inf(1,size(x,2))]<=t)/(size(x,1)+3);
+         ciprctileFuTail = @(x,t) furthertail(ciprctile(x,t));
          % What percentile confidence interval of bootstrapped margins contains 0?
 
          if numel(self.ci.bootstraps)>0
@@ -283,18 +283,18 @@ classdef SetOfHyps < Hypersphere
             % At what percentile confidence interval of permuted distances does
             % the unpermuted distance estimate occur?
             for i = 1:nc2
-               self.sigp.di(i) = ciprctileSmTail(distCV_perm(:,i),self.distsCV(i));
+               self.sigp.di(i) = ciprctileFuTail(distCV_perm(:,i),self.distsCV(i));
             end
          end
 
          %% SECOND-ORDER COMPARISONS
          if numel(self.ci.bootstraps)>0
             for i = 1:nc2
-               self.sigdiffp.ra(i) = ciprctileSmTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
+               self.sigdiffp.ra(i) = ciprctileFuTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
             end
             for i = 1:nc2c2
-               self.sigdiffp.ov(i) = ciprctileSmTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
-               self.sigdiffp.di(i) = ciprctileSmTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
+               self.sigdiffp.ov(i) = ciprctileFuTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
+               self.sigdiffp.di(i) = ciprctileFuTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
             end
             self.sigdiffp.ma = self.sigdiffp.ov; % Margin/overlap sigdiff is same bc smaller tail
          end
