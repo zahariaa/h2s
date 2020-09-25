@@ -185,13 +185,15 @@ end
 
 
 %% Plot analyses
-[d,r,n] = deal(1);
+d = 1;
+r = find(rs==0);
+n = numel(ns);
 nShown = [1 nn  1 nn];
 dShown = [1  1 nd nd];
 rShown = [1 nr  1 nr];
 
-fh = newfigure([3 4],sprintf('%u%s',s,measures{s}));
-ax = fh.a.h([9 10]);
+fh = newfigure([3 5],sprintf('%u%s',s,measures{s}));
+ax = fh.a.h([11 12]);
 
 for i = 1:3
    sampsz = (2^(i+4))*ones(1,2+double(s>2));
@@ -213,6 +215,17 @@ ylabel('Significance of false positives compared to 5%')
 title('Test performance')
 
 axtivate(5)
+plot(ds,100*squeeze(ptests(:,n,:,s)),'-o')
+plot(ds([1 end]),100*sigthresh*[1 1],'--k')
+if numel(ds)>1
+   xlim(ds([1 end])); logAxis(2)
+end
+ylim([0 max(ylim)])
+xlabel('dimensions')
+ylabel('Significance of false positives compared to 5%')
+title('Test performance')
+
+axtivate(6)
 plot([0 nsims],[0 0],'k--')
 for i = 1:nsims
    if sigtest{s,d,r}(n,i), linecol = [0   0   0  ];
@@ -225,7 +238,7 @@ ylabel(sprintf('%s\nestimates (red)\nconfidence intervals (black = significant)'
 xlabel('Simulation #')
 title({'Estimate (red)' 'boostrapped CI (black/grey)'})
 
-axtivate(6)
+axtivate(7)
 hb = histogram(bootsamps{s,d,r}(n,:,:),100,'Normalization','pdf',...
                'Orientation','horizontal','FaceColor',[0 0 0],'EdgeColor','none');
 he = histogram(estimates{s,d,r}(n,:),'BinEdges',hb.BinEdges,'Normalization','pdf',...
@@ -233,7 +246,7 @@ he = histogram(estimates{s,d,r}(n,:),'BinEdges',hb.BinEdges,'Normalization','pdf
 ylabel(measures{s})
 xlabel('pdf')
 title({'Boostrapped estimates from' 'all simulations (black) and' 'estimates (red)'})
-matchy(fh.a.h(5:6),'y')
+matchy(fh.a.h(6:7),'y')
 
 %% TODO: different colors for different conditions
 
@@ -255,7 +268,7 @@ matchy(ax)
 for d = nd:-1:1
    plotErrorPatch(rs,squeeze(indexm(cat(3,estimates{s,d,:}),n)) ...
                      .*(ones(nsims,1)*arrayfun(normfactor,1:nr)),...
-                  fh.a.h(7),[1 d*[1 1]/(nd+1)])%,'sem')
+                  fh.a.h(8),[1 d*[1 1]/(nd+1)])%,'sem')
 end
 xlim(rs([1 end])); xticks(rs); xticklabels(2.^rs);
 xlabel('radius ratio')
@@ -264,15 +277,25 @@ title('Estimate vs r-ratio')
 
 for r = nr:-1:1
    plotErrorPatch(ds,squeeze(indexm(cat(3,estimates{s,:,r}),n))*normfactor(r),...
-                  fh.a.h(8),[r*[1 1]/(nr+1) 1])%,'sem')
+                  fh.a.h(9),[r*[1 1]/(nr+1) 1])%,'sem')
 end
+r = find(rs==0);
 xlim(ds([1 end])); xticks(ds); xticklabels(2.^ds);
 xlabel('dimensions')
 ylabel(measures{s})
 title('Estimate vs d')
 
-axtivate(11)
-for d = 1:nd
+for d = nd:-1:1
+   plotErrorPatch(ns,cat(3,estimates{s,d,r})',...
+                  fh.a.h(10),[1 d*[1 1]/(nd+1)])%,'sem')
+end
+xlim(ns([1 end])); xticks(ns); xticklabels(2.^ns);
+xlabel('samples')
+ylabel(measures{s})
+title('Estimate vs number of samples')
+
+axtivate(13)
+for d = nd:-1:1
    a = permute(indexm(cat(3,sigtest{s,d,:}),n),[2 3 1]);
    plot(rs,100*mean(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
 end
@@ -280,18 +303,31 @@ plot(rs([1 end]),100*sigthresh*[1 1],'--k')
 xlim(rs([1 end])); xticks(rs); xticklabels(2.^rs);
 xlabel('radius ratio')
 ylabel('False positive rate (%)')
-title('False positive rate vs r-ratio')
+title({'False positive rate';'vs r-ratio'})
 
-axtivate(12)
-for r = 1:nr
+axtivate(14)
+for r = nr:-1:1
    a = permute(indexm(cat(3,sigtest{s,:,r}),n),[2 3 1]);
    plot(ds,100*mean(a),'-','LineWidth',2,'Color',[[r r]/(nr+1) 1])
 end
+r = find(rs==0);
 plot(ds([1 end]),100*sigthresh*[1 1],'--k')
 xlim(ds([1 end])); xticks(ds); xticklabels(2.^ds);
 xlabel('dimensions')
 ylabel('False positive rate (%)')
-title('False positive rate vs d')
+title({'False positive rate';'vs dimensions'})
+
+axtivate(15)
+for d = nd:-1:1
+   a = cat(3,sigtest{s,d,r})';
+   plot(ns,100*mean(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
+end
+plot(ns([1 end]),100*sigthresh*[1 1],'--k')
+xlim(ns([1 end])); xticks(ns); xticklabels(2.^ns);
+xlabel('samples')
+ylabel('False positive rate (%)')
+title({'False positive rate';'vs number of samples'})
+
 printFig;
 
 % keyboard
