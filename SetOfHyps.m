@@ -267,15 +267,16 @@ classdef SetOfHyps < Hypersphere
          %% COMPUTE SIGNIFICANCE (smaller values more significant)
          % helper functions
          smallertail     = @(x) min(cat(3,1-x,x),[],3);
-         ciprctile       = @(x,t) sum([-Inf(1,size(x,2));x;Inf(1,size(x,2))]>t)/(size(x,1)+2);
+         ciprctile       = @(x,t) sum([-Inf(1,size(x,2));x;Inf(1,size(x,2))]<=t)/(size(x,1)+2);
          ciprctileSmTail = @(x,t) smallertail(ciprctile(x,t));
          % What percentile confidence interval of bootstrapped margins contains 0?
 
          if numel(self.ci.bootstraps)>0
+            % What percentile confidence interval of bootstrapped overlap/margins contains 0?
+            % Overlap/margin is significant if 0 does not exceed the lowest 5% range
             for i = 1:nc2
                self.sigp.ma(i) = ciprctile(margin_boot(:,i),0);
             end
-            % What percentile confidence interval of bootstrapped overlap/margins contains 0?
             self.sigp.ov = 1-self.sigp.ma;
          end
          if numel(self.ci.permutations)>0
