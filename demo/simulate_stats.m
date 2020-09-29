@@ -46,7 +46,7 @@ nn = numel(ns);
 sigfield = {'sig',     'sigdiff'};
 measures = {'overlap', 'distance', 'radius difference', ...
             'overlap difference', 'distance difference','overlap difference'};
-mnames   = {'overlap', 'distsCV', 'radii', ...
+mnames   = {'overlap', 'dists', 'radii', ...
             'overlap', 'dists','overlap'};
 testtype = [{'bootstrap'  'permute'     } repmat({'bootstrap' },[1 4])];
 testrslt = [{'bootstraps' 'permutations'} repmat({'bootstraps'},[1 4])];
@@ -60,7 +60,7 @@ nm  = numel(measures);
 nc2 = nchoosek(2+double(floor(s/3)),2);
 
 basedir = '';%'/moto/nklab/users/az2522/';
-simfolder = '20200925/';
+simfolder = '20200929/';
 simfolder = [basedir 'data/statsim/' simfolder];
 if ~exist(simfolder,'dir'), mkdir(simfolder); end
 simfile = @(s,d,r,n) sprintf('%s%ss%g_d%g_r%g_n%g.mat',simfolder,estimator,s,d,r,n);
@@ -109,13 +109,14 @@ for d = 1:nd
             end
             % Assess significance on samples
             sigOrDiff = sigfield{1+double(s>2)};
-            nc2c2 = nchoosek(nc2,2);
+            nc2c2 = nchoosek(max(2,nc2),2);
             sigtmp = NaN(nsims,nc2c2);
             sigptmp = NaN(nsims,nc2c2);
             bootmp = NaN(nsims,nc2,nboots);
             for b = 1:nsims
                hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,testtype{s},estimator);
                sigtmp(b,:)  = hyptmp.(sigOrDiff).(mnames{s}(1:2));
+               sigptmp(b,:) = hyptmp.([sigOrDiff 'p']).(mnames{s}(1:2));
                bootmp(b,:,:) = cat(1,hyptmp.ci.(testrslt{s}).(mnames{s}))';
                stationarycounter(b,nsims)
             end
@@ -161,7 +162,7 @@ for d = 1:nd
             case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
             case   6  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],[1 6]),[],2);
          end
-         if s==1
+         if s<3
          bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r}(n,:,:))]',...
                                          [sigthresh*100 100])';
          else

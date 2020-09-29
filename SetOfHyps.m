@@ -256,8 +256,8 @@ classdef SetOfHyps < Hypersphere
 
          %% Collect relevant permutations/bootstraps
          if numel(self.ci.permutations)>0
-            distCV_perm  = cat(1,self.ci.permutations.distsCV);
-            %dist_perm    = cat(1,self.ci.permutations.dists);
+            %distCV_perm  = cat(1,self.ci.permutations.distsCV);
+            dist_perm    = cat(1,self.ci.permutations.dists);
          end
          if numel(self.ci.bootstraps)>0
             radii_boot   = cat(1,self.ci.bootstraps.radii);
@@ -283,7 +283,7 @@ classdef SetOfHyps < Hypersphere
             % At what percentile confidence interval of permuted distances does
             % the unpermuted distance estimate occur?
             for i = 1:nc2
-               self.sigp.di(i) = ciprctileFuTail(distCV_perm(:,i),self.distsCV(i));
+               self.sigp.di(i) = 1-ciprctile(dist_perm(:,i),self.dists(i));
             end
          end
 
@@ -1210,8 +1210,8 @@ classdef SetOfHyps < Hypersphere
          % Compute increasing levels of significance
          for this_thresh = threshes
             for f = fn; f=f{1};
-               if DIFF || strcmpi(f,'di'), t = this_thresh/2;
-               else                        t = this_thresh;
+               if      DIFF,                     t =   this_thresh/2;
+               else                              t =   this_thresh;
                end
                if numel(threshes)>1
                   sigThresh.(f) = sigThresh.(f) + double(fdr_bh(sig.(f),t));
