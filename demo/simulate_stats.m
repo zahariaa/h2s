@@ -45,19 +45,19 @@ nn = numel(ns);
 
 sigfield = {'sig',     'sigdiff'};
 measures = {'overlap', 'distance', 'radius difference', ...
-            'overlap difference', 'distance difference'};
+            'overlap difference', 'distance difference','overlap difference'};
 mnames   = {'overlap', 'distsCV', 'radii', ...
-            'overlap', 'dists'};
-testtype = {'bootstrap' ,'permute'     ,'bootstrap' ,'bootstrap' ,'bootstrap' };
-testrslt = {'bootstraps','permutations','bootstraps','bootstraps','bootstraps'};
+            'overlap', 'dists','overlap'};
+testtype = [{'bootstrap'  'permute'     } repmat({'bootstrap' },[1 4])];
+testrslt = [{'bootstraps' 'permutations'} repmat({'bootstraps'},[1 4])];
 % % debug
-% for s = 1:5
+% for s = 1:6
 %    testScenario(s,2.^ds,2.^rs,measures,mnames);
 % end
 % keyboard
 
 nm  = numel(measures);
-nc2 = 1+2*double(s>2);
+nc2 = nchoosek(2+double(floor(s/3)),2);
 
 basedir = '';%'/moto/nklab/users/az2522/';
 simfolder = '20200925/';
@@ -88,7 +88,7 @@ for d = 1:nd
             if ~DISPLAYED
                fprintf('Simulating points and estimating hyperspheres...      ')
             end
-            [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
+            [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(floor(s/3)))],nsims);
             % Simulate points
             hyp = Hypersphere.estimate(points,gt.categories,'independent',estimator);%.meanAndMerge(true);
             % save in-progress fits
@@ -105,22 +105,26 @@ for d = 1:nd
             
             if ~exist('points','var') % regenerate points
                gt.resetRandStream
-               [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(s>2))],nsims);
+               [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(floor(s/3)))],nsims);
             end
             % Assess significance on samples
-            sigtmp = NaN(nsims,nc2);
+            sigOrDiff = sigfield{1+double(s>2)};
+            nc2c2 = nchoosek(nc2,2);
+            sigtmp = NaN(nsims,nc2c2);
+            sigptmp = NaN(nsims,nc2c2);
             bootmp = NaN(nsims,nc2,nboots);
             for b = 1:nsims
                hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,testtype{s},estimator);
-               sigtmp(b,:) = hyptmp.(sigfield{1+double(s>2)}).(mnames{s}(1:2));
+               sigtmp(b,:)  = hyptmp.(sigOrDiff).(mnames{s}(1:2));
                bootmp(b,:,:) = cat(1,hyptmp.ci.(testrslt{s}).(mnames{s}))';
                stationarycounter(b,nsims)
             end
-            sigtmp = sigtmp(:,1+2*double(s==3));      % pick 3rd comparison only when s==3
+            sigtmp = sigtmp(:,1+2*(mod(s,3)==0).*round(s/3)); % pick 3rd for s=3 and 5th for s=6
             switch s
                case {1,2}; bootmp = bootmp(:,1,:);
-               case 3;     bootmp = diff(bootmp(:,2:3,:),[],2);   % difference of  last two measures
-               case {4,5}; bootmp = diff(bootmp(:,1:2,:),[],2);   % difference of first two measures
+               case   3;   bootmp = diff(bootmp(:, 2:3 ,:),[],2);   % difference of  last two measures
+               case {4,5}; bootmp = diff(bootmp(:, 1:2 ,:),[],2);   % difference of first two measures
+               case   6;   bootmp = diff(bootmp(:,[1 6],:),[],2);   % difference of first & last measures
             end
             % save in-progress fits
             savtmp = struct('hyp',hyp,'gt',gt,'sigtmp',sigtmp,'bootmp',bootmp,'n',ns(n),'d',ds(d),'r',rs(r));
@@ -155,6 +159,7 @@ for d = 1:nd
             case {1,2}; estimates{s,d,r}(n,:) =             cat(1,hyps{s,d,r}(n,:).(mnames{s}));
             case   3  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
             case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
+            case   6  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],[1 6]),[],2);
          end
          if s==1
          bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r}(n,:,:))]',...
@@ -167,9 +172,9 @@ for d = 1:nd
    end
 end
 switch s
-   case {1,4}; normfactor = @(r) min(2^rs(r).^[1 -1]);
-   case {2,5}; normfactor = @(r) min(2^rs(r).^[0 -1]);
-   case   3  ; normfactor = @(r)     2^-rs(r);
+   case {1,4,6}; normfactor = @(r) min(2^rs(r).^[1 -1]);
+   case  {2,5} ; normfactor = @(r) min(2^rs(r).^[0 -1]);
+   case    3   ; normfactor = @(r)     2^-rs(r);
 end
 
 %% Are the signifiance tests significantly performing correctly?
@@ -196,7 +201,7 @@ fh = newfigure([3 5],sprintf('%u%s',s,measures{s}));
 ax = fh.a.h([11 12]);
 
 for i = 1:3
-   sampsz = (2^(i+4))*ones(1,2+double(s>2));
+   sampsz = (2^(i+4))*ones(1,2+double(floor(s/3)));
    generateScenario(s,2,2^rs(rShown(i))).plotSamples(sampsz,fh.a.h(i));
    if s<3, title(sprintf('Samples: n_1= %u, n_2= %u',         sampsz))
    else    title(sprintf('Samples: n_1= %u, n_2= %u, n_3= %u',sampsz))
@@ -357,6 +362,8 @@ function hyp = generateScenario(s,d,r)
          % hyp = Hypersphere([zeros(1,d);r+1 zeros(1,d-1);ones(1,d)],[r 1 1]);
       % case 4 % OVERLAP DIFFERENCE. Null distribution: overlaps are the same. (Need 3+ balls.)
          % hyp = Hypersphere([zeros(1,d);3*r/2 zeros(1,d-1);0 3*r/2 zeros(1,d-2)],[r 1 1]);
+      case 6
+         hyp = Hypersphere([[-1 -r;-1 0.75; 1 r; 1 -0.75] zeros(4,d-2)],[r 1 r 1]);
    end
 end
 
