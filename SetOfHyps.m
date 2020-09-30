@@ -214,11 +214,15 @@ classdef SetOfHyps < Hypersphere
       %    SETOFHYPS.NULLHYPOTHESISREJECTED
          loc_cv = [];
          testtype = 'calcStats';
+         CVDISTS  = 'nocvdists'; % default, unless overwritten by input option
          for v = 1:numel(varargin)
             if ischar(varargin{v})
                switch lower(varargin{v})
                   case{'calcstats','permute','stratified','bootstrap'}
                      testtype = varargin{v};
+                     varargin{v} = [];
+                  case {'cvdists','nocvdists'}
+                     CVDISTS = varargin{v};
                      varargin{v} = [];
                end
             end
@@ -233,7 +237,7 @@ classdef SetOfHyps < Hypersphere
          else
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
             [bootsNperms,loc_cv] = Hypersphere.estimate(points,self.categories,N,...
-                                                        testtype,varargin{:});
+                                                        testtype,CVDISTS,varargin{:});
             bootsNperms = bootsNperms.meanAndMerge;
             self.ci = bootsNperms.ci;
             if islogical(self.distsCV)
@@ -256,8 +260,11 @@ classdef SetOfHyps < Hypersphere
 
          %% Collect relevant permutations/bootstraps
          if numel(self.ci.permutations)>0
-            %distCV_perm  = cat(1,self.ci.permutations.distsCV);
-            dist_perm    = cat(1,self.ci.permutations.dists);
+            if strcmpi(CVDISTS,'cvdists')
+               distCV_perm = cat(1,self.ci.permutations.distsCV);
+            else
+               dist_perm   = cat(1,self.ci.permutations.dists);
+            end
          end
          if numel(self.ci.bootstraps)>0
             radii_boot   = cat(1,self.ci.bootstraps.radii);
@@ -283,7 +290,11 @@ classdef SetOfHyps < Hypersphere
             % At what percentile confidence interval of permuted distances does
             % the unpermuted distance estimate occur?
             for i = 1:nc2
-               self.sigp.di(i) = 1-ciprctile(dist_perm(:,i),self.dists(i));
+               if strcmpi(CVDISTS,'cvdists')
+                  self.sigp.di(i) = ciprctileFuTail(distCV_perm(:,i),self.distsCV(i));
+               else
+                  self.sigp.di(i) = 1-ciprctile(dist_perm(:,i),self.dists(i));
+               end
             end
          end
 
@@ -299,8 +310,7 @@ classdef SetOfHyps < Hypersphere
             self.sigdiffp.ma = self.sigdiffp.ov; % Margin/overlap sigdiff is same bc smaller tail
          end
 
-         self.sig     = SetOfHyps.nullHypothesisRejected(self.sigp,0.05);
-         self.sigdiff = SetOfHyps.nullHypothesisRejected(self.sigdiffp,0.05);
+         self = self.nullHypothesisRejected(0.05);
 
          % %% DEBUG distances
          % fh = newfigure([nc2 1]);
@@ -691,7 +701,7 @@ classdef SetOfHyps < Hypersphere
 
          % Convert to sigmas significance, maxed to nSig(=3) and floored
          % Use False Discovery Rate correction for significance computation
-         sigThresh = SetOfHyps.nullHypothesisRejected(sig,[0.05 10.^(-2:-1:-nSigLevs)]);
+         sigThresh = self.nullHypothesisRejected([0.05 10.^(-2:-1:-nSigLevs)],DIFF);
          sigThresh = structfun(@(x) max(0,x/nSigLevs-1e-5),sigThresh(1),'UniformOutput',false);
 
          n = numel(self.radii);
@@ -1194,33 +1204,58 @@ classdef SetOfHyps < Hypersphere
          end
          axis equal ij off
       end
-   end % hidden methods
 
-   methods(Hidden = true, Static = true)
-      function sigThresh = nullHypothesisRejected(sig,threshes)
-      % SEE ALSO SETOFHYPS.SIGNIFICANCE
-         % Convert to sigmas significance, maxed to nSig(=3) and floored
-         % Use False Discovery Rate correction for significance computation
+      function self = nullHypothesisRejected(self,threshes,SIGTYPE)
+      % SetOfHyps.nullHypothesisRejected: Takes p-values and outputs a logical
+      %    indicating whether the threshold(s) for significance has been reached.
+      %
+%%    False Discovery Rate (FDR) correction will be applied (NOT FULLY IMPLEMENTED YET).
+      %    
+      % Optional inputs:
+      %    threshes (DEFAULT = 0.05): A numeric array or scalar containing the
+      %       theshold(s) for significance. If multiple thresholds are given,
+      %       the output will contain the sum of the test results at the different
+      %       thresholds.
+      %
+      %   SIGTYPE (DEFAULT = {'sig' 'sigdiff'}): The signficance types ('sig',
+      %       'sigdiff', or both) for which testing should be done. If only one
+      %       type is requested, then the output of the function will be just the
+      %       sigThresh (thresholded p-values) struct for the type requested.
+      %
+      % SEE ALSO SETOFHYPS.SIGNIFICANCE, SETOFHYPS.SHOWSIG
          if ~exist('threshes','var') || isempty(threshes), threshes = 0.05; end
+         if ~exist('SIGTYPE', 'var') || isempty(SIGTYPE ), SIGTYPE = {'sig' 'sigdiff'};
+         elseif ischar(SIGTYPE), SIGTYPE = {SIGTYPE};
+         end
 
-         fn = fieldnames(sig)';
-         DIFF = ~isempty(sig.ra);
+         CVDISTS = numel(self.ci.permutations) && any(cat(1,self.ci.permutations.distsCV));
 
-         sigThresh = structfun(@(x) false(1,numel(x)),sig,'UniformOutput',false);
-         % Compute increasing levels of significance
-         for this_thresh = threshes
-            for f = fn; f=f{1};
-               if      DIFF,                     t =   this_thresh/2;
-               else                              t =   this_thresh;
-               end
-               if numel(threshes)>1
-                  sigThresh.(f) = sigThresh.(f) + double(fdr_bh(sig.(f),t));
-               else
-                  sigThresh.(f) = fdr_bh(sig.(f),t);
+         for sig = SIGTYPE; sig = [sig{1} 'p'];
+            fn = fieldnames(self.(sig))';
+            DIFF = ~isempty(self.(sig).ra);
+   
+            sigThresh = structfun(@(x) false(1,numel(x)),self.(sig),'UniformOutput',false);
+            % Compute increasing levels of significance
+            for this_thresh = threshes
+               for f = fn; f=f{1};
+                  if DIFF || (CVDISTS && strcmpi(f,'di')), t =   this_thresh/2;
+                  %elseif ~DIFF && ~strcmpi(f,'di'), t = 1-this_thresh;
+                  else                                     t =   this_thresh;
+                  end
+                  % Use False Discovery Rate correction for significance computation
+                  if numel(threshes)>1
+                     sigThresh.(f) = sigThresh.(f) + double(fdr_bh(self.(sig).(f),t));
+                  else
+                     sigThresh.(f) = fdr_bh(self.(sig).(f),t);
+                  end
                end
             end
+            self.(sig(1:end-1)) = sigThresh;
+         end
+         if numel(SIGTYPE)==1
+            self = sigThresh; % output only sigThresh if only one sigtype is selected (e.g. showSig)
          end
       end
-   end
+   end % hidden methods
 end
 

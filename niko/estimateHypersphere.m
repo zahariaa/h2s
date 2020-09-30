@@ -41,6 +41,7 @@ for v = 1:numel(varargin)
          case 'normalize';   NORMALIZE  = true;  varargin{v} = [];
          case 'raw';         NORMALIZE  = false; varargin{v} = [];
          case 'nocvdists';     CVDISTS  = false;
+         case 'cvdists';       CVDISTS  = true;
          case 'independent'; INDEPENDENT= true;  varargin{v} = [];
          case {'meandist','distance','mcmc','jointml','gaussian','uniformball','uniformcube'}
             ESTIMATOR = lower(varargin{v});
