@@ -1,16 +1,108 @@
 function [hyp,loc_cv] = estimateHypersphere(points,varargin)
+% estimateHypersphere: the first step in the hypersphere2sphere algorithm,
+%    this function takes points as input and outputs a Hypersphere object.
+% 
+% e.g.
 % hyp = estimateHypersphere(points,nBootstraps) % output is a Hypersphere obj
 % hyps = estimateHypersphere(points,categories) % output is an array of Hypersphere objs
 % [hyp,loc_cv] = estimateHypersphere(points) % output is a Hypersphere obj and
-%    its 2-fold cross-validated center
+%    % its 2-fold cross-validated center
+% hyp = estimateHypersphere(points,'nocvdists') % cross-validated dists not computed
+% hyp = estimateHypersphere(points,'calcStats',nBootstraps) % compute both
+%    % permutation- and bootstrap-based statistical tests
+% 
+% Required input:
+%    points (2D or 3D array): [n x d x f] array, where n is the number of points/
+%       samples, d is the dimensionality of the points, and f (DEFAULT=1) is the
+%       numnber of 'frames' in a common space (as with temporal data in a movie)
+%       or independent sets of hyperspheres that can be computed in parallel.
 %
-% IF POINTS IS 3D:
-% hyp = estimateHypersphere(points,categories) % assumes 3rd dim are bootstraps
-% ASSUMES YOU WANT TO COMBINE the 2D points across frames in 3rd dim,
-%    using the same categories in categories, but to keep all frames in same space
-%    e.g. for a movie:
-% hyp = estimateHypersphere(points,categories,1)
+%% [NOT FULLY IMPLEMENTED] Points can also be a distance matrix--this case will be
+%       automatically detected, and a distance-based estimator will be applied.
+% 
+% Optional inputs:
+%    categories (DEFAULT = none): A Categories object. This is perhaps the most
+%       critical optional input; it can be used to specify the subsets of the
+%       points that denote distinct hyperspheres to estimate, which
+%       estimateHypersphere will recursively compute. The output will be a single
+%       Hypersphere object, with the Categories object embedded within it. When
+%       multiple hyperspheres are given for estimation, the cross-validated
+%       distance(s) between them will be computed and also embedded into the
+%       Hypersphere object. The cross-validated center coordinates (used to
+%       compute the cross-validated inter-center distances) are an optional output.
+% 
+%    nBootstraps (DEFAULT = 1): A scalar that determines how many bootstraps (or
+%       permutations, or both) to compute via recursive calls. A value of 0 or 1
+%       means no bootstrapping or permuting is done.
+% 
+%    'permute'/'stratified'/'bootstrap'/'calcStats' (DEFAULT = 'bootstrap'):
+%       string inputs that determine what type(s) of bootstrapping or permutation
+%       to do. 'bootstrap'/'stratified' do the same thing: they resample the
+%       points with replacement and compute new Hyperspheres on those resamplings.
+%       If multiple hyperspheres are given by the Categories object, the
+%       bootstrap is 'stratified' because it disallows points belonging to one
+%       hypersphere to be resampled in another. 'permute' resamples the category
+%       labels of each point, whichout replacement. 'calcStats' does both: it
+%       computes nBootstraps bootstraps and nBootstraps permutations.
+% 
+%       With any of these options, the final output of estimateHypersphere is an
+%       array of Hypersphere objects, each with their categories objects which
+%       specifies whether and how the points were bootstrapped or permuted. The
+%       first Hypersphere will always be the estimate based on the full (non-
+%       resampled) set of points. These can all be consolidated into a single
+%       SetOfHyps object (hypset) using [Hyersphere/SetOfHyps].meanAndMerge. The
+%       full (non-resampled) estimate is made the primary set of center and radius
+%       parameters, and the bootstrapped/permuted Hyperspheres are stored in
+%       hypset.ci.bootstraps and hypset.ci.permutations.
+% 
+%       NOTE: if points have been bootstrapped, the 2-fold cross-validation of the
+%       centers will not allow the same point to occur in both folds.
+% 
+%    'meandist'/'distance'/'mcmc'/'jointml'/'gaussian'/'uniformball'/'uniformcube'
+%       (DEFAULT = 'meandist'): The estimator used to estimate the Hypersphere(s).
+%       Options include:
+%          'meandist': An empirically-derived estimator that automatically selects
+%             either the Gaussian- or Uniform-based Minimum Variance Unbiased
+%             Estimators (MVUEs) based on the skewness of the radius estimates.
+%          'distance': An empirically-derived estimator based on the distance
+%             matrix.
+%          'mcmc': An MCMC-based estimator that estimates the joint posterior of
+%             the centers and radii under the assumption of a uniform ball
+%             distribution.
+%          'jointml': A maximum likelihood estimator that optimizes the centers and
+%             radii jointly under the assumption of a uniform ball distribution.
+% [NOT FULLY IMPLEMENTED/TESTED YET:]
+%          'gaussian': The Gaussian MVUE.
+%          'uniformball': The uniform ball MVUE.
+%          'uniformcube': The uniform cube MVUE.
+% 
+%    'nocvdists' (DEFAULT = false): Does not compute cross-validated centers and
+%       distances. Very important when using the 'joint' option.
+% 
+%    'independent'/'joint' (DEFAULT = 'joint'): These only apply when the points
+%       input is a 3D array. With the 'joint' option, the third dimension is
+%       treated as an index of, for example, frames in the time dimension, where
+%       the same points are changing within a common space. Hyperspheres are
+%       therefore estimated at once in the whole 3D array, while ignoring distances
+%       of Hyperspheres across frames.
+% 
+%       The 'independent' option estimates each 'frame' along the 3rd dimension
+%       independently. This is useful if points were pre-bootstrapped/permuted, but
+%       in that case, it is up to the user to keep track of this fact.
+% 
+%    'normalize'/'raw' (DEFAULT = 'raw'): 'normalize' standardizes each dimension
+%       in points to have zero mean and unit variance. 'raw' just ensures this
+%       does not happen.
+% 
+%    cv (DEFAULT = cvindex(n,2)): A cvindex object used for center/distance cross-
+%       validation. This is important for bootstrapping: estimateHypersphere will 
+%       use this to ensure that resampled duplicate points don't show up in both
+%       folds.
 %
+% SEE ALSO HYPERSPHERE, HYPERSPHERE.ESTIMATE, HYPERSPEHERE.CONCAT,
+%    HYPERSPHERE.MOVIE, SETOFHYPS, SETOFHYPS.MEANANDMERGE,, SETOFHYPS.H2S,
+%    CATEGORIES, CATEGORIES.PERMUTE, CATEGORIES.INTERNALREPMAT, CATEGORIES.SELECT,
+%    CATEGORIES.SLICE
 
 %% preparation
 [n,d,f] = size(points);
@@ -43,6 +135,7 @@ for v = 1:numel(varargin)
          case 'nocvdists';     CVDISTS  = false;
          case 'cvdists';       CVDISTS  = true;
          case 'independent'; INDEPENDENT= true;  varargin{v} = [];
+         case 'joint';       INDEPENDENT= false; varargin{v} = [];
          case {'meandist','distance','mcmc','jointml','gaussian','uniformball','uniformcube'}
             ESTIMATOR = lower(varargin{v});
          otherwise warning('bad string input option: %s', varargin{v})
@@ -77,7 +170,7 @@ if exist('categories','var') && numel(categories.labels)>1
          for i = 1:f
             [hyp(i),loc_cv{i}] = estimateHypersphere(points(:,:,i),categories,'raw',varargin{:});
          end
-         loc_cv = reshape(cat(1,loc_cv{:}),[nCats f])';
+         if CVDISTS, loc_cv = reshape(cat(1,loc_cv{:}),[nCats f])'; end
          return
       end
       points  = reshape(permute(points,[1 3 2]),n*f,d);
