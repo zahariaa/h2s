@@ -103,8 +103,18 @@ if exist('categories','var') && numel(categories.labels)>1
    if nBootstraps > 1 && ~strcmp(ESTIMATOR,'mcmc')
       catperm = [categories; categories.permute(nBootstraps,STRATIFIED)];
       % Recursive call
-      parfor iboot = 1:numel(catperm)
-         [hyp(iboot),loc_cv{iboot}] = estimateHypersphere(points,catperm(iboot),'raw',varargin{:});
+      % [hyp,loc_cv] = arrayfun(@(c) estimateHypersphere(points,c,'raw',varargin{:}),...
+      %                              catperm,'UniformOutput',false);
+      % hyp = cell2mat_concat(hyp);
+      loc_cv = cell(numel(catperm),1);
+      if CVDISTS
+         parfor iboot = 1:numel(catperm)
+            [hyp(iboot),loc_cv{iboot}] = estimateHypersphere(points,catperm(iboot),'raw',varargin{:});
+         end
+      else
+         parfor iboot = 1:numel(catperm)
+            hyp(iboot) = estimateHypersphere(points,catperm(iboot),'raw',varargin{:});
+         end
       end
    else % mcmc or single sample (of bootstrap or not)
       if DISTMATRIX
@@ -126,19 +136,26 @@ if exist('categories','var') && numel(categories.labels)>1
             p{i} = points( categories.select(i).vectorsForDistanceMatrix );
          end
          
-         % Generate cross-validation objects for center bootstraps that makes sure
-         %    bootstrap resamplings keep points in each fold independent
-         cvs = arrayfun(@(i) cvindex(categories.select(i).vectorsForDistanceMatrix,2),1:nCats);
+         if CVDISTS
+            % Generate cross-validation objects for center bootstraps that makes sure
+            %    bootstrap resamplings keep points in each fold independent
+            cvs = arrayfun(@(i) cvindex(categories.select(i).vectorsForDistanceMatrix,2),1:nCats);
+         end
       else
          [p,ix] = categories.slice(points);
-         cvs = cellfun(@(i) cvindex(i,2),ix);
+         if CVDISTS, cvs = cellfun(@(i) cvindex(i,2),ix); end
       end
 
       % Recursive call
-      [hyp,loc_cv] = cellfun(@(x,cv) estimateHypersphere(x,'raw',nBootstraps,cv,varargin{:}),...
-                                  p,num2cell(cvs),'UniformOutput',false);
-      % Compute cross-validated distances
-      if CVDISTS, cvdists = cvCenters2cvSqDists(loc_cv); end
+      if ~CVDISTS
+         hyp = cellfun(@(x) estimateHypersphere(x,'raw',nBootstraps,varargin{:}),...
+                            p,'UniformOutput',false);
+      else
+         [hyp,loc_cv] = cellfun(@(x,cv) estimateHypersphere(x,'raw',nBootstraps,cv,varargin{:}),...
+                                     p,num2cell(cvs),'UniformOutput',false);
+         % Compute cross-validated distances
+         cvdists = cvCenters2cvSqDists(loc_cv);
+      end
 
       switch(ESTIMATOR)
          case 'mcmc'
@@ -158,7 +175,7 @@ if exist('categories','var') && numel(categories.labels)>1
 end
 
 %% DO THE ACTUAL ESTIMATION
-if ~exist('cv','var')
+if CVDISTS && ~exist('cv','var')
    cv = cvindex(n,2); % for cross-validated centers estimation
 end
 
@@ -166,9 +183,11 @@ end
 switch(ESTIMATOR)
    case {'distance','mcmc','jointml'} % do nothing
    otherwise
-      % loc_cv = [mean(points(cv.train(1),:));
-      %           mean(points(cv.train(2),:)) ];
-      loc_cv = cell2mat_concat(cv.crossvalidate(@mean,points));
+      if CVDISTS
+         % loc_cv = [mean(points(cv.train(1),:));
+         %           mean(points(cv.train(2),:)) ];
+         loc_cv = cell2mat_concat(cv.crossvalidate(@mean,points));
+      end
       loc    =  mean(points,1); % optimises L2 cost (same as L1 force equilibrium)
       points = points - repmat(loc,[n 1]);
 end
@@ -180,15 +199,19 @@ switch(ESTIMATOR)
       rad = mean(points)/expDistPerRad(d);
    case 'mcmc'
       [loc,rad,llh] = inferHyperspherePosterior(points,nBootstraps,DBUGPLOT,VERBOSE);
-      loc_cv    = cv.crossvalidate(@inferHyperspherePosterior,...
-                                            points,nBootstraps,DBUGPLOT,VERBOSE);
-      loc_cv    = squeeze(mat2cell(permute(cell2mat_concat(loc_cv,3),[2 3 1]),...
-                                   d,2,ones(numel(rad),1)));
+
       % just take the best estimate
       ix     = maxix(llh);
       loc    = loc(ix,:);
       rad    = rad(ix);
-      loc_cv = loc_cv{ix};
+      
+      if CVDISTS
+         loc_cv    = cv.crossvalidate(@inferHyperspherePosterior,...
+                                               points,nBootstraps,DBUGPLOT,VERBOSE);
+         loc_cv    = squeeze(mat2cell(permute(cell2mat_concat(loc_cv,3),[2 3 1]),...
+                                      d,2,ones(numel(rad),1)));
+         loc_cv = loc_cv{ix};
+      end
    case 'jointml'
       tol  = 10^(-7-log2(d));
       opts = optimoptions('fminunc','TolX',tol,'TolFun',tol,'Algorithm','quasi-newton',...
@@ -197,7 +220,7 @@ switch(ESTIMATOR)
       loc0      =  mean(points,1);
       objfcn    = @(points) fminunc(@(m) maxRadiusGivenCenter(m,points),loc0,opts);
       [loc,rad] = objfcn(points);
-      loc_cv    = cell2mat_concat(cv.crossvalidate(objfcn,points));
+      if CVDISTS, loc_cv = cell2mat_concat(cv.crossvalidate(objfcn,points)); end
    case 'meandist'
       % dists = pdist(points,'Euclidean');
       % cv = cvindex(n,10);
