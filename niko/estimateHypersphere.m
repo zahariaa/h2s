@@ -167,10 +167,15 @@ if exist('categories','var') && numel(categories.labels)>1
    %% EVALUATE ALL FRAMES IN SAME SPACE
    if f > 1
       if INDEPENDENT % normalize must be false (think about this some more)
-         for i = 1:f
-            [hyp(i),loc_cv{i}] = estimateHypersphere(points(:,:,i),categories,'raw',varargin{:});
-         end
-         if CVDISTS, loc_cv = reshape(cat(1,loc_cv{:}),[nCats f])'; end
+         if CVDISTS
+            parfor i = 1:f
+               [hyp(i),loc_cv{i}] = estimateHypersphere(points(:,:,i),categories,'raw',varargin{:});
+            end
+            loc_cv = reshape(cat(1,loc_cv{:}),[nCats f])'; end
+         else
+            parfor i = 1:f
+               hyp(i) = estimateHypersphere(points(:,:,i),categories,'raw',varargin{:});
+            end
          return
       end
       points  = reshape(permute(points,[1 3 2]),n*f,d);
