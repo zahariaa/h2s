@@ -24,7 +24,7 @@ if ~exist('estimator','var') || isempty(estimator),estimator=[]; end
 sigthresh = 0.05;
 ds =  1:7; % # of dimensions
 rs = -1:3; % radius ratios
-ns =  6:8; % # of samples to test 
+ns =  4:10; % # of samples to test 
 nd = numel(ds);
 nr = numel(rs);
 nn = numel(ns);
@@ -306,7 +306,7 @@ for d = nd:-1:1
    plot(rs,100*mean(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
 end
 plot(rs([1 end]),100*sigthresh*[1 1],'--k')
-xlim(rs([1 end])); xticks(rs); xticklabels(2.^rs);
+axis([rs([1 end]) 0 max(ylim)]); xticks(rs); xticklabels(2.^rs);
 xlabel('radius ratio')
 ylabel('False positive rate (%)')
 title({'False positive rate';'vs r-ratio'})
@@ -318,7 +318,7 @@ for r = nr:-1:1
 end
 r = find(rs==0);
 plot(ds([1 end]),100*sigthresh*[1 1],'--k')
-xlim(ds([1 end])); xticks(ds); xticklabels(2.^ds);
+axis([ds([1 end]) 0 max(ylim)]); xticks(ds); xticklabels(2.^ds);
 xlabel('dimensions')
 ylabel('False positive rate (%)')
 title({'False positive rate';'vs dimensions'})
@@ -329,7 +329,7 @@ for d = nd:-1:1
    plot(ns,100*mean(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
 end
 plot(ns([1 end]),100*sigthresh*[1 1],'--k')
-xlim(ns([1 end])); xticks(ns); xticklabels(2.^ns);
+axis([ns([1 end]) 0 max(ylim)]); xticks(ns); xticklabels(2.^ns);
 xlabel('samples')
 ylabel('False positive rate (%)')
 title({'False positive rate';'vs number of samples'})
