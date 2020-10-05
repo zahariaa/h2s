@@ -118,7 +118,13 @@ classdef SetOfHyps < Hypersphere
                   obj.ci = radii; % assumes merged Hypersphere object
                end
             else
-               obj = SetOfHyps(centers.meanAndMerge,varargin{:});
+               sameSpace = unique([centers.belongsToCommonSpace]);
+               if numel(sameSpace)==1 && sameSpace(1) > 0
+                  obj = arrayfun(@SetOfHyps,centers);
+                  return
+               else
+                  obj = SetOfHyps(centers.meanAndMerge,varargin{:});
+               end
             end
          else                                           % input options (1-2,4-6)
             % Use Hypersphere constructor to handle other possible inputs
@@ -345,8 +351,9 @@ classdef SetOfHyps < Hypersphere
       % e.g.
       % hypslo = hypshi.h2s
       % hypslo = hypslo.h2s(hypsTarget)
-      % hypsjointlo = severalhyps.h2s(hypsTargets,'joint') % jointly optimizes all 
-      %    SetOfHyps objects in severalhyps (useful for movies)
+      % hypsjointlo = severalhyps.h2s(hypsTargets) % jointly optimizes all 
+      %    SetOfHyps objects in severalhyps if belongsToCommonSpace is true
+      %    (useful for movies)
       % hypslo = hypshi.h2s([dimLow ninits]).  % (optional numeric inputs)
       % hypslo = hypshi.h2s({alpha})           % alpha values must be in a cell
       % hypslo = hypshi.h2s('mdsinit','debugplot','verbose')  % (string flags)
@@ -384,10 +391,6 @@ classdef SetOfHyps < Hypersphere
       %          self.h2s({1 1 0}) and self.h2s({1 0 0}) keep radii fixed, and
       %                              are both equivalent to MDS on the centers
       %    String input options:
-      %       'joint'/'separate' (DEFAULT = 'joint'): if an array of multiple
-      %          SetOfHyps objects are provided, h2s jointly optimizes them. If
-      %          'separate' option provided, recursive calls to h2s optimize them
-      %          separately.
       %       'mdsinit'/'randinit' (DEFAULT = 'mdsinit'): use MDS for low centers
       %          initialization (as opposed to random initialization(s)).
       %       'debugplot' (DEFAULT = false): display the h2s optimization
@@ -417,8 +420,6 @@ classdef SetOfHyps < Hypersphere
                alpha = [varargin{v-1}{:}];
             else
                switch lower(varargin{v-1})
-                  case 'joint';     JOINT    = true;
-                  case 'separate';  JOINT    = false;
                   case 'mdsinit';   MDS_INIT = true;
                   case 'randinit';  MDS_INIT = false;
                   case 'debugplot'; DBUGPLOT = true;
@@ -436,11 +437,11 @@ classdef SetOfHyps < Hypersphere
          if ~exist('MDS_INIT','var'),           MDS_INIT = true;          end
          if ~exist('DBUGPLOT','var'),           DBUGPLOT = false;         end
          if ~exist('VERBOSE' ,'var'),            VERBOSE = false;         end
-         if ~exist('JOINT'   ,'var'),              JOINT = true;          end
          if ~exist('alpha'   ,'var'),              alpha = [1 1 1];       end
 
+%% TODO: figure out what to do with heterogeneous common space situation
          % Recurse for multiple SetOfHyps objects
-         if ~JOINT && n > 1
+         if n > 1 && ~all([hi.belongsToCommonSpace])
             for i = 1:n
                stationarycounter(i,n);
                model(i) = lo(i).h2s(varargin);

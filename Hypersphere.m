@@ -6,6 +6,7 @@ classdef Hypersphere < handle
    end
    properties (SetAccess = protected)
       distsCV = false; % false or vector of squared cross-validated distances
+      belongsToCommonSpace = false; % false or uint common space id
    end
    properties (GetAccess = private, SetAccess = private)
       stream     % random stream for controlled sampling
@@ -137,9 +138,13 @@ classdef Hypersphere < handle
          for v = 1:numel(varargin)
             if isa(varargin{v},'Categories')
                obj.categories = varargin{v};
-            elseif ischar(varargin{v}) && strcmpi(varargin{v},'cvdists')
-               % Save cross-validated distances
-               obj.distsCV = varargin{v+1}(:)';
+            elseif ischar(varargin{v})
+               switch lower(varargin{v})
+                  case 'cvdists' % Save cross-validated distances
+                     obj.distsCV = varargin{v+1}(:)';
+                  case 'commonspace'
+                     obj.belongsToCommonSpace = varargin{v+1}(:)';
+               end
             end
          end
          % Auto-generate dummy Categories if none exists by now
