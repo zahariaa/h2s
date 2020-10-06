@@ -57,11 +57,10 @@ classdef cvindex
       function ix = test(obj,i)         % Output test set for i'th fold
          ix = obj.rp{i};
       end
-      function out = crossvalidate(obj,fcn,varargin)
+      function out = crossvalidate(obj,fcn,X,varargin)
       % Calculate fcn on training data in all folds
-         X = varargin{1};
          for iCV = 1:obj.nCV
-            out{iCV} = fcn(X(obj.train(iCV),:));
+            out{iCV} = fcn(X(obj.train(iCV),:),varargin{:});
          end
       end
    end
