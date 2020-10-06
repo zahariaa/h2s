@@ -90,12 +90,12 @@ for d = 1:nd
             end
             [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(floor(s/3)))],nsims);
             % Simulate points
-            hyp = Hypersphere.estimate(points,gt.categories,'independent',estimator);%.meanAndMerge(true);
+            hyp = Hypersphere.estimate(points,gt.categories,'independent',estimator);
             % save in-progress fits
             savtmp = struct('hyp',hyp,'gt',gt,'n',ns(n),'d',ds(d),'r',rs(r));
             save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
-            stationarycounter([d r n],[nd nr nn])
          end
+         stationarycounter([d r n],[nd nr nn])
 
          if ~exist('sigtmp','var') || isempty(sigtmp)
             if ~DISPLAYED
@@ -109,10 +109,10 @@ for d = 1:nd
             end
             % Assess significance on samples
             sigOrDiff = sigfield{1+double(s>2)};
-            nc2c2 = nchoosek(max(2,nc2),2);
-            sigtmp = NaN(nsims,nc2c2);
-            sigptmp = NaN(nsims,nc2c2);
-            bootmp = NaN(nsims,nc2,nboots);
+            nc2c2     = nchoosek(max(2,nc2),2);
+            sigtmp    = NaN(nsims,nc2c2);
+            sigptmp   = NaN(nsims,nc2c2);
+            bootmp    = NaN(nsims,nc2,nboots);
             for b = 1:nsims
                hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,testtype{s},estimator);
                sigtmp(b,:)  = hyptmp.(sigOrDiff).(mnames{s}(1:2));

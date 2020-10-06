@@ -186,15 +186,15 @@ if exist('categories','var') && numel(categories.labels)>1
 
       % EVALUATE ALL TOGETHER!
       % Recursive call
-      [hypEst,loc_cv] = estimateHypersphere(points,categories.internalrepmat(f),...
-                                            'raw',nBootstraps,'nocvdists',varargin{:});
+      hypEst = estimateHypersphere(points,categories.internalrepmat(f),...
+                                   'raw',nBootstraps,'nocvdists',varargin{:});
       % SEPARATE COMBINED HYP
       centers = mat2cell(hypEst.centers,nCats*ones(f,1));
       radii   = num2cell(reshape(hypEst.radii,[nCats f]),1)';
-      loc_cv  = reshape(loc_cv,[nCats f])';
-      if CVDISTS, cvdists = cvCenters2cvSqDists(loc_cv); end
+      %loc_cv  = reshape(loc_cv,[nCats f])';
+      %if CVDISTS, cvdists = cvCenters2cvSqDists(loc_cv); end
 
-      hyp     = Hypersphere(centers,radii,categories,'cvdists',cvdists);
+      hyp = Hypersphere(centers,radii,categories,'commonSpace',true);%,'cvdists',cvdists);
       return
    end
 
@@ -249,6 +249,7 @@ if exist('categories','var') && numel(categories.labels)>1
       if ~CVDISTS
          hyp = cellfun(@(x) estimateHypersphere(x,'raw',nBootstraps,varargin{:}),...
                             p,'UniformOutput',false);
+         cvdists = false;
       else
          [hyp,loc_cv] = cellfun(@(x,cv) estimateHypersphere(x,'raw',nBootstraps,cv,varargin{:}),...
                                      p,num2cell(cvs),'UniformOutput',false);
@@ -259,9 +260,14 @@ if exist('categories','var') && numel(categories.labels)>1
       switch(ESTIMATOR)
          case 'mcmc'
             % do some fancy combining
-            hyp = cellfun(@unconcat, hyp,'UniformOutput',false); % n-cell of nSamples
-            hyp = num2cell(cell2mat_concat(hyp),1); % nSamples-cell of n-Hyperspheres
-            hyp = cellfun(@(x) x.concat(categories,cvdists),hyp); % nSamples n-Hyperspheres
+            hyp = cat(2,hyp{:}); % n-cell of nSamples to [nSamples x n] array
+            % nSamples n-Hyperspheres
+            if nBootstraps > 1
+               catperm = categories.permute(nBootstraps,true);
+               hyp = cellfun(@(x,c) x.concat(c,cvdists),num2cell(hyp,2),num2cell([categories;catperm]));
+            else
+               hyp = hyp.concat(categories,cvdists);
+            end
          case 'distance'
             hyp = cell2mat_concat(hyp).concat(categories,cvdists);
             % replace true centers in all hyp's
@@ -299,6 +305,11 @@ switch(ESTIMATOR)
    case 'mcmc'
       [loc,rad,llh] = inferHyperspherePosterior(points,nBootstraps,DBUGPLOT,VERBOSE);
 
+      % Store samples as bootstraps
+      if any(strcmpi(varargin,'bootstrap') | strcmpi(varargin,'permute') | strcmpi(varargin,'calcstats')) 
+         hypBoots = Hypersphere(num2cell(loc,2),num2cell(rad));
+      end
+
       % just take the best estimate
       ix     = maxix(llh);
       loc    = loc(ix,:);
@@ -308,7 +319,7 @@ switch(ESTIMATOR)
          loc_cv    = cv.crossvalidate(@inferHyperspherePosterior,...
                                                points,nBootstraps,DBUGPLOT,VERBOSE);
          loc_cv    = squeeze(mat2cell(permute(cell2mat_concat(loc_cv,3),[2 3 1]),...
-                                      d,2,ones(numel(rad),1)));
+                                      d,2,ones(numel(llh),1)));
          loc_cv = loc_cv{ix};
       end
    case 'jointml'
@@ -341,6 +352,9 @@ if ~exist('categories','var')
 end
 
 hyp = Hypersphere(loc,rad,categories);
+if exist('hypBoots','var')
+   hyp = [hyp;hypBoots(:)];
+end
 
 return
 end

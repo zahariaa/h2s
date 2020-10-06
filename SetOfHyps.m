@@ -181,7 +181,7 @@ classdef SetOfHyps < Hypersphere
 
 
       %% HIGHER ORDER FUNCTIONS
-      function [self,loc_cv] = significance(self,points,N,varargin)
+      function self = significance(self,points,N,varargin)
       % SetOfHyps.significance: tests 'statistics of interest' (distances,
       %    margins/overlaps, radii), and their pairwise differences, for
       %    significance. It uses bootstrapped and permuted SetOfHyps or
@@ -218,7 +218,6 @@ classdef SetOfHyps < Hypersphere
       % 
       % SEE ALSO ESTIMATEHYPERSPHERE, HYPERSPHERE.MEANANDMERGE,
       %    SETOFHYPS.NULLHYPOTHESISREJECTED
-         loc_cv = [];
          testtype = 'calcStats';
          CVDISTS  = 'nocvdists'; % default, unless overwritten by input option
          for v = 1:numel(varargin)
@@ -242,8 +241,7 @@ classdef SetOfHyps < Hypersphere
             error('self.categories.vectors needs to index points');
          else
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
-            [bootsNperms,loc_cv] = Hypersphere.estimate(points,self.categories,N,...
-                                                        testtype,CVDISTS,varargin{:});
+            bootsNperms = Hypersphere.estimate(points,self.categories,N,testtype,CVDISTS,varargin{:});
             bootsNperms = bootsNperms.meanAndMerge;
             self.ci = bootsNperms.ci;
             if islogical(self.distsCV)
@@ -292,7 +290,7 @@ classdef SetOfHyps < Hypersphere
             end
             self.sigp.ov = 1-self.sigp.ma;
          end
-         if numel(self.ci.permutations)>0
+         if ~any(strcmpi(varargin,'mcmc')) && numel(self.ci.permutations)>0
             % At what percentile confidence interval of permuted distances does
             % the unpermuted distance estimate occur?
             for i = 1:nc2
