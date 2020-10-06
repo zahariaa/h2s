@@ -300,6 +300,10 @@ classdef SetOfHyps < Hypersphere
                   self.sigp.di(i) = 1-ciprctile(dist_perm(:,i),self.dists(i));
                end
             end
+         elseif any(strcmpi(varargin,'mcmc')) && numel(self.ci.bootstraps)>0
+            for i = 1:nc2
+               self.sigp.di(i) = 1-ciprctile(dist_boot(:,i),0);
+            end
          end
 
          %% SECOND-ORDER COMPARISONS

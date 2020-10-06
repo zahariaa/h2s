@@ -48,8 +48,13 @@ measures = {'overlap', 'distance', 'radius difference', ...
             'overlap difference', 'distance difference','overlap difference'};
 mnames   = {'overlap', 'dists', 'radii', ...
             'overlap', 'dists','overlap'};
-testtype = [{'bootstrap'  'permute'     } repmat({'bootstrap' },[1 4])];
-testrslt = [{'bootstraps' 'permutations'} repmat({'bootstraps'},[1 4])];
+if strcmpi(estimator,'mcmc')
+   testtype = repmat({'bootstrap' },[1 6]);
+   testrslt = repmat({'bootstraps'},[1 6]);
+else
+   testtype = [{'bootstrap'  'permute'     } repmat({'bootstrap' },[1 4])];
+   testrslt = [{'bootstraps' 'permutations'} repmat({'bootstraps'},[1 4])];
+end
 % % debug
 % for s = 1:6
 %    testScenario(s,2.^ds,2.^rs,measures,mnames);
