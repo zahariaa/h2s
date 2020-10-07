@@ -86,6 +86,7 @@ classdef Hypersphere < handle
       %   Hypersphere.dists
       %   Hypersphere.margins
       %   Hypersphere.overlap
+      %   Hypersphere.estimate (Static method: calls estimateHypersphere)
       % 
       % 2018-06-07 AZ Created
       % 
@@ -628,6 +629,14 @@ classdef Hypersphere < handle
             close(vidObj)
             fprintf('\nVideo written to %s\n',SAVE)
          end
+      end
+
+      function model = h2s(self,varargin)
+      % Hypersphere.h2s: alias to SetOfHyps.h2s to allow for simple h2s syntax.
+      %    Output is a SetOfHyps object.
+      % 
+      % SEE ALSO SETOFHYPS, SETOFHYPS.H2S
+         model = SetOfHyps(self).h2s(varargin{:});
       end
 
       %% FUNCTIONS TO COMPUTE VOLUME, DISTS, MARGINS, OVERLAPS
