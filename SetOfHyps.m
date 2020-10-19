@@ -91,6 +91,7 @@ classdef SetOfHyps < Hypersphere
       %    SetOfHyps.show
       %    SetOfHyps.camera
       %    SetOfHyps.movie
+      %    SetOfHyps.estimate (Static method)
       % Methods:
       %    SetOfHyps.significance
       %    SetOfHyps.h2s
@@ -101,11 +102,11 @@ classdef SetOfHyps < Hypersphere
       %    SetOfHyps.showSigLegend
       %    SetOfHyps.toJSON
       %    SetOfHyps.stressUpdate
-      %    stress (Static method: h2s objective function and gradients)
+      %    SetOfHyps.stress (Static method: h2s objective function and gradients)
       % 
       % 2018-06-07 AZ Created
       % 
-      % See also HYPERSPHERE, CATEGORIES, ESTIMATEHYPERSPHERE, SHOWMODEL
+      % See also HYPERSPHERE, CATEGORIES, ESTIMATEHYPERSPHERE
          if nargin==0; return; end
 
          if isa(centers,'SetOfHyps'), obj = centers;    % input option  (7)
