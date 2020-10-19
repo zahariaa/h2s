@@ -86,10 +86,14 @@ for d = 1:nd
       gt = generateScenario(s,2^ds(d),2^rs(r));
 
       for n = 1:nn
+         stationarycounter([d r n],[nd nr nn])
          if exist(simfile(s,ds(d),rs(r),ns(n)),'file')
             [hyp,gt,sigtmp,bootmp] = hyp_load(simfile,s,ds(d),rs(r),ns(n),DISPLAYED);
-            %% TODO: check nboots/nsims
          else
+            if ~STANDALONE
+               fprintf('FILE MISSING\n')
+               continue
+            end
             if ~DISPLAYED
                fprintf('Simulating points and estimating hyperspheres...      ')
             end
@@ -100,9 +104,13 @@ for d = 1:nd
             savtmp = struct('hyp',hyp,'gt',gt,'n',ns(n),'d',ds(d),'r',rs(r));
             save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
          end
-         stationarycounter([d r n],[nd nr nn])
 
-         if ~exist('sigtmp','var') || isempty(sigtmp)
+         if ~exist('sigtmp','var') || isempty(sigtmp) || size(sigtmp,2)>1
+            if ~STANDALONE
+               fprintf('FILE MISSING\n')
+               continue
+            end
+            stationarycounter([d r n],[nd nr nn]);fprintf('       \n');
             if ~DISPLAYED
                fprintf('\nSignificance testing...      ')
                DISPLAYED = true;
@@ -115,15 +123,24 @@ for d = 1:nd
             % Assess significance on samples
             sigOrDiff = sigfield{1+double(s>2)};
             nc2c2     = nchoosek(max(2,nc2),2);
-            sigtmp    = NaN(nsims,nc2c2);
-            sigptmp   = NaN(nsims,nc2c2);
-            bootmp    = NaN(nsims,nc2,nboots);
-            for b = 1:nsims
+            if ~exist('sigtmp','var')
+               sigtmp    = NaN(nsims,nc2c2);
+               %sigptmp   = NaN(nsims,nc2c2);
+               bootmp    = NaN(nsims,nc2,nboots);
+            end
+            startSim = find(isnan(sigtmp(:,1+2*(mod(s,3)==0).*round(s/3))),1);
+            for b = startSim:nsims
                hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,testtype{s},estimator);
                sigtmp(b,:)  = hyptmp.(sigOrDiff).(mnames{s}(1:2));
-               sigptmp(b,:) = hyptmp.([sigOrDiff 'p']).(mnames{s}(1:2));
+               %sigptmp(b,:) = hyptmp.([sigOrDiff 'p']).(mnames{s}(1:2));
                bootmp(b,:,:) = cat(1,hyptmp.ci.(testrslt{s}).(mnames{s}))';
                stationarycounter(b,nsims)
+               if mod(b,100)==0
+                  %keyboard
+                  savtmp = struct('hyp',hyp,'gt',gt,'sigtmp',sigtmp,'bootmp',bootmp,'n',ns(n),'d',ds(d),'r',rs(r));
+                  save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
+                  fprintf('\nSaved checkpoint          ')
+               end
             end
             sigtmp = sigtmp(:,1+2*(mod(s,3)==0).*round(s/3)); % pick 3rd for s=3 and 5th for s=6
             switch s
@@ -161,6 +178,7 @@ bootprc   = repmat({NaN(nn,nsims,2)},[nm nd nr]);
 for d = 1:nd
    for r = 1:nr
       for n = 1:nn
+         try
          switch s
             case {1,2}; estimates{s,d,r}(n,:) =             cat(1,hyps{s,d,r}(n,:).(mnames{s}));
             case   3  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
@@ -173,6 +191,8 @@ for d = 1:nd
          else
          bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r}(n,:,:)) Inf(nsims,1)]',...
                                          [0 100] + [1 -1]*sigthresh*100/2)';
+         end
+         catch
          end
       end
    end
@@ -338,6 +358,8 @@ axis([ns([1 end]) 0 max(ylim)]); xticks(ns); xticklabels(2.^ns);
 xlabel('samples')
 ylabel('False positive rate (%)')
 title({'False positive rate';'vs number of samples'})
+
+matchy(fh.a.h(end-2:end),'y')
 
 printFig;
 
