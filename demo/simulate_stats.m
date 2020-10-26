@@ -105,7 +105,10 @@ for d = 1:nd
             save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
          end
 
-         if ~exist('sigtmp','var') || isempty(sigtmp) || size(sigtmp,2)>1
+         if exist('sigtmp','var') && ~isempty(sigtmp)
+            startSim = find(isnan(sigtmp(:,1)),1);
+         end
+         if ~exist('sigtmp','var') || isempty(sigtmp) || size(sigtmp,2)>1 || (~isempty(startSim) && startSim < nsims)
             if ~STANDALONE
                fprintf('FILE MISSING\n')
                continue
@@ -128,7 +131,7 @@ for d = 1:nd
                %sigptmp   = NaN(nsims,nc2c2);
                bootmp    = NaN(nsims,nc2,nboots);
             end
-            startSim = find(isnan(sigtmp(:,1+2*(mod(s,3)==0).*round(s/3))),1);
+            startSim = find(isnan(sigtmp(:,1)),1);
             for b = startSim:nsims
                hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,testtype{s},estimator);
                sigtmp(b,:)  = hyptmp.(sigOrDiff).(mnames{s}(1:2));
