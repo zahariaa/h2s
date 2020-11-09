@@ -126,7 +126,7 @@ for d = 1:nd
             % Assess significance on samples
             sigOrDiff = sigfield{1+double(s>2)};
             nc2c2     = nchoosek(max(2,nc2),2);
-            if ~exist('sigtmp','var')
+            if ~exist('sigtmp','var') || isempty(sigtmp)
                sigtmp    = NaN(nsims,nc2c2);
                %sigptmp   = NaN(nsims,nc2c2);
                bootmp    = NaN(nsims,nc2,nboots);
