@@ -29,6 +29,22 @@ nd = numel(ds);
 nr = numel(rs);
 nn = numel(ns);
 
+if strcmpi(estimator,'mcmc')
+   testtype = repmat({'bootstrap' },[1 7]);
+   testrslt = repmat({'bootstraps'},[1 7]);
+else
+   testtype = [{'bootstrap'  'permute'     } repmat({'bootstrap' },[1 4]) {'bootstrap' }];
+   testrslt = [{'bootstraps' 'permutations'} repmat({'bootstraps'},[1 4]) {'jackknives'}];
+end
+measures = {'overlap', 'distance', 'radius difference', ...
+            'overlap difference', 'distance difference','overlap difference',...
+            'margin'};
+mnames   = {'overlap', 'dists', 'radii', ...
+            'overlap', 'dists','overlap','margins'};
+if isempty(strfind(measures{s},'difference')), sigOrDiff = 'sig';
+else                                           sigOrDiff = 'sigdiff'
+end
+
 STANDALONE = exist('drn','var') && ~isempty(drn);
 if     ~STANDALONE % do nothing
 elseif isnumeric(drn) && numel(drn)==1
@@ -43,18 +59,6 @@ nd = numel(ds);
 nr = numel(rs);
 nn = numel(ns);
 
-sigfield = {'sig',     'sigdiff'};
-measures = {'overlap', 'distance', 'radius difference', ...
-            'overlap difference', 'distance difference','overlap difference'};
-mnames   = {'overlap', 'dists', 'radii', ...
-            'overlap', 'dists','overlap'};
-if strcmpi(estimator,'mcmc')
-   testtype = repmat({'bootstrap' },[1 6]);
-   testrslt = repmat({'bootstraps'},[1 6]);
-else
-   testtype = [{'bootstrap'  'permute'     } repmat({'bootstrap' },[1 4])];
-   testrslt = [{'bootstraps' 'permutations'} repmat({'bootstraps'},[1 4])];
-end
 % % debug
 % for s = 1:6
 %    testScenario(s,2.^ds,2.^rs,measures,mnames);
@@ -62,8 +66,6 @@ end
 % keyboard
 
 nm  = numel(measures);
-nc2 = nchoosek(2+double(floor(s/3)),2);
-
 basedir = '';%'/moto/nklab/users/az2522/';
 simfolder = '20200929/';
 simfolder = [basedir 'data/statsim/' simfolder];
@@ -84,9 +86,16 @@ for d = 1:nd
    for r = 1:nr
       % Generate points for the different scenarios
       gt = generateScenario(s,2^ds(d),2^rs(r));
+      nballs = numel(gt.radii);
+      nc2    = nchoosek(nballs,2);
 
       for n = 1:nn
          stationarycounter([d r n],[nd nr nn])
+
+         if strcmpi(testrslt{s},'jackknives')
+            nboots = nballs*2^ns(n);
+         end
+
          if exist(simfile(s,ds(d),rs(r),ns(n)),'file')
             [hyp,gt,sigtmp,bootmp] = hyp_load(simfile,s,ds(d),rs(r),ns(n),DISPLAYED);
          else
@@ -97,7 +106,7 @@ for d = 1:nd
             if ~DISPLAYED
                fprintf('Simulating points and estimating hyperspheres...      ')
             end
-            [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(floor(s/3)))],nsims);
+            [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,nballs)],nsims);
             % Simulate points
             hyp = Hypersphere.estimate(points,gt.categories,'independent',estimator);
             % save in-progress fits
@@ -121,10 +130,9 @@ for d = 1:nd
             
             if ~exist('points','var') % regenerate points
                gt.resetRandStream
-               [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(floor(s/3)))],nsims);
+               [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,nballs)],nsims);
             end
             % Assess significance on samples
-            sigOrDiff = sigfield{1+double(s>2)};
             nc2c2     = nchoosek(max(2,nc2),2);
             if ~exist('sigtmp','var') || isempty(sigtmp)
                sigtmp    = NaN(nsims,nc2c2);
@@ -147,10 +155,10 @@ for d = 1:nd
             end
             sigtmp = sigtmp(:,1+2*(mod(s,3)==0).*round(s/3)); % pick 3rd for s=3 and 5th for s=6
             switch s
-               case {1,2}; bootmp = bootmp(:,1,:);
                case   3;   bootmp = diff(bootmp(:, 2:3 ,:),[],2);   % difference of  last two measures
                case {4,5}; bootmp = diff(bootmp(:, 1:2 ,:),[],2);   % difference of first two measures
                case   6;   bootmp = diff(bootmp(:,[1 6],:),[],2);   % difference of first & last measures
+               case {1,2,7}; bootmp = bootmp(:,1,:);
             end
             % save in-progress fits
             savtmp = struct('hyp',hyp,'gt',gt,'sigtmp',sigtmp,'bootmp',bootmp,'n',ns(n),'d',ds(d),'r',rs(r));
@@ -183,12 +191,12 @@ for d = 1:nd
       for n = 1:nn
          try
          switch s
-            case {1,2}; estimates{s,d,r}(n,:) =             cat(1,hyps{s,d,r}(n,:).(mnames{s}));
             case   3  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
             case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
             case   6  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],[1 6]),[],2);
+            case {1,2,7}; estimates{s,d,r}(n,:) =             cat(1,hyps{s,d,r}(n,:).(mnames{s}));
          end
-         if s<3
+         if strcmp(sigOrDiff,'sig')
          bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r}(n,:,:))]',...
                                          [sigthresh*100 100])';
          else
@@ -200,10 +208,10 @@ for d = 1:nd
       end
    end
 end
-switch s
-   case {1,4,6}; normfactor = @(r) min(2^rs(r).^[1 -1]);
-   case  {2,5} ; normfactor = @(r) min(2^rs(r).^[0 -1]);
-   case    3   ; normfactor = @(r)     2^-rs(r);
+switch mnames{s} % normalization factor, depending on statistical test
+   case {'overlap','margins'}, normfactor = @(r) min(2^rs(r).^[1 -1]);
+   case  'dists',              normfactor = @(r) min(2^rs(r).^[0 -1]);
+   case  'radii',              normfactor = @(r)     2^-rs(r);
 end
 
 %% Are the signifiance tests significantly performing correctly?
@@ -230,10 +238,10 @@ fh = newfigure([3 5],sprintf('%u%s',s,measures{s}));
 ax = fh.a.h([11 12]);
 
 for i = 1:3
-   sampsz = (2^(i+4))*ones(1,2+double(floor(s/3)));
+   sampsz = (2^(i+4))*ones(1,nballs+1);
    generateScenario(s,2,2^rs(rShown(i))).plotSamples(sampsz,fh.a.h(i));
-   if s<3, title(sprintf('Samples: n_1= %u, n_2= %u',         sampsz))
    else    title(sprintf('Samples: n_1= %u, n_2= %u, n_3= %u',sampsz))
+   if numel(gt.radii)==2, title(sprintf('Samples: n_1= %u, n_2= %u',         sampsz))
    end
 end
 
@@ -381,7 +389,7 @@ function hyp = generateScenario(s,d,r)
 %    d: (scalar) the dimensionality of the hyperspheres
 %    r: (scalar) the radius of one hypersphere (the other(s) is/are 1)
    switch s
-      case 1 % OVERLAP. Null distribution: 0 overlap.
+      case {1,7} % OVERLAP. Null distribution: 0 overlap.
          hyp = Hypersphere([zeros(1,d);r+1 zeros(1,d-1)],[r 1]);
       case 2 % INTER-CENTER DISTANCE. Null distribution: 0 distance.
          hyp = Hypersphere( zeros(2,d),[r 1]);
