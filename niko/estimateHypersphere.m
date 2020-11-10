@@ -136,7 +136,8 @@ for v = 1:numel(varargin)
          case 'cvdists';       CVDISTS  = true;
          case 'independent'; INDEPENDENT= true;  varargin{v} = [];
          case 'joint';       INDEPENDENT= false; varargin{v} = [];
-         case {'meandist','distance','mcmc','jointml','gaussian','uniformball','uniformcube'}
+         case {'meandist','distance','mcmc','maxradius','jointml',...
+               'gaussian','uniformball','uniformcube'}
             ESTIMATOR = lower(varargin{v});
          otherwise warning('bad string input option: %s', varargin{v})
       end
@@ -286,7 +287,9 @@ end
 
 %% estimate location, re-center points
 switch(ESTIMATOR)
-   case {'distance','mcmc','jointml'} % do nothing
+   case {'distance','mcmc'} % do nothing
+   case {'jointml','maxradius'}
+      loc =  mean(points,1);
    otherwise
       if CVDISTS
          % loc_cv = [mean(points(cv.train(1),:));
@@ -322,13 +325,17 @@ switch(ESTIMATOR)
                                       d,2,ones(numel(llh),1)));
          loc_cv = loc_cv{ix};
       end
+   case 'maxradius'
+      rad = maxRadiusGivenCenter(loc,points);
+      if CVDISTS, loc_cv = cell2mat_concat(cv.crossvalidate(@(p) ...
+                                           maxRadiusGivenCenter(loc,p),points));
+      end
    case 'jointml'
       tol  = 10^(-7-log2(d));
       opts = optimoptions('fminunc','TolX',tol,'TolFun',tol,'Algorithm','quasi-newton',...
                           'Display','off','GradObj','on');%,'DerivativeCheck','on');
       % search for the center that minimizes the maximum radius, starting at centroid
-      loc0      =  mean(points,1);
-      objfcn    = @(points) fminunc(@(m) maxRadiusGivenCenter(m,points),loc0,opts);
+      objfcn    = @(points) fminunc(@(c) maxRadiusGivenCenter(c,points),loc,opts);
       [loc,rad] = objfcn(points);
       if CVDISTS, loc_cv = cell2mat_concat(cv.crossvalidate(objfcn,points)); end
    case 'meandist'
@@ -375,18 +382,6 @@ expectedDists = [0.6673 0.9039 1.1043 1.2407 1.3230 1.3657 1.3898 1.4020 1.4081 
 if d<4097,   r = interp1(2.^(0:12),expectedDists,d);
 else         r = sqrt(2);
 end
-return
-end
-
-%% Objective function to optimize, with gradient
-function [fval,grad] = maxRadiusGivenCenter(m,X)
-
-grad = X - repmat(m(:)',[size(X,1) 1]);
-fval = sqrt(sum(grad.^2,2));
-
-% Apply max function
-[fval,ix] = max(fval);
-grad = -grad(ix,:)/fval;
 return
 end
 
