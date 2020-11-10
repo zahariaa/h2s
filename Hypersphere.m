@@ -293,11 +293,15 @@ classdef Hypersphere < handle
          % uses 1st object's categories
          n = numel(self);
          if n > 1
-            cfull   = ~arrayfun(@(x) x.categories.ispermuted,self)';
-            cbooted = ~arrayfun(@(x) islogical(x.categories.vectors),self)'; 
-            cpermed = ~cfull & ~cbooted;
+            cfull   = ~arrayfun(@(x) x.ispermuted,[self.categories])';
+            cbooted = ~arrayfun(@(x) islogical(x.vectors),[self.categories])';
+            cjacked =  arrayfun(@(x) sum(~~x.vectors(:))==(size(x.vectors,1)-1),...
+                                     [self.categories])';
+            cpermed = ~cfull  & ~cbooted;
+            cpermed = cbooted & ~cjacked;
 
             ci.bootstraps   = self(cbooted);
+            ci.jackknives   = self(cjacked);
             ci.permutations = self(cpermed);
             if any(cbooted)
                ci.centers = prctile(cat(3,self(cbooted).centers),[2.5 97.5],3);

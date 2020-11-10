@@ -243,6 +243,8 @@ classdef SetOfHyps < Hypersphere
          else
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
             bootsNperms = Hypersphere.estimate(points,self.categories,N,testtype,CVDISTS,varargin{:});
+            marginSamps = marginSampling(points,self.categories,N,'jackknife');
+            bootsNperms = [bootsNperms marginSamps];
             bootsNperms = bootsNperms.meanAndMerge;
             self.ci = bootsNperms.ci;
             if islogical(self.distsCV)
@@ -273,7 +275,8 @@ classdef SetOfHyps < Hypersphere
          end
          if numel(self.ci.bootstraps)>0
             radii_boot   = cat(1,self.ci.bootstraps.radii);
-            margin_boot  =       self.ci.bootstraps.margins;
+            overlap_boot =       self.ci.bootstraps.overlap;
+            margin_boot  =       self.ci.jackknives.margins;
             dist_boot    = cat(1,self.ci.bootstraps.dists);
          end
          %% COMPUTE SIGNIFICANCE (smaller values more significant)
@@ -287,9 +290,9 @@ classdef SetOfHyps < Hypersphere
             % What percentile confidence interval of bootstrapped overlap/margins contains 0?
             % Overlap/margin is significant if 0 does not exceed the lowest 5% range
             for i = 1:nc2
-               self.sigp.ma(i) = ciprctile(margin_boot(:,i),0);
+               self.sigp.ov(i) = ciprctile(overlap_boot(:,i),0);
+               self.sigp.ma(i) = ciprctile( margin_boot(:,i),0);
             end
-            self.sigp.ov = 1-self.sigp.ma;
          end
          if ~any(strcmpi(varargin,'mcmc')) && numel(self.ci.permutations)>0
             % At what percentile confidence interval of permuted distances does
