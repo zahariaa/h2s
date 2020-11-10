@@ -24,7 +24,7 @@ if ~exist('estimator','var') || isempty(estimator),estimator=[]; end
 sigthresh = 0.05;
 ds =  1:7; % # of dimensions
 rs = -1:3; % radius ratios
-ns =  4:10; % # of samples to test 
+ns =  4:10; % # of samples to test
 nd = numel(ds);
 nr = numel(rs);
 nn = numel(ns);
@@ -58,6 +58,7 @@ end
 nd = numel(ds);
 nr = numel(rs);
 nn = numel(ns);
+nm = numel(measures);
 
 % % debug
 % for s = 1:6
@@ -65,7 +66,6 @@ nn = numel(ns);
 % end
 % keyboard
 
-nm  = numel(measures);
 basedir = '';%'/moto/nklab/users/az2522/';
 simfolder = '20200929/';
 simfolder = [basedir 'data/statsim/' simfolder];
@@ -85,9 +85,10 @@ FINISHED  = false;
 for d = 1:nd
    for r = 1:nr
       % Generate points for the different scenarios
-      gt = generateScenario(s,2^ds(d),2^rs(r));
+      gt     = generateScenario(s,2^ds(d),2^rs(r));
       nballs = numel(gt.radii);
       nc2    = nchoosek(nballs,2);
+      nc2c2  = nchoosek(max(2,nc2),2);
 
       for n = 1:nn
          stationarycounter([d r n],[nd nr nn])
@@ -133,7 +134,6 @@ for d = 1:nd
                [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,nballs)],nsims);
             end
             % Assess significance on samples
-            nc2c2     = nchoosek(max(2,nc2),2);
             if ~exist('sigtmp','var') || isempty(sigtmp)
                sigtmp    = NaN(nsims,nc2c2);
                %sigptmp   = NaN(nsims,nc2c2);
@@ -155,10 +155,10 @@ for d = 1:nd
             end
             sigtmp = sigtmp(:,1+2*(mod(s,3)==0).*round(s/3)); % pick 3rd for s=3 and 5th for s=6
             switch s
-               case   3;   bootmp = diff(bootmp(:, 2:3 ,:),[],2);   % difference of  last two measures
-               case {4,5}; bootmp = diff(bootmp(:, 1:2 ,:),[],2);   % difference of first two measures
-               case   6;   bootmp = diff(bootmp(:,[1 6],:),[],2);   % difference of first & last measures
                case {1,2,7}; bootmp = bootmp(:,1,:);
+               case    3   ; bootmp = diff(bootmp(:, 2:3 ,:),[],2); % difference of  last two measures
+               case  {4,5} ; bootmp = diff(bootmp(:, 1:2 ,:),[],2); % difference of first two measures
+               case    6   ; bootmp = diff(bootmp(:,[1 6],:),[],2); % difference of first & last measures
             end
             % save in-progress fits
             savtmp = struct('hyp',hyp,'gt',gt,'sigtmp',sigtmp,'bootmp',bootmp,'n',ns(n),'d',ds(d),'r',rs(r));
@@ -191,10 +191,10 @@ for d = 1:nd
       for n = 1:nn
          try
          switch s
-            case   3  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
-            case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
-            case   6  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],[1 6]),[],2);
             case {1,2,7}; estimates{s,d,r}(n,:) =             cat(1,hyps{s,d,r}(n,:).(mnames{s}));
+            case    3   ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
+            case  {4,5} ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
+            case    6   ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],[1 6]),[],2);
          end
          if strcmp(sigOrDiff,'sig')
          bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r}(n,:,:))]',...
@@ -240,8 +240,8 @@ ax = fh.a.h([11 12]);
 for i = 1:3
    sampsz = (2^(i+4))*ones(1,nballs+1);
    generateScenario(s,2,2^rs(rShown(i))).plotSamples(sampsz,fh.a.h(i));
-   else    title(sprintf('Samples: n_1= %u, n_2= %u, n_3= %u',sampsz))
    if numel(gt.radii)==2, title(sprintf('Samples: n_1= %u, n_2= %u',         sampsz))
+   else                   title(sprintf('Samples: n_1= %u, n_2= %u, n_3= %u',sampsz))
    end
 end
 
