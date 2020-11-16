@@ -323,7 +323,7 @@ classdef Hypersphere < handle
          end
       end
 
-      function [points,self] = sample(self,nsamples,nboots,type)
+      function [points,self] = sample(self,varargin)
       % Hypersphere.sample: samples points from a Hypersphere. Can output the
       %    points with one or more samplings (bootstraps) as well as an updated
       %    Hypersphere object with hyp.categories.vectors replaced with the new
@@ -347,6 +347,7 @@ classdef Hypersphere < handle
       %       scalar or n-vector determining the number of samples to generate
       %       per hypersphere. If a scalar is provided, all hyperspheres are
       %       sampled with that same number of points.
+      % NOTE: nsamples must be passed before nboots
       %    nboots (DEFAULT = 1): Number of 'bootstrap samples', or the size of
       %       a third (tensor) dimension of samples, to compute.
       %    type (DEFAULT = 'uniform'): The type of distribution from which
@@ -361,6 +362,14 @@ classdef Hypersphere < handle
       %    HYPERSPHERE.RESETRANDSTREAM
          [n,d] = size(self.centers);
 
+         for v = 1:numel(varargin)
+            if ischar(varargin{v}), type = varargin{v};
+            elseif isnumeric(varargin{v})
+               if ~exist('nsamples','var'), nsamples = varargin{v};
+               else                         nboots   = varargin{v};
+               end
+            end
+         end
          if ~exist('type',    'var') || isempty(  type  ), type = 'uniform'; end
          if ~exist('nboots',  'var') || isempty( nboots ), nboots = 1;       end
          if ~exist('nsamples','var') || isempty(nsamples)
@@ -384,18 +393,19 @@ classdef Hypersphere < handle
          end
       end
 
-      function varargout = plotSamples(self,points,varargin)
+      function varargout = plotSamples(self,varargin)
       % Hypersphere.plotSamples: Overloads categories.plotSamples. This is a
       %    wrapper that calls self.categories.plotSamples, but if no points are
       %    provided, this automatically samples points via self.sample.
       % 
       % SEE ALSO CATEGORIES.PLOTSAMPLES, HYPERSPHERE.SAMPLE, SAMPLESPHERES
-         if ~exist('points','var') || isempty(points),          points = self.sample;
-         elseif ishandle(points), varargin = [points varargin]; points = self.sample;
-         end
-         if isvector(points), [points,self] = self.sample(points); end
+         [points,self] = self.sample(varargin{:});
 
-         out = self.categories.plotSamples(points,varargin{:});
+         for v = 1:numel(varargin)
+            if ishandle(varargin{v}), ax = varargin{v}; end
+         end
+         if ~exist('ax','var'), ax = []; end
+         out = self.categories.plotSamples(points,ax);
 
          if nargout, varargout = {out}; end
       end
