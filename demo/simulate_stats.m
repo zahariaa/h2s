@@ -110,7 +110,7 @@ for d = 1:nd
             if ~DISPLAYED
                fprintf('Simulating points and estimating hyperspheres...      ')
             end
-            [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,nballs)],nsims);
+            [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,nballs-1)],nsims);
             % Simulate points
             hyp = Hypersphere.estimate(points,gt.categories,'independent',estimator,cvdists);
             % save in-progress fits
@@ -134,7 +134,7 @@ for d = 1:nd
             
             if ~exist('points','var') % regenerate points
                gt.resetRandStream
-               [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,nballs)],nsims);
+               [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,nballs-1)],nsims);
             end
             % Assess significance on samples
             if ~exist('sigtmp','var') || isempty(sigtmp)
@@ -241,7 +241,7 @@ fh = newfigure([3 5],sprintf('%u%s',s,measures{s}));
 ax = fh.a.h([11 12]);
 
 for i = 1:3
-   sampsz = (2^(i+4))*ones(1,nballs+1);
+   sampsz = (2^(i+4))*ones(1,nballs);
    generateScenario(s,2,2^rs(rShown(i))).plotSamples(sampsz,fh.a.h(i));
    if numel(gt.radii)==2, title(sprintf('Samples: n_1= %u, n_2= %u',         sampsz))
    else                   title(sprintf('Samples: n_1= %u, n_2= %u, n_3= %u',sampsz))
