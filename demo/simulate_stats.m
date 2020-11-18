@@ -42,7 +42,7 @@ measures = {'overlap', 'distance', 'radius difference', ...
 mnames   = {'overlap', 'dists', 'radii', ...
             'overlap', 'dists','overlap','margins'};
 if isempty(strfind(measures{s},'difference')), sigOrDiff = 'sig';
-else                                           sigOrDiff = 'sigdiff'
+else                                           sigOrDiff = 'sigdiff';
 end
 if strcmp(mnames{s},'dists'), cvdists = 'cvdists';
 else                          cvdists = 'nocvdists';
@@ -123,7 +123,7 @@ for d = 1:nd
          end
          if ~exist('sigtmp','var') || isempty(sigtmp) || size(sigtmp,2)>1 || (~isempty(startSim) && startSim < nsims)
             if ~STANDALONE
-               fprintf('FILE MISSING\n')
+               fprintf('FILE INCOMPLETE\n')
                continue
             end
             stationarycounter([d r n],[nd nr nn]);fprintf('       \n');
@@ -174,9 +174,9 @@ for d = 1:nd
             fprintf('Simulations complete.\n');
             return
          elseif ~STANDALONE % collect data
-            hyps{s,d,r}(n,:)        = hyp;
-            groundtruth{s,d,r}      = gt;
-            sigtest{s,d,r}(n,:)     = sigtmp;
+            hyps{s,d,r}(n,:)    = hyp;
+            groundtruth{s,d,r}  = gt;
+            sigtest{s,d,r}(n,:) = sigtmp;
             bootsamps{s,d,r,n}  = bootmp;
          end
          clear sigtmp
