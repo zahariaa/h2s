@@ -149,7 +149,7 @@ for d = 1:nd
                %sigptmp(b,:) = hyptmp.([sigOrDiff 'p']).(mnames{s}(1:2));
                bootmp(b,:,:) = cat(1,hyptmp.ci.(testrslt{s}).(mnames{s}))';
                stationarycounter(b,nsims)
-               if mod(b,100)==0
+               if mod(b,50)==0
                   %keyboard
                   savtmp = struct('hyp',hyp,'gt',gt,'sigtmp',sigtmp,'bootmp',bootmp,'n',ns(n),'d',ds(d),'r',rs(r));
                   save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
