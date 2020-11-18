@@ -77,7 +77,7 @@ simfile = @(s,d,r,n) sprintf('%s%ss%g_d%g_r%g_n%g.mat',simfolder,estimator,s,d,r
 % Initialize data for saving (could probably change from cell to tensor)
 if ~STANDALONE % Collect all simulations, make figures
    sigtest   = repmat({false(nn,nsims       )},[nm nd nr]);
-   bootsamps = repmat({  NaN(nn,nsims,nboots)},[nm nd nr]);
+   bootsamps = repmat({  NaN(nsims,nboots)},[nm nd nr nn]);
    hyps      = repmat({repmat(Hypersphere(),[nn nsims])},[nm nd nr]);
 end
 % else do only one simulation, don't make figures
@@ -177,7 +177,7 @@ for d = 1:nd
             hyps{s,d,r}(n,:)        = hyp;
             groundtruth{s,d,r}      = gt;
             sigtest{s,d,r}(n,:)     = sigtmp;
-            bootsamps{s,d,r}(n,:,:) = bootmp;
+            bootsamps{s,d,r,n}  = bootmp;
          end
          clear sigtmp
 %       keyboard
@@ -200,10 +200,10 @@ for d = 1:nd
             case    6   ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],[1 6]),[],2);
          end
          if strcmp(sigOrDiff,'sig')
-         bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r}(n,:,:))]',...
+         bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) bootsamps{s,d,r,n}]',...
                                          [sigthresh*100 100])';
          else
-         bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r}(n,:,:)) Inf(nsims,1)]',...
+         bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) bootsamps{s,d,r,n} Inf(nsims,1)]',...
                                          [0 100] + [1 -1]*sigthresh*100/2)';
          end
          catch
@@ -284,7 +284,7 @@ xlabel('Simulation #')
 title({'Estimate (red)' 'boostrapped CI (black/grey)'})
 
 axtivate(7)
-hb = histogram(bootsamps{s,d,r}(n,:,:),100,'Normalization','pdf',...
+hb = histogram(bootsamps{s,d,r,n},100,'Normalization','pdf',...
                'Orientation','horizontal','FaceColor',[0 0 0],'EdgeColor','none');
 he = histogram(estimates{s,d,r}(n,:),'BinEdges',hb.BinEdges,'Normalization','pdf',...
                'Orientation','horizontal','FaceColor',[1 0 0],'EdgeColor','none');
