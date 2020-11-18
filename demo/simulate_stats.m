@@ -44,6 +44,9 @@ mnames   = {'overlap', 'dists', 'radii', ...
 if isempty(strfind(measures{s},'difference')), sigOrDiff = 'sig';
 else                                           sigOrDiff = 'sigdiff'
 end
+if strcmp(mnames{s},'dists'), cvdists = 'cvdists';
+else                          cvdists = 'nocvdists';
+end
 
 STANDALONE = exist('drn','var') && ~isempty(drn);
 if     ~STANDALONE % do nothing
@@ -109,7 +112,7 @@ for d = 1:nd
             end
             [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,nballs)],nsims);
             % Simulate points
-            hyp = Hypersphere.estimate(points,gt.categories,'independent',estimator);
+            hyp = Hypersphere.estimate(points,gt.categories,'independent',estimator,cvdists);
             % save in-progress fits
             savtmp = struct('hyp',hyp,'gt',gt,'n',ns(n),'d',ds(d),'r',rs(r));
             save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
@@ -141,7 +144,7 @@ for d = 1:nd
             end
             startSim = find(isnan(sigtmp(:,1)),1);
             for b = startSim:nsims
-               hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,testtype{s},estimator);
+               hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,testtype{s},estimator,cvdists);
                sigtmp(b,:)  = hyptmp.(sigOrDiff).(mnames{s}(1:2));
                %sigptmp(b,:) = hyptmp.([sigOrDiff 'p']).(mnames{s}(1:2));
                bootmp(b,:,:) = cat(1,hyptmp.ci.(testrslt{s}).(mnames{s}))';
