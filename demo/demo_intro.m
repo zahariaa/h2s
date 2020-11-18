@@ -123,7 +123,7 @@ planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
    end
    
    axtivate(3)
-   model = hypersphere2sphere(points{itype+1}(1:(n*nCats),:),orig.categories.select(1:nCats),[],2);
+   model = Hypersphere.estimate(points{itype+1}(1:(n*nCats),:),orig.categories.select(1:nCats)).h2s(2);
    model = SetOfHyps(model).stressUpdate(orig);
    model.show;
    for i = 1:nCats

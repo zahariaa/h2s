@@ -43,7 +43,7 @@ for d = ds
    end
    [points,categories] = randnsimplex_of_nballs(groundtruth.centers,50,...
                                                 groundtruth.radii);
-   model = hypersphere2sphere(points,categories,[],dimLow);
+   model = Hypersphere.estimate(points,categories).h2s(dimLow);
    model = SetOfHyps(model).stressUpdate(groundtruth);
    % model = model.significance(points,1000);
    %keyboard
