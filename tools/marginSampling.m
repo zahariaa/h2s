@@ -36,6 +36,7 @@ end
 %% recurse on each category
 if ~exist('N'  ,'var') || isempty(N), N = 1000; end
 if exist('cats','var') %&& ~isempty(cats)
+   nCats = size(cats.vectors,2);
    hyps = cellfun(@(p) marginSampling(p,N,samplingMethod),cats.slice(points),...
                   'UniformOutput',false);
    hyps = cell2mat_concat(hyps,2);
@@ -48,8 +49,8 @@ if exist('cats','var') %&& ~isempty(cats)
       case 'jackknife'
          % actually have to combine hyps for leave one out over *ALL* points
          [~,thiscat] = find(cats.vectors);
-         notthiscat = arrayfun(@(c) setdiff(1:d,c),thiscat);
-         hyps = num2cell([vectify(hyps(2:end,:)) hyps(1,notthiscat)'],2);
+         notthiscat = cell2mat_concat(arrayfun(@(c) setdiff(1:nCats,c),thiscat,'UniformOutput',false));
+         hyps = num2cell([vectify(hyps(2:end,:)) reshape(hyps(1,notthiscat),size(notthiscat))],2);
          hyps = cell2mat_concat(cellfun(@(h,c) concat(h,c),...
                           hyps,num2cell(cats.leaveoneout),'UniformOutput',false))';
    end
