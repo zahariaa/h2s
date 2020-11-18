@@ -1238,6 +1238,8 @@ classdef SetOfHyps < Hypersphere
          CVDISTS = numel(self.ci.permutations) && any(cat(1,self.ci.permutations.distsCV));
 
          for sig = SIGTYPE; sig = [sig{1} 'p'];
+            if isempty(strfind(sig,'sig')), sig = ['sig' sig]; end
+
             fn = fieldnames(self.(sig))';
             DIFF = ~isempty(self.(sig).ra);
    
