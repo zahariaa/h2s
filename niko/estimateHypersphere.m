@@ -107,10 +107,10 @@ function [hyp,loc_cv] = estimateHypersphere(points,varargin)
 %% preparation
 [n,d,f] = size(points);
 nBootstraps= 1;
-NORMALIZE  = false;    % pre-normalize points
-CVDISTS    = true;     % distances are cross-validated by default
-cvdists    = false;    % placeholder if don't have cross-validated distance values
-STRATIFIED = 'calcStats'; % stratified bootstrap (default)
+SAMPLING   = 'calcStats'; % stratified bootstrap (default)
+NORMALIZE  = false;       % pre-normalize points
+CVDISTS    = true;        % distances are cross-validated by default
+cvdists    = false;       % placeholder if don't have cross-validated distance values
 ESTIMATOR  = 'meandist';
 DBUGPLOT   = false;
 VERBOSE    = false;
@@ -134,7 +134,7 @@ for v = 1:numel(varargin)
          case 'independent'; INDEPENDENT= true;  varargin{v} = [];
          case 'joint';       INDEPENDENT= false; varargin{v} = [];
          case {'bootstrap','stratified','permute','jackknife','calcstats'};
-               STRATIFIED = varargin{v};
+               SAMPLING = varargin{v};
          case {'meandist','distance','mcmc','maxradius','jointml',...
                'gaussian','uniformball','uniformcube'}
             ESTIMATOR = lower(varargin{v});
@@ -150,7 +150,7 @@ if f==1 && ( (n==d && all(diag(points)==0) && issymmetric(points)) ...
    DISTMATRIX = true;
    normtype   = [];    % if normalizing, make full matrix min be 0 and max be 1
    ESTIMATOR  = 'distance'; % override estimator choice
-   STRATIFIED = 'permute';  % bootstrap must be w/o replacement; stratified doesn't make sense
+   SAMPLING   = 'permute';  % bootstrap must be w/o replacement; stratified doesn't make sense
 
    if n==d, points = squareform(points); end
 else
@@ -200,7 +200,7 @@ if exist('categories','var') && numel(categories.labels)>1
 
    %% permutation or stratified bootstrap test
    if nBootstraps > 1 && ~strcmp(ESTIMATOR,'mcmc')
-      catperm = [categories; categories.permute(nBootstraps,STRATIFIED)];
+      catperm = [categories; categories.permute(nBootstraps,SAMPLING)];
       % Recursive call
       % [hyp,loc_cv] = arrayfun(@(c) estimateHypersphere(points,c,'raw',varargin{:}),...
       %                              catperm,'UniformOutput',false);

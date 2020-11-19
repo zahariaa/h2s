@@ -154,29 +154,29 @@ classdef Categories
          obj = Categories(obj);
       end
 
-      function objs = permute(self,N,STRAT_BOOTSTRAP)
+      function objs = permute(self,N,SAMPLING)
       % Categories.permute: outputs a Categories object that has been
       %    subsampled to have one or more categories, indexed by input i
       % e.g.:
       % permutedcats = cats.permute
       % permutedcats = cats.permute(N)
-      % permutedcats = cats.permute(N,STRAT_BOOTSTRAP)
+      % permutedcats = cats.permute(N,SAMPLING)
       % 
       % N = 100 by default, is the number of bootstraps to do
-      % STRAT_BOOTSTRAP = false by default, indicates whether to do a 
+      % SAMPLING = 'permute' by default, indicates whether to do a 
       %    stratified bootstrap (sampled with replacement) or a random
       %    permutation (sampled without replacement, default).
          if ~exist('N','var') || isempty(N), N=100;
          elseif N < 2,                       objs=self; return; end
-         if ~exist('STRAT_BOOTSTRAP','var') || isempty(STRAT_BOOTSTRAP)
-            STRAT_BOOTSTRAP = 'permute';
-         elseif strcmpi(STRAT_BOOTSTRAP,'calcstats')
-            STRAT_BOOTSTRAP = {'bootstrap','permute','jackknife'};
+         if ~exist('SAMPLING','var') || isempty(SAMPLING)
+            SAMPLING = 'permute';
+         elseif strcmpi(SAMPLING,'calcstats')
+            SAMPLING = {'bootstrap','permute','jackknife'};
          end
-         if numel(STRAT_BOOTSTRAP)>1
+         if numel(SAMPLING)>1
             objs = [];
-            for i = 1:numel(STRAT_BOOTSTRAP)
-               objs = [objs; self.permute(N,STRAT_BOOTSTRAP(i))];
+            for i = 1:numel(SAMPLING)
+               objs = [objs; self.permute(N,SAMPLING(i))];
             end
             return
          end
@@ -192,29 +192,29 @@ classdef Categories
 
          % Build categories objs with permuted vector identities
          self.ispermuted = true;
-         switch lower(STRAT_BOOTSTRAP)
-         case {'bootstrap','stratified'} % resample with replacement
-            self.vectors = zeros(p,n,dtype);
-            objs = repmat(self,[N 1]);
-            for i = 1:n
-               includedvecs = find(vecs==i);
-               ni = numel(includedvecs);
-               for j = 1:N
-                  objs(j).vectors(includedvecs,i) = includedvecs(sort(randi(ni,ni,1)));
+         switch lower(SAMPLING)
+            case {'bootstrap','stratified'} % resample with replacement
+               self.vectors = zeros(p,n,dtype);
+               objs = repmat(self,[N 1]);
+               for i = 1:n
+                  includedvecs = find(vecs==i);
+                  ni = numel(includedvecs);
+                  for j = 1:N
+                     objs(j).vectors(includedvecs,i) = includedvecs(sort(randi(ni,ni,1)));
+                  end
                end
-            end
-         case 'permute'
-            self.vectors = false(p,n);
-            objs = repmat(self,[N 1]);
-            includedvecs = find(vecs);
-            for i = 1:N
-               ivec = vecs(includedvecs(randperm(p)));
-               for j = 1:n
-                  objs(i).vectors(ivec==j,j) = true;
+            case 'permute'
+               self.vectors = false(p,n);
+               objs = repmat(self,[N 1]);
+               includedvecs = find(vecs);
+               for i = 1:N
+                  ivec = vecs(includedvecs(randperm(p)));
+                  for j = 1:n
+                     objs(i).vectors(ivec==j,j) = true;
+                  end
                end
-            end
-         case 'jackknife'
-            objs = self.leaveoneout;
+            case 'jackknife'
+               objs = self.leaveoneout;
          end
       end
 
