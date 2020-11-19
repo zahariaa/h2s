@@ -169,9 +169,15 @@ classdef Categories
          if ~exist('N','var') || isempty(N), N=100;
          elseif N < 2,                       objs=self; return; end
          if ~exist('STRAT_BOOTSTRAP','var') || isempty(STRAT_BOOTSTRAP)
-            STRAT_BOOTSTRAP = false;
-         elseif numel(STRAT_BOOTSTRAP)==2
-            objs = [self.permute(N,STRAT_BOOTSTRAP(1)); self.permute(N,STRAT_BOOTSTRAP(2))];
+            STRAT_BOOTSTRAP = 'permute';
+         elseif strcmpi(STRAT_BOOTSTRAP,'calcstats')
+            STRAT_BOOTSTRAP = {'bootstrap','permute','jackknife'};
+         end
+         if numel(STRAT_BOOTSTRAP)>1
+            objs = [];
+            for i = 1:numel(STRAT_BOOTSTRAP)
+               objs = [objs; self.permute(N,STRAT_BOOTSTRAP(i))];
+            end
             return
          end
 
@@ -186,7 +192,8 @@ classdef Categories
 
          % Build categories objs with permuted vector identities
          self.ispermuted = true;
-         if STRAT_BOOTSTRAP % resample with replacement
+         switch lower(STRAT_BOOTSTRAP)
+         case {'bootstrap','stratified'} % resample with replacement
             self.vectors = zeros(p,n,dtype);
             objs = repmat(self,[N 1]);
             for i = 1:n
@@ -196,7 +203,7 @@ classdef Categories
                   objs(j).vectors(includedvecs,i) = includedvecs(sort(randi(ni,ni,1)));
                end
             end
-         else
+         case 'permute'
             self.vectors = false(p,n);
             objs = repmat(self,[N 1]);
             includedvecs = find(vecs);
@@ -206,6 +213,8 @@ classdef Categories
                   objs(i).vectors(ivec==j,j) = true;
                end
             end
+         case 'jackknife'
+            objs = self.leaveoneout;
          end
       end
 
