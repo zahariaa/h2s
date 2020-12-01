@@ -33,7 +33,7 @@ if strcmpi(estimator,'mcmc')
    testtype = repmat({'bootstrap' },[1 7]);
    testrslt = repmat({'bootstraps'},[1 7]);
 else
-   testtype = [{'bootstrap'  'permute'     } repmat({'bootstrap' },[1 4]) {'bootstrap' }];
+   testtype = [{'bootstrap'  'permute'     } repmat({'bootstrap' },[1 4]) {'jackknife' }];
    testrslt = [{'bootstraps' 'permutations'} repmat({'bootstraps'},[1 4]) {'jackknives'}];
 end
 measures = {'overlap', 'distance', 'radius difference', ...
