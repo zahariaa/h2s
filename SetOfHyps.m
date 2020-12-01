@@ -135,7 +135,7 @@ classdef SetOfHyps < Hypersphere
             % Deal with multiple Hyperspheres, convert to SetOfHyps
             MCMC = any(strcmpi(varargin,'mcmc'));
             if obj(end).categories.ispermuted || MCMC
-               obj = obj.meanAndMerge(MCMC);
+               obj = obj.meanAndMerge;
             else
                % assume multiple objects are not bootstraps, but different
                % frames etc, leave them as multiple objects
