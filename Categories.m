@@ -173,10 +173,10 @@ classdef Categories
          elseif strcmpi(SAMPLING,'calcstats')
             SAMPLING = {'bootstrap','permute','jackknife'};
          end
-         if numel(SAMPLING)>1
+         if iscell(SAMPLING) && numel(SAMPLING)>1
             objs = [];
             for i = 1:numel(SAMPLING)
-               objs = [objs; self.permute(N,SAMPLING(i))];
+               objs = [objs; self.permute(N,SAMPLING{i})];
             end
             return
          end
