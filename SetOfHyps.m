@@ -274,8 +274,10 @@ classdef SetOfHyps < Hypersphere
          if numel(self.ci.bootstraps)>0
             radii_boot   = cat(1,self.ci.bootstraps.radii);
             overlap_boot =       self.ci.bootstraps.overlap;
-            margin_boot  =       self.ci.jackknives.margins;
             dist_boot    = cat(1,self.ci.bootstraps.dists);
+         end
+         if numel(self.ci.jackknives)>0
+            margin_jack  =       self.ci.jackknives.margins;
          end
          %% COMPUTE SIGNIFICANCE (smaller values more significant)
          % helper functions
@@ -289,7 +291,11 @@ classdef SetOfHyps < Hypersphere
             % Overlap/margin is significant if 0 does not exceed the lowest 5% range
             for i = 1:nc2
                self.sigp.ov(i) = ciprctile(overlap_boot(:,i),0);
-               self.sigp.ma(i) = ciprctile( margin_boot(:,i),0);
+            end
+         end
+         if numel(self.ci.jackknives)>0
+            for i = 1:nc2
+               self.sigp.ma(i) = ciprctile( margin_jack(:,i),0);
             end
          end
          if ~any(strcmpi(varargin,'mcmc')) && numel(self.ci.permutations)>0
@@ -314,10 +320,14 @@ classdef SetOfHyps < Hypersphere
                self.sigdiffp.ra(i) = ciprctileFuTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
             end
             for i = 1:nc2c2
-               self.sigdiffp.ov(i) = ciprctileFuTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
+               self.sigdiffp.ov(i) = ciprctileFuTail(diff(overlap_boot(:,ixc2(:,i)),[],2),0);
                self.sigdiffp.di(i) = ciprctileFuTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
             end
-            self.sigdiffp.ma = self.sigdiffp.ov; % Margin/overlap sigdiff is same bc smaller tail
+         end
+         if numel(self.ci.jackknives)>0
+            for i = 1:nc2c2
+               self.sigdiffp.ma(i) = ciprctileFuTail(diff( margin_jack(:,ixc2(:,i)),[],2),0);
+            end
          end
 
          self = self.nullHypothesisRejected(0.05);
