@@ -243,8 +243,6 @@ classdef SetOfHyps < Hypersphere
          else
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
             bootsNperms = Hypersphere.estimate(points,self.categories,N,testtype,CVDISTS,varargin{:});
-            marginSamps = marginSampling(points,self.categories,N,'jackknife');
-            bootsNperms = [bootsNperms marginSamps];
             bootsNperms = bootsNperms.meanAndMerge;
             self.ci = bootsNperms.ci;
             if islogical(self.distsCV)

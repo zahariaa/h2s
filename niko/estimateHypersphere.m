@@ -201,19 +201,35 @@ if exist('categories','var') && numel(categories.labels)>1
    %% permutation or stratified bootstrap test
    if nBootstraps > 1 && ~strcmp(ESTIMATOR,'mcmc')
       catperm = [categories; categories.permute(nBootstraps,SAMPLING)];
+      cjacked = arrayfun(@(x) sum(~~x.vectors(:))==(size(x.vectors,1)-1), catperm)';
+      
       % Recursive call
       % [hyp,loc_cv] = arrayfun(@(c) estimateHypersphere(points,c,'raw',varargin{:}),...
       %                              catperm,'UniformOutput',false);
       % hyp = cell2mat_concat(hyp);
       loc_cv = cell(numel(catperm),1);
       if CVDISTS
-         parfor iboot = 1:numel(catperm)
+         parfor iboot = setdiff(1:numel(catperm),find(cjacked))
             [hyp(iboot),loc_cv{iboot}] = estimateHypersphere(points,catperm(iboot),'raw',varargin{:});
          end
       else
-         parfor iboot = 1:numel(catperm)
+         parfor iboot = setdiff(1:numel(catperm),find(cjacked))
             hyp(iboot) = estimateHypersphere(points,catperm(iboot),'raw',varargin{:});
          end
+      end
+      if any(cjacked)
+         locs = cellfun(@mean, categories.slice(points),'UniformOutput',false);
+         % Independent hypersphere estimates -- these must combined for proper margins, etc
+         hyps = cellfun(@jackknife, categories.slice(points),'UniformOutput',false);
+         hyps = cell2mat_concat(hyps,2);
+
+         % actually have to combine hyps for leave one out over *ALL* points
+         [~,thiscat] = find(categories.vectors);
+         notthiscat = cell2mat_concat(arrayfun(@(c) setdiff(1:nCats,c),thiscat,'UniformOutput',false));
+         hyps = num2cell([vectify(hyps(2:end,:)) reshape(hyps(1,notthiscat),size(notthiscat))],2);
+         hyps = cell2mat_concat(cellfun(@(h,c) concat(h,c),...
+                          hyps,num2cell(catperm(cjacked)),'UniformOutput',false))';
+         hyp(cjacked) = hyps;
       end
    else % mcmc or single sample (of bootstrap or not)
       if DISTMATRIX
@@ -413,3 +429,19 @@ function cvdists = cvCenters2cvSqDists(loc_cv)
    % cvdists = sign(cvdists).*sqrt(abs(cvdists));
    return
 end
+
+function hyps = jackknife(points)
+   [n,d,f] = size(points);
+   loc = mean(points,1);
+
+   % leave one out (but first one is full data estimate)
+   locs = repmat(loc,[n+1 1]) - [zeros(1,d); points/n];
+   locs(2:end,:) = (n-1)*locs(2:end,:)/n;
+
+   rads = cellfun(@(c) maxRadiusGivenCenter(c,points),num2cell(locs,2));
+
+   hyps = Hypersphere(num2cell(locs,2),num2cell(rads));
+
+   return
+end
+
