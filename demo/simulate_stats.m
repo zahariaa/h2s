@@ -281,7 +281,7 @@ for i = 1:nsims
 end
 ylabel(sprintf('%s\nestimates (red)\nconfidence intervals (black = significant)',measures{s}))
 xlabel('Simulation #')
-title({'Estimate (red)' 'boostrapped CI (black/grey)'})
+title({'Estimate (red)' 'bootstrapped CI (black/grey)'})
 
 axtivate(7)
 hb = histogram(bootsamps{s,d,r,n},100,'Normalization','pdf',...
@@ -290,7 +290,7 @@ he = histogram(estimates{s,d,r}(n,:),'BinEdges',hb.BinEdges,'Normalization','pdf
                'Orientation','horizontal','FaceColor',[1 0 0],'EdgeColor','none');
 ylabel(measures{s})
 xlabel('pdf')
-title({'Boostrapped estimates from' 'all simulations (black) and' 'estimates (red)'})
+title({'Bootstrapped estimates from' 'all simulations (black) and' 'estimates (red)'})
 matchy(fh.a.h(6:7),'y')
 
 %% TODO: different colors for different conditions
