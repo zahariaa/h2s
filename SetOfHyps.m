@@ -272,12 +272,12 @@ classdef SetOfHyps < Hypersphere
             end
          end
          if numel(self.ci.bootstraps)>0
-            radii_boot   = cat(1,self.ci.bootstraps.radii);
             overlap_boot =       self.ci.bootstraps.overlap;
             dist_boot    = cat(1,self.ci.bootstraps.dists);
          end
          if numel(self.ci.jackknives)>0
             margin_jack  =       self.ci.jackknives.margins;
+            radii_jack   = cat(1,self.ci.jackknives.radii);
          end
          %% COMPUTE SIGNIFICANCE (smaller values more significant)
          % helper functions
@@ -316,15 +316,15 @@ classdef SetOfHyps < Hypersphere
 
          %% SECOND-ORDER COMPARISONS
          if numel(self.ci.bootstraps)>0
-            for i = 1:nc2
-               self.sigdiffp.ra(i) = ciprctileFuTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
-            end
             for i = 1:nc2c2
                self.sigdiffp.ov(i) = ciprctileFuTail(diff(overlap_boot(:,ixc2(:,i)),[],2),0);
                self.sigdiffp.di(i) = ciprctileFuTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
             end
          end
          if numel(self.ci.jackknives)>0
+            for i = 1:nc2
+               self.sigdiffp.ra(i) = ciprctileFuTail(diff(  radii_jack(:,  ix(:,i)),[],2),0);
+            end
             for i = 1:nc2c2
                self.sigdiffp.ma(i) = ciprctileFuTail(diff( margin_jack(:,ixc2(:,i)),[],2),0);
             end

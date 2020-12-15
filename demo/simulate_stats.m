@@ -33,8 +33,8 @@ if strcmpi(estimator,'mcmc')
    testtype = repmat({'bootstrap' },[1 7]);
    testrslt = repmat({'bootstraps'},[1 7]);
 else
-   testtype = [{'bootstrap'  'permute'     } repmat({'bootstrap' },[1 4]) {'jackknife' }];
-   testrslt = [{'bootstraps' 'permutations'} repmat({'bootstraps'},[1 4]) {'jackknives'}];
+   testtype = [{'bootstrap'  'permute'      'jackknife' } repmat({'bootstrap' },[1 3]) {'jackknife' }];
+   testrslt = [{'bootstraps' 'permutations' 'jackknives'} repmat({'bootstraps'},[1 3]) {'jackknives'}];
 end
 measures = {'overlap', 'distance', 'radius difference', ...
             'overlap difference', 'distance difference','overlap difference',...
@@ -70,7 +70,7 @@ nm = numel(measures);
 % keyboard
 
 basedir = '';%'/moto/nklab/users/az2522/';
-simfolder = '20200929/';
+simfolder = '20201215';%'20200929/';
 simfolder = [basedir 'data/statsim/' simfolder];
 if ~exist(simfolder,'dir'), mkdir(simfolder); end
 simfile = @(s,d,r,n) sprintf('%s%ss%g_d%g_r%g_n%g.mat',simfolder,estimator,s,d,r,n);
