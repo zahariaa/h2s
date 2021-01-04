@@ -2,17 +2,21 @@
 
 hypersphere2sphere(h2s) is a visualization method for conveying the relationships between high-dimensional, labeled data distributions. h2s summarizes each labeled distribution as a sphere (in 3D) or circle (in 2D).
 
-<img src="demo/lenet_compare_ver3ab.png" title="h2s can visualize, for example, the activations in each layer of a convolutional neural network to images of handwritten (MNIST) digits" />
-
-*h2s can visualize, for example, the activations in each layer of a convolutional neural network to images of handwritten (MNIST) digits.*
+<p align="center">
+  <img src="demo/lenet_compare_ver3ab.png" width="750" title="h2s can visualize, for example, the activations in each layer of a convolutional neural network to images of handwritten (MNIST) digits" />
+  <br>
+  <i>h2s can visualize, for example, the activations in each layer of a convolutional neural network to images of handwritten (MNIST) digits.</i><br>
+</p>
 
 ## Basics
 
 The h2s algorithm proceeds in two steps:
 
-<img src="demo/intro_v7.png" title="h2s fits hyperspheres enclosing high-dimensional, labeled data distributions and represents them in a low-dimensional visualization space, either perfectly (a), or approximately (b)" />
-
-*h2s fits hyperspheres enclosing high-dimensional, labeled data distributions and represents them in a low-dimensional visualization space, either perfectly (a), or approximately (b).*
+<p align="center">
+  <img src="demo/intro_v7.png" width="400" title="h2s fits hyperspheres enclosing high-dimensional, labeled data distributions and represents them in a low-dimensional visualization space, either perfectly (a), or approximately (b)" />
+  <br>
+  <i>h2s fits hyperspheres enclosing high-dimensional, labeled data distributions and represents them in a low-dimensional visualization space, either perfectly (a), or approximately (b).</i><br>
+</p>
 
 #### Step 1: High-dimensional hypersphere estimation
 A uniform *N*-ball distribution is fit to the distribution of samples from each category, yielding a center (a *N*-vector) and a radius (a scalar) for each category [[1]](#Ritter1990)[[2]](#Larsson2008).
@@ -209,14 +213,17 @@ lo.movie;
 figure;
 lo.plotDynamics;
 ```
+<p align="center">
+  <img src="demo/RDMs_srd_weighted_S2.gif" title="h2s can dynamically visualize the changes in brain response patterns over time to different categories of images" />
+  <br>
+  <i>h2s can dynamically visualize the changes in brain response patterns over time to different categories of images.</i><br>
+</p>
 
-<img src="demo/RDMs_srd_weighted_S2.gif" title="h2s can dynamically visualize the changes in brain response patterns over time to different categories of images" />
-
-*h2s can dynamically visualize the changes in brain response patterns over time to different categories of images.*
-
-<img src="demo/comparisons-S2.png" title="plotDynamics visualizes the statistics of interest in a set of times series plots" />
-
-*plotDynamics visualizes the statistics of interest in a set of times series plots.*
+<p align="center">
+  <img src="demo/comparisons-S2.png" width="500" title="plotDynamics visualizes the statistics of interest in a set of times series plots" />
+  <br>
+  <i>plotDynamics visualizes the statistics of interest in a set of times series plots.</i><br>
+</p>
 
 If you have [*P* by *N* by *F*] tensor data which has the same category structure (i.e., you can apply the same `Categories` object to each frame), but you want each frame to be optimized independently, you can use the `'independent'` option:
 
