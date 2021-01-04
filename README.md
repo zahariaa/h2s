@@ -7,7 +7,7 @@ hypersphere2sphere(h2s) is a visualization method for conveying the relationship
 The h2s algorithm proceeds in two steps:
 
 #### Step 1: High-dimensional hypersphere estimation
-A uniform *N*-ball distribution is fit to the distribution of samples from each category, yielding a center (a *N*-vector) and a radius (a scalar) for each category \cite{Ritter1990,Larsson2008}.
+A uniform *N*-ball distribution is fit to the distribution of samples from each category, yielding a center (a *N*-vector) and a radius (a scalar) for each category [[1]](#Ritter1990)[[2]](#Larsson2008).
 
 Here `data` is either an [*P* by *N*] matrix or [*P* by *N* by *F*] tensor, where *P* is the number of points (or "samples"), *N* is the dimensionality of the points, and for dynamic data, *F* is the number of frames (or samples in time).
 
@@ -56,7 +56,7 @@ hi.plotSamples(100); % 100 samples per hypersphere
 #### Step 2: Optimization of low-dimensional rendering
 If the number of categories *C* is no greater than *n+1* (e.g., for up to 4 categories for a 3d visualization), the hyperspheres' parameters can be perfectly expressed by the visual language of spheres (or circles for a 2d visualization). If *C>n+1*, then a perfect expression of the summary statistics is not in general possible, and the sphere parameters are optimized to best express the hypersphere parameters.
 
-For the second step, H2S initializes the low-dimensional sphere embedding by positioning the sphere centers using MDS with metric stress \cite{Young1938,Torgerson1952,Shepard1962} as the optimization criterion. The sphere embedding configuration is further optimized to minimize the error *E* between the visualized spreads $\tilde{s}$, separation distances $\tilde{d}$, and overlaps, $\tilde{o}$, and the target values measured in the high-dimensional space ($\hat{s}$, $\hat{d}$, and $\hat{o}$, respectively):
+For the second step, H2S initializes the low-dimensional sphere embedding by positioning the sphere centers using MDS with metric stress [[3]](#Young1938)[[4]](#Torgerson1952)[[5]](#Shepard1962) as the optimization criterion. The sphere embedding configuration is further optimized to minimize the error *E* between the visualized spreads $\tilde{s}$, separation distances $\tilde{d}$, and overlaps, $\tilde{o}$, and the target values measured in the high-dimensional space ($\hat{s}$, $\hat{d}$, and $\hat{o}$, respectively):
 <img src="https://latex.codecogs.com/svg.latex?\large&space;E = \sum_{i=1}^{C-1} \sum_{j=i+1}^C \left( \tilde{d}_{ij} - \hat{d}_{ij} \right)^2 + \sum_{i=1}^{C-1} \sum_{j=i+1}^C \left( \tilde{o}_{ij} - \hat{o}_{ij} \right)^2 + \sum_{i=1}^C \left( \tilde{s}_i - \hat{s}_i \right)^2" title="\largeE=\sum_{i=1}^{C-1}\sum_{j=i+1}^C\left(\tilde{d}_{ij}-\hat{d}_{ij}\right)^2+\sum_{i=1}^{C-1}\sum_{j=i+1}^C\left(\tilde{o}_{ij}-\hat{o}_{ij}\right)^2+\sum_{i=1}^C\left(\tilde{s}_i-\hat{s}_i\right)^2" />
 
 This step yields a `SetOfHyps` object (it can be run on a `Hypersphere` or `SetOfHyps` object), which is a subclass of `Hypersphere` that inherits its methods and has additional methods and properties related to h2s optimization, display, and statistical inference. Some properties, such as centers and radii, are protected in `SetOfHyps`, and several other properties (such as overlaps) are eagerly computed and stored in the object.
@@ -162,3 +162,29 @@ lo = hi.h2s('independent');
 ```
 
 This can be useful if you've manually bootstrapped or permuted the data.
+
+## References
+<a id="Ritter1990">[1]</a>
+Ritter, J. (1990).
+An Efficient Bounding Sphere. In Glassner, A. S. (ed.) Graphics Gems, 301–303, Academic Press Professional, San Diego, CA.
+DOI: 10.1016/B978-0-08-050753-8.50063-2
+
+<a id="Larsson2008">[2]</a>
+Larsson, T. (2008).
+Fast and Tight Fitting Bounding Spheres.
+Proceedings of The Annual SIGRAD Conference 27–30.
+
+<a id="Young1938">[3]</a>
+Young, G. & Householder, A. S. (1938).
+Discussion of a set of points in terms of their mutual distances. Psychometrika 3, 19–22.
+DOI: 10.1007/BF02287916
+
+<a id="Torgerson1952">[4]</a>
+Torgerson, W. S. (1952).
+Multidimensional scaling: I. Theory and method. Psychometrika 17, 401–419.
+DOI: 10.1007/BF02288916
+
+<a id="Shepard1962">[5]</a>
+Shepard, R. N. (1962).
+The analysis of proximities: Multidimensional scaling with an unknown distance function. I. Psychometrika 27, 125–140.
+DOI: 10.1007/BF02289630
