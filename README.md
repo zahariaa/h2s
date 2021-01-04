@@ -2,9 +2,17 @@
 
 hypersphere2sphere(h2s) is a visualization method for conveying the relationships between high-dimensional, labeled data distributions. h2s summarizes each labeled distribution as a sphere (in 3D) or circle (in 2D).
 
+<img src="demo/lenet_compare_ver3ab.png" title="h2s can visualize, for example, the activations in each layer of a convolutional neural network to images of handwritten (MNIST) digits" />
+
+*h2s can visualize, for example, the activations in each layer of a convolutional neural network to images of handwritten (MNIST) digits.*
+
 ## Basics
 
 The h2s algorithm proceeds in two steps:
+
+<img src="demo/intro_v7.png" title="h2s fits hyperspheres enclosing high-dimensional, labeled data distributions and represents them in a low-dimensional visualization space, either perfectly (a), or approximately (b)" />
+
+*h2s fits hyperspheres enclosing high-dimensional, labeled data distributions and represents them in a low-dimensional visualization space, either perfectly (a), or approximately (b).*
 
 #### Step 1: High-dimensional hypersphere estimation
 A uniform *N*-ball distribution is fit to the distribution of samples from each category, yielding a center (a *N*-vector) and a radius (a scalar) for each category [[1]](#Ritter1990)[[2]](#Larsson2008).
@@ -21,7 +29,27 @@ The result is a `Hypersphere` object which contains an estimate of the center an
 
 ```matlab
 >> hi
+
+hi =
+
+  Hypersphere with properties:
+
+                 centers: [-0.0064 -0.0232 0.0145]
+                   radii: 1.9138
+              categories: [1x1 Categories]
+                 distsCV: 0
+    belongsToCommonSpace: 0
+
 >> hi.categories
+
+ans =
+
+  Categories with properties:
+
+        labels: {'category 1'}
+        colors: [0.9647 0.5333 0.6235]
+       vectors: []
+    ispermuted: 0
 ```
 
 Running `Hypersphere.estimate` with only one argument assumes that all the data belong to a single label/distribution. You may notice in the `Hypersphere` object, another `Categories` object within it, here in `hi.categories`. This was automatically generated, but you can alternatively specify the labels of each point by first creating your own `Categories` object.
@@ -41,7 +69,33 @@ Each of the hyperspheres estimated are in this single `Hypersphere` object. Thin
 
 ```matlab
 >> hi
->> hi.overlaps
+
+hi =
+
+  Hypersphere with properties:
+
+                 centers: [4x3 double]
+                   radii: [0.9997 0.9887 0.9116 1.0366]
+              categories: [1x1 Categories]
+                 distsCV: [4.8025 4.7251 4.4056 4.0907 4.1996 4.1976]
+    belongsToCommonSpace: 0
+
+>> hi.overlap
+
+ans =
+
+   -0.2063   -0.2681   -0.0780   -0.1227   -0.0338   -0.1100
+
+>> hi.categories
+
+ans =
+
+  Categories with properties:
+
+        labels: {'category 1'  'category 2'  'category 3'  'category 4'}
+        colors: [4x3 double]
+       vectors: [200x4 logical]
+    ispermuted: 0
 ```
 
 For reference, you can also plot the original points with the colors specified in the `Categories` object. You can also generate new samples from the estimated distributions.
@@ -111,7 +165,7 @@ lo = hi.h2s({1 1 0});
 Note that the standard `'mdsinit'` initialization is the global optimum of this reduced objective function.
 
 
-## Other stuff: statistical inference
+## Going deeper: statistical inference
 
 The H2S framework can also report statistical significance for each individual summary statistic, and significant differences between them. These are permutation- and bootstrap-based tests that are applied to the high-dimensional data. The output is a `SetOfHyps` object.
 
@@ -137,7 +191,7 @@ hi.showValues;
 hi.showValues(lo);
 ```
 
-## Other stuff: dynamics
+## Adding time: dynamics
 
 If you have dynamic data in the form of a [*P* by *N* by *F*] tensor, evaluating H2S on those data, making sure each *f*th frame is optimized in the same visualization space as all the other frames, the code is very much the same:
 
@@ -155,6 +209,14 @@ lo.movie;
 figure;
 lo.plotDynamics;
 ```
+
+<img src="demo/RDMs_srd_weighted_S2.gif" title="h2s can dynamically visualize the changes in brain response patterns over time to different categories of images" />
+
+*h2s can dynamically visualize the changes in brain response patterns over time to different categories of images.*
+
+<img src="demo/comparisons-S2.png" title="plotDynamics visualizes the statistics of interest in a set of times series plots" />
+
+*plotDynamics visualizes the statistics of interest in a set of times series plots.*
 
 If you have [*P* by *N* by *F*] tensor data which has the same category structure (i.e., you can apply the same `Categories` object to each frame), but you want each frame to be optimized independently, you can use the `'independent'` option:
 
