@@ -525,7 +525,7 @@ classdef SetOfHyps < Hypersphere
       % hyps.plotOverlapErrors
       % 
       % SEE ALSO HYPERSPHERE.SHOW, SETOFHYPS.SIGNIFICANCE
-         if isempty(self.sig), sigov = true(1,numel(self.margins));
+         if isempty(self.sig), sigov = false(1,numel(self.margins));
          else                  sigov = sum([self.sig.ov;self.sig.ma]);
          end
          if isempty(self.msflips), self.msflips = zeros(size(sigov));
@@ -1235,7 +1235,7 @@ classdef SetOfHyps < Hypersphere
          elseif ischar(SIGTYPE), SIGTYPE = {SIGTYPE};
          end
 
-         CVDISTS = numel(self.ci.permutations) && any(cat(1,self.ci.permutations.distsCV));
+         CVDISTS = numel(self.ci.permutations)>0 && any(cat(1,self.ci.permutations.distsCV));
 
          for sig = SIGTYPE; sig = [sig{1} 'p'];
             if isempty(strfind(sig,'sig')), sig = ['sig' sig]; end
