@@ -1188,6 +1188,9 @@ classdef SetOfHyps < Hypersphere
          elseif strcmpi(boxpart,'diagonal') % plot as circles!
             ix = repmat(1:max(2,nchoosek(n,2)),[2 1]);
             if FIRSTORDER, colors = mat2cell(self.categories.colors,ones(n,1)); end
+         elseif nVals == n^2
+            [ixx,ixy] = meshgrid(1:n,1:n);
+            ix = [ixx(:)'; ixy(:)'];
          end
          for i = 1:nVals
             if ~all(colors{i}==1)
@@ -1235,7 +1238,7 @@ classdef SetOfHyps < Hypersphere
          elseif ischar(SIGTYPE), SIGTYPE = {SIGTYPE};
          end
 
-         CVDISTS = numel(self.ci.permutations)>0 && any(cat(1,self.ci.permutations.distsCV));
+         CVDISTS = numel(self.ci.permutations)>0 && any(any(cat(1,self.ci.permutations.distsCV)));
 
          for sig = SIGTYPE; sig = [sig{1} 'p'];
             if isempty(strfind(sig,'sig')), sig = ['sig' sig]; end
