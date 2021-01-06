@@ -70,7 +70,7 @@ nm = numel(measures);
 % keyboard
 
 basedir = '';%'/moto/nklab/users/az2522/';
-simfolder = '20200929/';
+simfolder = '20201215/';%'20200929/';
 simfolder = [basedir 'data/statsim/' simfolder];
 if ~exist(simfolder,'dir'), mkdir(simfolder); end
 simfile = @(s,d,r,n) sprintf('%s%ss%g_d%g_r%g_n%g.mat',simfolder,estimator,s,d,r,n);
@@ -180,7 +180,6 @@ for d = 1:nd
             bootsamps{s,d,r,n}  = bootmp;
          end
          clear sigtmp
-%       keyboard
       end
    end
 end
@@ -189,6 +188,8 @@ if STANDALONE, fprintf('Simulations complete.\n'); return; end
 %% Extract data: collect estimates (e.g., overlaps, distances)
 estimates = repmat({NaN(nn,nsims  )},[nm nd nr]);
 bootprc   = repmat({NaN(nn,nsims,2)},[nm nd nr]);
+varestms  = NaN(nm,nd,nr,nn);
+varboots  = repmat({NaN(nsims,1)},[nm nd nr nn]);
 for d = 1:nd
    for r = 1:nr
       for n = 1:nn
@@ -199,11 +200,13 @@ for d = 1:nd
             case  {4,5} ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
             case    6   ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],[1 6]),[],2);
          end
+         varestms(s,d,r,n) = var(estimates{s,d,r}(n,:));
+         varboots{s,d,r,n} = var(bootsamps{s,d,r,n});
          if strcmp(sigOrDiff,'sig')
-         bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) bootsamps{s,d,r,n}]',...
+         bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r,n})]',...
                                          [sigthresh*100 100])';
          else
-         bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) bootsamps{s,d,r,n} Inf(nsims,1)]',...
+         bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r,n}) Inf(nsims,1)]',...
                                          [0 100] + [1 -1]*sigthresh*100/2)';
          end
          catch
@@ -232,114 +235,98 @@ end
 %% Plot analyses
 d = 1;
 r = find(rs==0);
-n = numel(ns);
+n = min(5,numel(ns));
 nShown = [1 nn  1 nn];
 dShown = [1  1 nd nd];
 rShown = [1 nr  1 nr];
 
-fh = newfigure([3 5],sprintf('%u%s',s,measures{s}));
-ax = fh.a.h([11 12]);
+fp.DESTINATION = '1col'; fp.pap.sz = [7.5 3.5];
+figsetup;
+fp.dots{2} = 3; fp.nticks = [-1 4];
 
-for i = 1:3
+fh = newfigure([2 6],sprintf('%u%s',s,measures{s}),fp);
+sampax = fh.a.h([1 7]);
+
+for i = 1:2%3
    sampsz = (2^(i+4))*ones(1,nballs);
-   generateScenario(s,2,2^rs(rShown(i))).plotSamples(sampsz,fh.a.h(i));
-   if numel(gt.radii)==2, title(sprintf('Samples: n_1= %u, n_2= %u',         sampsz))
-   else                   title(sprintf('Samples: n_1= %u, n_2= %u, n_3= %u',sampsz))
+   generateScenario(s,2,2^rs(rShown(i))).plotSamples(sampsz,sampax(i));
+   if i==2
+      generateScenario(s,2,2^rs(rShown(i))).show
+      xlabel({'simulated null hypothesis:';['zero ' measures{s}]});
    end
+   title(sprintf('%u samples each,\n%1.1f:1 radius ratio',sampsz(1),2^rs(rShown(i))))
 end
 
-axtivate(4)
-plot(ns,100*squeeze(ptests(:,:,r,s)),'-o')
-plot(ns([1 end]),100*sigthresh*[1 1],'--k')
-if numel(ns)>1
-   xlim(ns([1 end])); logAxis(2)
-end
-ylim([0 max(ylim)])
-xlabel('samples')
-ylabel('Significance of false positives compared to 5%')
-title('Test performance')
-
-axtivate(5)
-plot(ds,100*squeeze(ptests(:,n,:,s)),'-o')
-plot(ds([1 end]),100*sigthresh*[1 1],'--k')
-if numel(ds)>1
-   xlim(ds([1 end])); logAxis(2)
-end
-ylim([0 max(ylim)])
-xlabel('dimensions')
-ylabel('Significance of false positives compared to 5%')
-title('Test performance')
-
-axtivate(6)
-plot([0 nsims],[0 0],'k--')
+axtivate(2)
 for i = 1:nsims
    if sigtest{s,d,r}(n,i), linecol = [0   0   0  ];
    else                    linecol = [0.5 0.5 0.5];
    end
-   plot([i i],squeeze(bootprc{s,d,r}(n,i,:)),'-','Color',linecol,'LineWidth',4)
-   plot(i,estimates{s,d,r}(n,i),'wo','MarkerFaceColor','r','LineWidth',1.5)
+   plot([i i],squeeze(bootprc{s,d,r}(n,i,:)),'-','Color',linecol,'LineWidth',2)
+   plot(i,estimates{s,d,r}(n,i),'wo','MarkerFaceColor',linecol,'LineWidth',1.5)
 end
-ylabel(sprintf('%s\nestimates (red)\nconfidence intervals (black = significant)',measures{s}))
-xlabel('Simulation #')
-title({'Estimate (red)' 'boostrapped CI (black/grey)'})
+plot([0 nsims],[0 0],'k-')
+ylabel(sprintf('%s estimates',measures{s}))
+xlabel('simulation #')
+title(sprintf('all simulations (%ud, %u samples/ea)',2^ds(d),2^ns(n)))
 
-axtivate(7)
-hb = histogram(bootsamps{s,d,r,n},100,'Normalization','pdf',...
-               'Orientation','horizontal','FaceColor',[0 0 0],'EdgeColor','none');
+axtivate(3)
+if s==2, bootcentered = bootsamps{s,d,r,n};
+else     bootcentered = bootsamps{s,d,r,n}-repmat(mean(bootsamps{s,d,r,n},3),[1 nboots]);
+end
+hb = histogram(bootcentered,100,'Normalization','pdf',...
+               'Orientation','horizontal','FaceColor','none','EdgeColor',[0 0 0],'DisplayStyle','stairs');
 he = histogram(estimates{s,d,r}(n,:),'BinEdges',hb.BinEdges,'Normalization','pdf',...
-               'Orientation','horizontal','FaceColor',[1 0 0],'EdgeColor','none');
-ylabel(measures{s})
+               'Orientation','horizontal','FaceColor','none','EdgeColor',[0.5 0.5 0.5],'DisplayStyle','stairs');
+plot([0 max([hb.Values he.Values])],[0 0],'k-')
 xlabel('pdf')
-title({'Boostrapped estimates from' 'all simulations (black) and' 'estimates (red)'})
-matchy(fh.a.h(6:7),'y')
+matchy(fh.a.h(2:3),'y')
 
-%% TODO: different colors for different conditions
+axtivate(8);
+hb = histogram(varboots{s,d,r,n},'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
+plot([1 1]*varestms(s,d,r,n),[0 0.25],'w-' ,'LineWidth',3)
+plot([1 1]*varestms(s,d,r,n),[0 0.25],'k--','LineWidth',2)
+ylabel('probability')
+xlabel('variance')
+title(sprintf('(%ud, %u samples/ea)',2^ds(d),2^ns(n)))
 
-for i = 3:4
-   axtivate(ax(i-2))
-   % histogram of all estimates (newly calculated for new dimensionality)
-   hb = histogram(bootsamps{s,dShown(i),r}(nShown(i),1,:),...
-               'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
-   he = histogram(estimates{s,dShown(i),r}(nShown(i),:),'BinEdges',hb.BinEdges,...
-               'Normalization','probability','FaceColor',[1 0 0],'EdgeColor','none');
-   plot([1 1]*estimates{s,dShown(i),r}(nShown(i),1),[0 0.25],'w-' ,'LineWidth',3)
-   plot([1 1]*estimates{s,dShown(i),r}(nShown(i),1),[0 0.25],'r--','LineWidth',2)
-   xlabel(measures{s})
-   ylabel('probability')
-   title(sprintf('Estimates (n = %u, d = %u)',2^ns(nShown(i)),2^ds(dShown(i))))
+axtivate(9)
+for d = nd:-1:1
+   for r = nr:-1:1
+      for n = nn:-1:1
+         plot(log10(varestms(s,d,r,n)),log10(mean(varboots{s,d,r,n})),'o','Color',[1 d*[1 1]/(nd+1)])
+      end
+   end
 end
-matchy(ax)
+plot([min(axis) max(axis)],[min(axis) max(axis)],'k--')
+xlabel('variance (full data)')
+ylabel(sprintf('variance (%s)',testrslt{s}))
+logAxis('xy')
 
 for d = nd:-1:1
    plotErrorPatch(rs,squeeze(indexm(cat(3,estimates{s,d,:}),n)) ...
                      .*(ones(nsims,1)*arrayfun(normfactor,1:nr)),...
-                  fh.a.h(8),[1 d*[1 1]/(nd+1)])%,'sem')
+                  fh.a.h(4),[1 d*[1 1]/(nd+1)])%,'sem')
 end
 xlim(rs([1 end])); xticks(rs); xticklabels(2.^rs);
-xlabel('radius ratio')
 ylabel(measures{s})
-title('Estimate vs r-ratio')
 
 for r = nr:-1:1
    plotErrorPatch(ds,squeeze(indexm(cat(3,estimates{s,:,r}),n))*normfactor(r),...
-                  fh.a.h(9),[r*[1 1]/(nr+1) 1])%,'sem')
+                  fh.a.h(5),[r*[1 1]/(nr+1) 1])%,'sem')
 end
 r = find(rs==0);
 xlim(ds([1 end])); xticks(ds); xticklabels(2.^ds);
-xlabel('dimensions')
-ylabel(measures{s})
-title('Estimate vs d')
+title(sprintf('%s, %u simulations each',measures{s},nsims))
 
 for d = nd:-1:1
    plotErrorPatch(ns,cat(3,estimates{s,d,r})',...
-                  fh.a.h(10),[1 d*[1 1]/(nd+1)])%,'sem')
+                  fh.a.h(6),[1 d*[1 1]/(nd+1)])%,'sem')
 end
 xlim(ns([1 end])); xticks(ns); xticklabels(2.^ns);
-xlabel('samples')
 ylabel(measures{s})
-title('Estimate vs number of samples')
 
-axtivate(13)
+axtivate(10)
 for d = nd:-1:1
    a = permute(indexm(cat(3,sigtest{s,d,:}),n),[2 3 1]);
    plot(rs,100*mean(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
@@ -347,10 +334,9 @@ end
 plot(rs([1 end]),100*sigthresh*[1 1],'--k')
 axis([rs([1 end]) 0 max(ylim)]); xticks(rs); xticklabels(2.^rs);
 xlabel('radius ratio')
-ylabel('False positive rate (%)')
-title({'False positive rate';'vs r-ratio'})
+ylabel('false positive rate (%)')
 
-axtivate(14)
+axtivate(11)
 for r = nr:-1:1
    a = permute(indexm(cat(3,sigtest{s,:,r}),n),[2 3 1]);
    plot(ds,100*mean(a),'-','LineWidth',2,'Color',[[r r]/(nr+1) 1])
@@ -359,10 +345,9 @@ r = find(rs==0);
 plot(ds([1 end]),100*sigthresh*[1 1],'--k')
 axis([ds([1 end]) 0 max(ylim)]); xticks(ds); xticklabels(2.^ds);
 xlabel('dimensions')
-ylabel('False positive rate (%)')
-title({'False positive rate';'vs dimensions'})
+title(sprintf('false positive rate, %u simulations each',nsims))
 
-axtivate(15)
+axtivate(12)
 for d = nd:-1:1
    a = cat(3,sigtest{s,d,r})';
    plot(ns,100*mean(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
@@ -370,11 +355,16 @@ end
 plot(ns([1 end]),100*sigthresh*[1 1],'--k')
 axis([ns([1 end]) 0 max(ylim)]); xticks(ns); xticklabels(2.^ns);
 xlabel('samples')
-ylabel('False positive rate (%)')
-title({'False positive rate';'vs number of samples'})
 
-matchy(fh.a.h(end-2:end),'y')
+matchy(fh.a.h(10:12),'y')
 
+%keyboard
+batchPlotRefine(fh,fp);
+%set(findall(fh.a.h(2).Children,'Color',linecol),'LineWidth',4)
+hideAxes(sampax,'x','y');
+hideAxes(sampax,'x'); %% TODO: need to fix above line
+hideAxes(fh.a.h([3 5 11 12]),'y');
+hideAxes(fh.a.h(4:6),'x');
 printFig;
 
 % keyboard
