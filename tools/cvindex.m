@@ -5,9 +5,19 @@ classdef cvindex
       rp      % cell of random permutation of indices organized by fold
    end
    methods
-      function obj = cvindex(n,nCV,DEBUG) % Constructor
+      function obj = cvindex(n,nCV,varargin) % Constructor
       % Note: can pass bootstrappedIndices in first argument instead of n
-         if ~exist('DEBUG','var') || isempty(DEBUG), DEBUG = true; end
+         for v = 1:numel(varargin)
+            if  islogical(varargin{v}), DEBUG = varargin{v};
+            elseif ischar(varargin{v})
+               switch lower(varargin{v})
+                  case 'rebase', REBASE = true;
+                  case 'debug' , DEBUG  = true;
+               end
+            end
+         end
+         if ~exist('DEBUG' ,'var') || isempty(DEBUG ), DEBUG  = true; end
+         if ~exist('REBASE','var') || isempty(REBASE), REBASE = false; end
          if numel(n) > 1 % bootstrappedIndices passed as first input
             if islogical(n)
                bootstrappedIndices = find(n);
@@ -18,6 +28,7 @@ classdef cvindex
             uniquebi = unique(bootstrappedIndices);
             density  = hist(bootstrappedIndices,single(uniquebi));
             n        = numel(uniquebi);
+            if REBASE, uniquebi = 1:n; end
          end
 
          % Construct random permutations (rp) of indices and separate into nCV folds
