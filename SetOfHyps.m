@@ -276,8 +276,11 @@ classdef SetOfHyps < Hypersphere
          if numel(self.ci.bootstraps)>0
             radii_boot   = cat(1,self.ci.bootstraps.radii);
             overlap_boot =       self.ci.bootstraps.overlap;
-            margin_boot  =       self.ci.jackknives.margins;
+            margin_boot  =       self.ci.bootstraps.margins;
             dist_boot    = cat(1,self.ci.bootstraps.dists);
+         end
+         if numel(self.ci.jackknives)>0
+            margin_jack  =       self.ci.jackknives.margins;
          end
          %% COMPUTE SIGNIFICANCE (smaller values more significant)
          % helper functions
@@ -292,6 +295,11 @@ classdef SetOfHyps < Hypersphere
             for i = 1:nc2
                self.sigp.ov(i) = ciprctile(overlap_boot(:,i),0);
                self.sigp.ma(i) = ciprctile( margin_boot(:,i),0);
+            end
+         end
+         if numel(self.ci.jackknives)>0
+            for i = 1:nc2
+               self.sigp.ma(i) = ciprctile( margin_jack(:,i),0);
             end
          end
          if ~any(strcmpi(varargin,'mcmc')) && numel(self.ci.permutations)>0
