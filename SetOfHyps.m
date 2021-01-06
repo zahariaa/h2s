@@ -94,6 +94,7 @@ classdef SetOfHyps < Hypersphere
       %    SetOfHyps.estimate (Static method)
       % Methods:
       %    SetOfHyps.significance
+      %    SetOfHyps.dropBootstraps
       %    SetOfHyps.h2s
       %    SetOfHyps.plotOverlapErrors
       %    SetOfHyps.plotDynamics
@@ -340,6 +341,15 @@ classdef SetOfHyps < Hypersphere
          %    plot((self.dists(i)^2)*[1 1],[0 N/nc2],'r-','LineWidth',2);
          % end
          % matchy(fh.a.h,{'XLim','YLim'})
+      end
+
+      function self = dropBootstraps(self)
+      % SetOfHyps.dropBootstraps: deletes bootstrapped Hyperspheres from self.ci
+      %   Useful for saving SetOfHyps objects without creating enormous files
+         btypes = {'bootstraps','jackknives','permutations'};
+         for b = btypes; b=b{1};
+            self.ci.(b) = [];
+         end
       end
 
       function self = stressUpdate(self,hypsTarget)
