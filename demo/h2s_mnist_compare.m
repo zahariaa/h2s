@@ -42,11 +42,12 @@ else
    %% Estimate hyperspheres, run h2s
    for i = 1:nlayers+2
       stationarycounter(i,nlayers+1)
-      hi.(model)(i) = SetOfHyps('estimate',double(data.x{i}(chunk,:)),cats(~~(i-1)+1).(model),10000);
+      hi.(model)(i) = Hypersphere.estimate(double(data.x{i}(chunk,:)),cats(~~(i-1)+1).(model),10000).meanAndMerge;
       lo.(model)(i) = hi.(model)(i).h2s(dimLow);
       if all(lo.(model)(i).radii==0)
          lo.(model)(i).radii = 0.05*ones(1,10);
       end
+      hi.(model)(i) = hi.(model)(i).dropBootstraps;
       save(h2sfile,'hi','lo','cats','nlayers')
       fprintf('Saved h2s to %s     \n',h2sfile);
    end
@@ -64,7 +65,7 @@ if ~exist('points2D','var')
       end
       points2D{i}{1} = simplepca(data.x{i}(chunk,:),dimLow);
       points2D{i}{2} = mdscale(dists{i},2,'criterion','metricstress');
-      points2D{i}{3} = tsne(data.x{i}(chunk,:));%,[],[],min(size(data.x{i}(chunk,:))));
+      points2D{i}{3} = tsne(single(data.x{i}(chunk,:)));%,[],[],min(size(data.x{i}(chunk,:))));
    end   
 
 %% Draw points from circle/sphere to align other visualizations to
