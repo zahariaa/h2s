@@ -243,7 +243,7 @@ if exist('categories','var') && numel(categories.labels)>1
          end
       else
          [p,ix] = categories.slice(points);
-         if CVDISTS, cvs = cellfun(@(i) cvindex(i,2),ix); end
+         if CVDISTS, cvs = cellfun(@(i) cvindex(i,2,'rebase'),ix); end
       end
 
       % Recursive call
