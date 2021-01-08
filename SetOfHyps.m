@@ -95,6 +95,7 @@ classdef SetOfHyps < Hypersphere
       % Methods:
       %    SetOfHyps.significance
       %    SetOfHyps.dropBootstraps
+      %    SetOfHyps.importStats
       %    SetOfHyps.h2s
       %    SetOfHyps.plotOverlapErrors
       %    SetOfHyps.plotDynamics
@@ -350,6 +351,16 @@ classdef SetOfHyps < Hypersphere
          for b = btypes; b=b{1};
             self.ci.(b) = [];
          end
+      end
+
+      function self = importStats(self,hypsTarget)
+      % SetOfHyps.importStats: copy stats (sig, sigp, sigdiff, sigdiffp, ci)
+      %   from another SetOfHyps object. Also force msflips refresh.
+         felds = {'ci', 'sig', 'sigp', 'sigdiff', 'sigdiffp'};
+         for f = felds; f=f{1};
+            self.(f) = hypsTarget.(f);
+         end
+         [~,~,~,self.msflips] = self.stress(Hypersphere(self),hypsTarget);
       end
 
       function self = stressUpdate(self,hypsTarget)

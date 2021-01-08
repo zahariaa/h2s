@@ -144,20 +144,20 @@ for v = 1:numel(varargin)
    end
 end
 
-% Auto-detect distance matrix (do easy/fast checks first)
-if f==1 && ( (n==d && all(diag(points)==0) && issymmetric(points)) ...
-   || strcmp(ESTIMATOR,'distance') || d==1 )% this line assumes points are de-squareform'd
-
-   DISTMATRIX = true;
-   normtype   = [];    % if normalizing, make full matrix min be 0 and max be 1
-   ESTIMATOR  = 'distance'; % override estimator choice
-   STRATIFIED = false; % bootstrap must be w/o replacement; stratified doesn't make sense
-
-   if n==d, points = squareform(points); end
-else
+% % Auto-detect distance matrix (do easy/fast checks first)
+% if f==1 && ( (n==d && all(diag(points)==0) && issymmetric(points)) ...
+%    || strcmp(ESTIMATOR,'distance') || d==1 )% this line assumes points are de-squareform'd
+% 
+%    DISTMATRIX = true;
+%    normtype   = [];    % if normalizing, make full matrix min be 0 and max be 1
+%    ESTIMATOR  = 'distance'; % override estimator choice
+%    STRATIFIED = false; % bootstrap must be w/o replacement; stratified doesn't make sense
+% 
+%    if n==d, points = squareform(points); end
+% else
    DISTMATRIX = false;
    normtype   = 'col'; % if normalizing, adjust each column by overall mean and std
-end
+% end
 
 if f==1 && NORMALIZE, points = normalize(points,normtype); end
 
@@ -217,34 +217,34 @@ if exist('categories','var') && numel(categories.labels)>1
          end
       end
    else % mcmc or single sample (of bootstrap or not)
-      if DISTMATRIX
-         % build inter-category mean distance matrix
-         catix = nchoosek_ix(nCats);
-         distsAcross = zeros(1,size(catix,2));
-         for i = 1:size(catix,2)
-            distsAcross(i) = mean(points( ...
-                              categories.select(catix(:,i)).vectorsForDistanceMatrix ));
-         end
-         % mds on the category-level distance matrix to get centers
-         % TODO: what should the dimensionality of the high-dimensional embedding be?
-         nDimsEmbedding = max(2,nCats-1);
-         centers = mdscale(distsAcross,nDimsEmbedding,'Criterion','metricstress');
-         % not doing this anymore: compute centers from all unique distances
-
-         % collect within-category distances, so later recursive calls compute radii
-         for i = 1:nCats
-            p{i} = points( categories.select(i).vectorsForDistanceMatrix );
-         end
-         
-         if CVDISTS
-            % Generate cross-validation objects for center bootstraps that makes sure
-            %    bootstrap resamplings keep points in each fold independent
-            cvs = arrayfun(@(i) cvindex(categories.select(i).vectorsForDistanceMatrix,2),1:nCats);
-         end
-      else
+%       if DISTMATRIX
+%          % build inter-category mean distance matrix
+%          catix = nchoosek_ix(nCats);
+%          distsAcross = zeros(1,size(catix,2));
+%          for i = 1:size(catix,2)
+%             distsAcross(i) = mean(points( ...
+%                               categories.select(catix(:,i)).vectorsForDistanceMatrix ));
+%          end
+%          % mds on the category-level distance matrix to get centers
+%          % TODO: what should the dimensionality of the high-dimensional embedding be?
+%          nDimsEmbedding = max(2,nCats-1);
+%          centers = mdscale(distsAcross,nDimsEmbedding,'Criterion','metricstress');
+%          % not doing this anymore: compute centers from all unique distances
+% 
+%          % collect within-category distances, so later recursive calls compute radii
+%          for i = 1:nCats
+%             p{i} = points( categories.select(i).vectorsForDistanceMatrix );
+%          end
+%          
+%          if CVDISTS
+%             % Generate cross-validation objects for center bootstraps that makes sure
+%             %    bootstrap resamplings keep points in each fold independent
+%             cvs = arrayfun(@(i) cvindex(categories.select(i).vectorsForDistanceMatrix,2),1:nCats);
+%          end
+%       else
          [p,ix] = categories.slice(points);
          if CVDISTS, cvs = cellfun(@(i) cvindex(i,2,'rebase'),ix); end
-      end
+%       end
 
       % Recursive call
       if ~CVDISTS

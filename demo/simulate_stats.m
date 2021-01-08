@@ -247,33 +247,14 @@ fp.dots{2} = 3; fp.nticks = [-1 4];
 fh = newfigure([2 6],sprintf('%u%s',s,measures{s}),fp);
 sampax = fh.a.h([1 7]);
 
-for i = 1:2%3
-   sampsz = (2^(i+4))*ones(1,nballs);
-   generateScenario(s,2,2^rs(rShown(i))).plotSamples(sampsz,sampax(i));
-   if i==2
-      generateScenario(s,2,2^rs(rShown(i))).show
-      xlabel({'simulated null hypothesis:';['zero ' measures{s}]});
-   end
-   title(sprintf('%u samples each,\n%1.1f:1 radius ratio',sampsz(1),2^rs(rShown(i))))
-end
-
-axtivate(2)
-for i = 1:nsims
-   if sigtest{s,d,r}(n,i), linecol = [0   0   0  ];
-   else                    linecol = [0.5 0.5 0.5];
-   end
-   plot([i i],squeeze(bootprc{s,d,r}(n,i,:)),'-','Color',linecol,'LineWidth',2)
-   plot(i,estimates{s,d,r}(n,i),'wo','MarkerFaceColor',linecol,'LineWidth',1.5)
-end
-plot([0 nsims],[0 0],'k-')
-ylabel(sprintf('%s estimates',measures{s}))
-xlabel('simulation #')
-title(sprintf('all simulations (%ud, %u samples/ea)',2^ds(d),2^ns(n)))
+showCIs(estimates{s,d,r}(n,:),squeeze(bootprc{s,d,r}(n,:,:)),sigtest{s,d,r}(n,:),...
+        measures{s},2^ds(d),2^ns(n),fh.a.h(2))
 
 axtivate(3)
 if s==2, bootcentered = bootsamps{s,d,r,n};
 else     bootcentered = bootsamps{s,d,r,n}-repmat(mean(bootsamps{s,d,r,n},3),[1 nboots]);
 end
+plot([0 nsims],[0 0],'k-')
 hb = histogram(bootcentered,100,'Normalization','pdf',...
                'Orientation','horizontal','FaceColor','none','EdgeColor',[0 0 0],'DisplayStyle','stairs');
 he = histogram(estimates{s,d,r}(n,:),'BinEdges',hb.BinEdges,'Normalization','pdf',...
@@ -282,13 +263,7 @@ plot([0 max([hb.Values he.Values])],[0 0],'k-')
 xlabel('pdf')
 matchy(fh.a.h(2:3),'y')
 
-axtivate(8);
-hb = histogram(varboots{s,d,r,n},'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
-plot([1 1]*varestms(s,d,r,n),[0 0.25],'w-' ,'LineWidth',3)
-plot([1 1]*varestms(s,d,r,n),[0 0.25],'k--','LineWidth',2)
-ylabel('probability')
-xlabel('variance')
-title(sprintf('(%ud, %u samples/ea)',2^ds(d),2^ns(n)))
+showVar(varboots{s,d,r,n},varestms(s,d,r,n),2^ds(d),2^ns(n),'variance',fh.a.h(8))
 
 axtivate(9)
 for d = nd:-1:1
@@ -367,7 +342,29 @@ hideAxes(fh.a.h([3 5 11 12]),'y');
 hideAxes(fh.a.h(4:6),'x');
 printFig;
 
-% keyboard
+
+fh = newfigure([1 1]*ceil(sqrt(numel(ns))),fh,sprintf('%u%sCIs',s,measures{s}));
+for n = 1:numel(ns)
+   showCIs(estimates{s,d,r}(n,:),squeeze(bootprc{s,d,r}(n,:,:)),sigtest{s,d,r}(n,:),...
+           measures{s},2^ds(d),2^ns(n),fh.a(end).h(n))
+end
+
+fh = newfigure([1 1]*ceil(sqrt(numel(ns))),fh,sprintf('%u%svars',s,measures{s}));
+for n = 1:numel(ns)
+   showVar(varboots{s,d,r,n},varestms(s,d,r,n),2^ds(d),2^ns(n),'variance',fh.a(end).h(n))
+end
+
+fh = newfigure([1 1]*ceil(sqrt(numel(ns))),fh,sprintf('%u%svarsIndividual',s,measures{s}));
+% find 0:9:100th percentile estimates
+n = numel(ns);
+y = prctile(estimates{s,d,r}(n,:),linspace(0,100,numel(fh.a(end).h)));
+for i = 1:numel(fh.a(end).h)
+   yix = minix(abs(estimates{s,d,r}(n,:)-y(i)));
+   showVar(squeeze(bootsamps{s,d,r,n}(yix,:,:)),estimates{s,d,r}(n,yix),...
+           2^ds(d),2^ns(n),measures{s},fh.a(end).h(i));
+end
+printFig(fh.f(2:end))
+
 return
 end
 
@@ -423,6 +420,36 @@ function fh = testScenario(s,ds,rs,measures,mnames)
       drawnow
    end
    return
+end
+
+function showCIs(estimates,bootprc,sigtest,measure,d,n,ax)
+   if ~exist('ax','var') || isempty(ax), ax = gca; end
+   axtivate(ax);
+
+   nsims = numel(estimates);
+   for i = 1:nsims
+      if sigtest(i), linecol = [0   0   0  ];
+      else           linecol = [0.5 0.5 0.5];
+      end
+      plot([i i],bootprc(i,:),'-','Color',linecol,'LineWidth',2)
+      plot(i,estimates(i),'wo','MarkerFaceColor',linecol,'LineWidth',1.5)
+   end
+   plot([0 nsims],[0 0],'k-')
+   ylabel(sprintf('%s estimates',measure))
+   xlabel('simulation #')
+   title(sprintf('all simulations (%ud, %u samples/ea)',d,n))
+end
+
+function showVar(varboots,varestms,d,n,xlab,ax)
+   if ~exist('ax','var') || isempty(ax), ax = gca; end
+   axtivate(ax);
+
+   hb = histogram(varboots,'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
+   plot([1 1]*varestms,[0 0.25],'w-' ,'LineWidth',3)
+   plot([1 1]*varestms,[0 0.25],'k--','LineWidth',2)
+   ylabel('probability')
+   xlabel(xlab)
+   title(sprintf('(%ud, %u samples/ea)',d,n))
 end
 
 function [hyp,gt,sigtmp,bootmp] = hyp_load(simfile,s,d,r,n,DISPLAYED)
