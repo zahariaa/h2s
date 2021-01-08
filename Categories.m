@@ -235,6 +235,20 @@ classdef Categories
          end
       end
 
+      function objs = leaveoneout(self)
+      % Categories.leaveoneout: replicates a Categories object into p copies,
+      %    but with each vectors missing one point. Useful for jackknife/leave-
+      %    one-out significance testing, as is used for the margins.
+      % SEE ALSO MARGINSAMPLING, SETOFHYPS.SIGNIFICANCE, HYPERSPHERE.MEANANDMERGE
+         [p,n] = size(self.vectors);
+
+         self.ispermuted = true;
+         objs = repmat(self,[p 1]);
+         for c = 1:p
+            objs(c).vectors(c,:) = false;
+         end
+      end
+
       function ix = vectorsForDistanceMatrix(self)
       % Categories.vectorsForDistanceMatrix: converts vectors to indices to
       %    make selections from a distance matrix.

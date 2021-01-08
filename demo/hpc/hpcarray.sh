@@ -5,6 +5,8 @@
 # e.g.,
 # ./hpcarray.sh simulate_stats 75 1
 # ./hpcarray.sh simulate_stats 50-75 2
+# ./hpcarray.sh simulate_stats 147,153,160,168,202-203,209-210,213,216-217,223-224,229-231,244-245 3 "'jointml'"
+# ./hpcarray.sh simulate_stats 217-245:7 1 "'jointml'"
 #
 # To release held jobs:
 #
@@ -93,7 +95,7 @@ pbtxt9a="\nmodule load matlab/$matlabver\nif [ "'"$SLURM_JOBTMP" == ""'" ]; then
 
 # MAIN MATLAB EXECUTION PBS line
 #Command to execute Matlab code
-pbtxt10="# To delete temporary files created above\nfunction clean_up {\n  rm -f \$SLURM_JOBTMP\n  exit\n}\n"
+pbtxt10="# To delete temporary files created above\nfunction clean_up {\n  rm -Rf \$SLURM_JOBTMP\n  exit\n}\n"
 pbtxt11="\ntrap 'clean_up' EXIT\n"
 pbtxt12="matlab -nodisplay < $mfilebase\$SLURM_ARRAY_TASK_ID.m > ${scriptdir}r/$jobname\$SLURM_ARRAY_TASK_ID.txt"
 

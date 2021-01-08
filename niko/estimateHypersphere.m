@@ -136,27 +136,28 @@ for v = 1:numel(varargin)
          case 'cvdists';       CVDISTS  = true;
          case 'independent'; INDEPENDENT= true;  varargin{v} = [];
          case 'joint';       INDEPENDENT= false; varargin{v} = [];
-         case {'meandist','distance','mcmc','jointml','gaussian','uniformball','uniformcube'}
+         case {'meandist','distance','mcmc','maxradius','jointml',...
+               'gaussian','uniformball','uniformcube'}
             ESTIMATOR = lower(varargin{v});
          otherwise warning('bad string input option: %s', varargin{v})
       end
    end
 end
 
-% Auto-detect distance matrix (do easy/fast checks first)
-if f==1 && ( (n==d && all(diag(points)==0) && issymmetric(points)) ...
-   || strcmp(ESTIMATOR,'distance') || d==1 )% this line assumes points are de-squareform'd
-
-   DISTMATRIX = true;
-   normtype   = [];    % if normalizing, make full matrix min be 0 and max be 1
-   ESTIMATOR  = 'distance'; % override estimator choice
-   STRATIFIED = false; % bootstrap must be w/o replacement; stratified doesn't make sense
-
-   if n==d, points = squareform(points); end
-else
+% % Auto-detect distance matrix (do easy/fast checks first)
+% if f==1 && ( (n==d && all(diag(points)==0) && issymmetric(points)) ...
+%    || strcmp(ESTIMATOR,'distance') || d==1 )% this line assumes points are de-squareform'd
+% 
+%    DISTMATRIX = true;
+%    normtype   = [];    % if normalizing, make full matrix min be 0 and max be 1
+%    ESTIMATOR  = 'distance'; % override estimator choice
+%    STRATIFIED = false; % bootstrap must be w/o replacement; stratified doesn't make sense
+% 
+%    if n==d, points = squareform(points); end
+% else
    DISTMATRIX = false;
    normtype   = 'col'; % if normalizing, adjust each column by overall mean and std
-end
+% end
 
 if f==1 && NORMALIZE, points = normalize(points,normtype); end
 
@@ -216,34 +217,34 @@ if exist('categories','var') && numel(categories.labels)>1
          end
       end
    else % mcmc or single sample (of bootstrap or not)
-      if DISTMATRIX
-         % build inter-category mean distance matrix
-         catix = nchoosek_ix(nCats);
-         distsAcross = zeros(1,size(catix,2));
-         for i = 1:size(catix,2)
-            distsAcross(i) = mean(points( ...
-                              categories.select(catix(:,i)).vectorsForDistanceMatrix ));
-         end
-         % mds on the category-level distance matrix to get centers
-         % TODO: what should the dimensionality of the high-dimensional embedding be?
-         nDimsEmbedding = max(2,nCats-1);
-         centers = mdscale(distsAcross,nDimsEmbedding,'Criterion','metricstress');
-         % not doing this anymore: compute centers from all unique distances
-
-         % collect within-category distances, so later recursive calls compute radii
-         for i = 1:nCats
-            p{i} = points( categories.select(i).vectorsForDistanceMatrix );
-         end
-         
-         if CVDISTS
-            % Generate cross-validation objects for center bootstraps that makes sure
-            %    bootstrap resamplings keep points in each fold independent
-            cvs = arrayfun(@(i) cvindex(categories.select(i).vectorsForDistanceMatrix,2),1:nCats);
-         end
-      else
+%       if DISTMATRIX
+%          % build inter-category mean distance matrix
+%          catix = nchoosek_ix(nCats);
+%          distsAcross = zeros(1,size(catix,2));
+%          for i = 1:size(catix,2)
+%             distsAcross(i) = mean(points( ...
+%                               categories.select(catix(:,i)).vectorsForDistanceMatrix ));
+%          end
+%          % mds on the category-level distance matrix to get centers
+%          % TODO: what should the dimensionality of the high-dimensional embedding be?
+%          nDimsEmbedding = max(2,nCats-1);
+%          centers = mdscale(distsAcross,nDimsEmbedding,'Criterion','metricstress');
+%          % not doing this anymore: compute centers from all unique distances
+% 
+%          % collect within-category distances, so later recursive calls compute radii
+%          for i = 1:nCats
+%             p{i} = points( categories.select(i).vectorsForDistanceMatrix );
+%          end
+%          
+%          if CVDISTS
+%             % Generate cross-validation objects for center bootstraps that makes sure
+%             %    bootstrap resamplings keep points in each fold independent
+%             cvs = arrayfun(@(i) cvindex(categories.select(i).vectorsForDistanceMatrix,2),1:nCats);
+%          end
+%       else
          [p,ix] = categories.slice(points);
-         if CVDISTS, cvs = cellfun(@(i) cvindex(i,2),ix); end
-      end
+         if CVDISTS, cvs = cellfun(@(i) cvindex(i,2,'rebase'),ix); end
+%       end
 
       % Recursive call
       if ~CVDISTS
@@ -286,7 +287,9 @@ end
 
 %% estimate location, re-center points
 switch(ESTIMATOR)
-   case {'distance','mcmc','jointml'} % do nothing
+   case {'distance','mcmc'} % do nothing
+   case {'jointml','maxradius'}
+      loc =  mean(points,1);
    otherwise
       if CVDISTS
          % loc_cv = [mean(points(cv.train(1),:));
@@ -322,13 +325,17 @@ switch(ESTIMATOR)
                                       d,2,ones(numel(llh),1)));
          loc_cv = loc_cv{ix};
       end
+   case 'maxradius'
+      rad = maxRadiusGivenCenter(loc,points);
+      if CVDISTS, loc_cv = cell2mat_concat(cv.crossvalidate(@(p) ...
+                                           maxRadiusGivenCenter(loc,p),points));
+      end
    case 'jointml'
       tol  = 10^(-7-log2(d));
       opts = optimoptions('fminunc','TolX',tol,'TolFun',tol,'Algorithm','quasi-newton',...
                           'Display','off','GradObj','on');%,'DerivativeCheck','on');
       % search for the center that minimizes the maximum radius, starting at centroid
-      loc0      =  mean(points,1);
-      objfcn    = @(points) fminunc(@(m) maxRadiusGivenCenter(m,points),loc0,opts);
+      objfcn    = @(points) fminunc(@(c) maxRadiusGivenCenter(c,points),loc,opts);
       [loc,rad] = objfcn(points);
       if CVDISTS, loc_cv = cell2mat_concat(cv.crossvalidate(objfcn,points)); end
    case 'meandist'
@@ -375,18 +382,6 @@ expectedDists = [0.6673 0.9039 1.1043 1.2407 1.3230 1.3657 1.3898 1.4020 1.4081 
 if d<4097,   r = interp1(2.^(0:12),expectedDists,d);
 else         r = sqrt(2);
 end
-return
-end
-
-%% Objective function to optimize, with gradient
-function [fval,grad] = maxRadiusGivenCenter(m,X)
-
-grad = X - repmat(m(:)',[size(X,1) 1]);
-fval = sqrt(sum(grad.^2,2));
-
-% Apply max function
-[fval,ix] = max(fval);
-grad = -grad(ix,:)/fval;
 return
 end
 

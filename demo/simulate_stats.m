@@ -24,10 +24,29 @@ if ~exist('estimator','var') || isempty(estimator),estimator=[]; end
 sigthresh = 0.05;
 ds =  1:7; % # of dimensions
 rs = -1:3; % radius ratios
-ns =  4:10; % # of samples to test 
+ns =  4:10; % # of samples to test
 nd = numel(ds);
 nr = numel(rs);
 nn = numel(ns);
+
+if strcmpi(estimator,'mcmc')
+   testtype = repmat({'bootstrap' },[1 7]);
+   testrslt = repmat({'bootstraps'},[1 7]);
+else
+   testtype = [{'bootstrap'  'permute'     } repmat({'bootstrap' },[1 4]) {'bootstrap' }];
+   testrslt = [{'bootstraps' 'permutations'} repmat({'bootstraps'},[1 4]) {'jackknives'}];
+end
+measures = {'overlap', 'distance', 'radius difference', ...
+            'overlap difference', 'distance difference','overlap difference',...
+            'margin'};
+mnames   = {'overlap', 'dists', 'radii', ...
+            'overlap', 'dists','overlap','margins'};
+if isempty(strfind(measures{s},'difference')), sigOrDiff = 'sig';
+else                                           sigOrDiff = 'sigdiff';
+end
+if strcmp(mnames{s},'dists'), cvdists = 'cvdists';
+else                          cvdists = 'nocvdists';
+end
 
 STANDALONE = exist('drn','var') && ~isempty(drn);
 if     ~STANDALONE % do nothing
@@ -42,37 +61,23 @@ end
 nd = numel(ds);
 nr = numel(rs);
 nn = numel(ns);
+nm = numel(measures);
 
-sigfield = {'sig',     'sigdiff'};
-measures = {'overlap', 'distance', 'radius difference', ...
-            'overlap difference', 'distance difference','overlap difference'};
-mnames   = {'overlap', 'dists', 'radii', ...
-            'overlap', 'dists','overlap'};
-if strcmpi(estimator,'mcmc')
-   testtype = repmat({'bootstrap' },[1 6]);
-   testrslt = repmat({'bootstraps'},[1 6]);
-else
-   testtype = [{'bootstrap'  'permute'     } repmat({'bootstrap' },[1 4])];
-   testrslt = [{'bootstraps' 'permutations'} repmat({'bootstraps'},[1 4])];
-end
 % % debug
 % for s = 1:6
 %    testScenario(s,2.^ds,2.^rs,measures,mnames);
 % end
 % keyboard
 
-nm  = numel(measures);
-nc2 = nchoosek(2+double(floor(s/3)),2);
-
 basedir = '';%'/moto/nklab/users/az2522/';
-simfolder = '20200929/';
+simfolder = '20201215/';%'20200929/';
 simfolder = [basedir 'data/statsim/' simfolder];
 if ~exist(simfolder,'dir'), mkdir(simfolder); end
 simfile = @(s,d,r,n) sprintf('%s%ss%g_d%g_r%g_n%g.mat',simfolder,estimator,s,d,r,n);
 % Initialize data for saving (could probably change from cell to tensor)
 if ~STANDALONE % Collect all simulations, make figures
    sigtest   = repmat({false(nn,nsims       )},[nm nd nr]);
-   bootsamps = repmat({  NaN(nn,nsims,nboots)},[nm nd nr]);
+   bootsamps = repmat({  NaN(nsims,nboots)},[nm nd nr nn]);
    hyps      = repmat({repmat(Hypersphere(),[nn nsims])},[nm nd nr]);
 end
 % else do only one simulation, don't make figures
@@ -83,10 +88,18 @@ FINISHED  = false;
 for d = 1:nd
    for r = 1:nr
       % Generate points for the different scenarios
-      gt = generateScenario(s,2^ds(d),2^rs(r));
+      gt     = generateScenario(s,2^ds(d),2^rs(r));
+      nballs = numel(gt.radii);
+      nc2    = nchoosek(nballs,2);
+      nc2c2  = nchoosek(max(2,nc2),2);
 
       for n = 1:nn
          stationarycounter([d r n],[nd nr nn])
+
+         if strcmpi(testrslt{s},'jackknives')
+            nboots = nballs*2^ns(n);
+         end
+
          if exist(simfile(s,ds(d),rs(r),ns(n)),'file')
             [hyp,gt,sigtmp,bootmp] = hyp_load(simfile,s,ds(d),rs(r),ns(n),DISPLAYED);
          else
@@ -97,9 +110,9 @@ for d = 1:nd
             if ~DISPLAYED
                fprintf('Simulating points and estimating hyperspheres...      ')
             end
-            [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(floor(s/3)))],nsims);
+            [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,nballs-1)],nsims);
             % Simulate points
-            hyp = Hypersphere.estimate(points,gt.categories,'independent',estimator);
+            hyp = Hypersphere.estimate(points,gt.categories,'independent',estimator,cvdists);
             % save in-progress fits
             savtmp = struct('hyp',hyp,'gt',gt,'n',ns(n),'d',ds(d),'r',rs(r));
             save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
@@ -110,7 +123,7 @@ for d = 1:nd
          end
          if ~exist('sigtmp','var') || isempty(sigtmp) || size(sigtmp,2)>1 || (~isempty(startSim) && startSim < nsims)
             if ~STANDALONE
-               fprintf('FILE MISSING\n')
+               fprintf('FILE INCOMPLETE\n')
                continue
             end
             stationarycounter([d r n],[nd nr nn]);fprintf('       \n');
@@ -121,11 +134,9 @@ for d = 1:nd
             
             if ~exist('points','var') % regenerate points
                gt.resetRandStream
-               [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,1+double(floor(s/3)))],nsims);
+               [points,gt] = gt.sample(2.^[ns(n) ns(n)*ones(1,nballs-1)],nsims);
             end
             % Assess significance on samples
-            sigOrDiff = sigfield{1+double(s>2)};
-            nc2c2     = nchoosek(max(2,nc2),2);
             if ~exist('sigtmp','var') || isempty(sigtmp)
                sigtmp    = NaN(nsims,nc2c2);
                %sigptmp   = NaN(nsims,nc2c2);
@@ -133,12 +144,12 @@ for d = 1:nd
             end
             startSim = find(isnan(sigtmp(:,1)),1);
             for b = startSim:nsims
-               hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,testtype{s},estimator);
+               hyptmp = SetOfHyps(hyp(b)).significance(points(:,:,b),nboots,testtype{s},estimator,cvdists);
                sigtmp(b,:)  = hyptmp.(sigOrDiff).(mnames{s}(1:2));
                %sigptmp(b,:) = hyptmp.([sigOrDiff 'p']).(mnames{s}(1:2));
                bootmp(b,:,:) = cat(1,hyptmp.ci.(testrslt{s}).(mnames{s}))';
                stationarycounter(b,nsims)
-               if mod(b,100)==0
+               if mod(b,50)==0
                   %keyboard
                   savtmp = struct('hyp',hyp,'gt',gt,'sigtmp',sigtmp,'bootmp',bootmp,'n',ns(n),'d',ds(d),'r',rs(r));
                   save(simfile(s,ds(d),rs(r),ns(n)),'-struct','savtmp')
@@ -147,10 +158,10 @@ for d = 1:nd
             end
             sigtmp = sigtmp(:,1+2*(mod(s,3)==0).*round(s/3)); % pick 3rd for s=3 and 5th for s=6
             switch s
-               case {1,2}; bootmp = bootmp(:,1,:);
-               case   3;   bootmp = diff(bootmp(:, 2:3 ,:),[],2);   % difference of  last two measures
-               case {4,5}; bootmp = diff(bootmp(:, 1:2 ,:),[],2);   % difference of first two measures
-               case   6;   bootmp = diff(bootmp(:,[1 6],:),[],2);   % difference of first & last measures
+               case {1,2,7}; bootmp = bootmp(:,1,:);
+               case    3   ; bootmp = diff(bootmp(:, 2:3 ,:),[],2); % difference of  last two measures
+               case  {4,5} ; bootmp = diff(bootmp(:, 1:2 ,:),[],2); % difference of first two measures
+               case    6   ; bootmp = diff(bootmp(:,[1 6],:),[],2); % difference of first & last measures
             end
             % save in-progress fits
             savtmp = struct('hyp',hyp,'gt',gt,'sigtmp',sigtmp,'bootmp',bootmp,'n',ns(n),'d',ds(d),'r',rs(r));
@@ -163,13 +174,12 @@ for d = 1:nd
             fprintf('Simulations complete.\n');
             return
          elseif ~STANDALONE % collect data
-            hyps{s,d,r}(n,:)        = hyp;
-            groundtruth{s,d,r}      = gt;
-            sigtest{s,d,r}(n,:)     = sigtmp;
-            bootsamps{s,d,r}(n,:,:) = bootmp;
+            hyps{s,d,r}(n,:)    = hyp;
+            groundtruth{s,d,r}  = gt;
+            sigtest{s,d,r}(n,:) = sigtmp;
+            bootsamps{s,d,r,n}  = bootmp;
          end
          clear sigtmp
-%       keyboard
       end
    end
 end
@@ -178,21 +188,25 @@ if STANDALONE, fprintf('Simulations complete.\n'); return; end
 %% Extract data: collect estimates (e.g., overlaps, distances)
 estimates = repmat({NaN(nn,nsims  )},[nm nd nr]);
 bootprc   = repmat({NaN(nn,nsims,2)},[nm nd nr]);
+varestms  = NaN(nm,nd,nr,nn);
+varboots  = repmat({NaN(nsims,1)},[nm nd nr nn]);
 for d = 1:nd
    for r = 1:nr
       for n = 1:nn
          try
          switch s
-            case {1,2}; estimates{s,d,r}(n,:) =             cat(1,hyps{s,d,r}(n,:).(mnames{s}));
-            case   3  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
-            case {4,5}; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
-            case   6  ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],[1 6]),[],2);
+            case {1,2,7}; estimates{s,d,r}(n,:) =             cat(1,hyps{s,d,r}(n,:).(mnames{s}));
+            case    3   ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
+            case  {4,5} ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
+            case    6   ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],[1 6]),[],2);
          end
-         if s<3
-         bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r}(n,:,:))]',...
+         varestms(s,d,r,n) = var(estimates{s,d,r}(n,:));
+         varboots{s,d,r,n} = var(bootsamps{s,d,r,n});
+         if strcmp(sigOrDiff,'sig')
+         bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r,n})]',...
                                          [sigthresh*100 100])';
          else
-         bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r}(n,:,:)) Inf(nsims,1)]',...
+         bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r,n}) Inf(nsims,1)]',...
                                          [0 100] + [1 -1]*sigthresh*100/2)';
          end
          catch
@@ -200,10 +214,10 @@ for d = 1:nd
       end
    end
 end
-switch s
-   case {1,4,6}; normfactor = @(r) min(2^rs(r).^[1 -1]);
-   case  {2,5} ; normfactor = @(r) min(2^rs(r).^[0 -1]);
-   case    3   ; normfactor = @(r)     2^-rs(r);
+switch mnames{s} % normalization factor, depending on statistical test
+   case {'overlap','margins'}, normfactor = @(r) min(2^rs(r).^[1 -1]);
+   case  'dists',              normfactor = @(r) min(2^rs(r).^[0 -1]);
+   case  'radii',              normfactor = @(r)     2^-rs(r);
 end
 
 %% Are the signifiance tests significantly performing correctly?
@@ -221,21 +235,17 @@ end
 %% Plot analyses
 d = 1;
 r = find(rs==0);
-n = numel(ns);
+n = min(5,numel(ns));
 nShown = [1 nn  1 nn];
 dShown = [1  1 nd nd];
 rShown = [1 nr  1 nr];
 
-fh = newfigure([3 5],sprintf('%u%s',s,measures{s}));
-ax = fh.a.h([11 12]);
+fp.DESTINATION = '1col'; fp.pap.sz = [7.5 3.5];
+figsetup;
+fp.dots{2} = 3; fp.nticks = [-1 4];
 
-for i = 1:3
-   sampsz = (2^(i+4))*ones(1,2+double(floor(s/3)));
-   generateScenario(s,2,2^rs(rShown(i))).plotSamples(sampsz,fh.a.h(i));
-   if s<3, title(sprintf('Samples: n_1= %u, n_2= %u',         sampsz))
-   else    title(sprintf('Samples: n_1= %u, n_2= %u, n_3= %u',sampsz))
-   end
-end
+fh = newfigure([2 6],sprintf('%u%s',s,measures{s}),fp);
+sampax = fh.a.h([1 7]);
 
 showCIs(estimates{s,d,r}(n,:),squeeze(bootprc{s,d,r}(n,:,:)),sigtest{s,d,r}(n,:),...
         measures{s},2^ds(d),2^ns(n),fh.a.h(2))
@@ -244,16 +254,12 @@ axtivate(3)
 if s==2, bootcentered = bootsamps{s,d,r,n};
 else     bootcentered = bootsamps{s,d,r,n}-repmat(mean(bootsamps{s,d,r,n},3),[1 nboots]);
 end
-ylabel(sprintf('%s\nestimates (red)\nconfidence intervals (black = significant)',measures{s}))
-xlabel('Simulation #')
-title({'Estimate (red)' 'boostrapped CI (black/grey)'})
-
-axtivate(7)
-hb = histogram(bootsamps{s,d,r}(n,:,:),100,'Normalization','pdf',...
-               'Orientation','horizontal','FaceColor',[0 0 0],'EdgeColor','none');
+plot([0 nsims],[0 0],'k-')
+hb = histogram(bootcentered,100,'Normalization','pdf',...
+               'Orientation','horizontal','FaceColor','none','EdgeColor',[0 0 0],'DisplayStyle','stairs');
 he = histogram(estimates{s,d,r}(n,:),'BinEdges',hb.BinEdges,'Normalization','pdf',...
-               'Orientation','horizontal','FaceColor',[1 0 0],'EdgeColor','none');
-ylabel(measures{s})
+               'Orientation','horizontal','FaceColor','none','EdgeColor',[0.5 0.5 0.5],'DisplayStyle','stairs');
+plot([0 max([hb.Values he.Values])],[0 0],'k-')
 xlabel('pdf')
 matchy(fh.a.h(2:3),'y')
 
@@ -267,38 +273,35 @@ for d = nd:-1:1
       end
    end
 end
-matchy(ax)
+plot([min(axis) max(axis)],[min(axis) max(axis)],'k--')
+xlabel('variance (full data)')
+ylabel(sprintf('variance (%s)',testrslt{s}))
+logAxis('xy')
 
 for d = nd:-1:1
    plotErrorPatch(rs,squeeze(indexm(cat(3,estimates{s,d,:}),n)) ...
                      .*(ones(nsims,1)*arrayfun(normfactor,1:nr)),...
-                  fh.a.h(8),[1 d*[1 1]/(nd+1)])%,'sem')
+                  fh.a.h(4),[1 d*[1 1]/(nd+1)])%,'sem')
 end
 xlim(rs([1 end])); xticks(rs); xticklabels(2.^rs);
-xlabel('radius ratio')
 ylabel(measures{s})
-title('Estimate vs r-ratio')
 
 for r = nr:-1:1
    plotErrorPatch(ds,squeeze(indexm(cat(3,estimates{s,:,r}),n))*normfactor(r),...
-                  fh.a.h(9),[r*[1 1]/(nr+1) 1])%,'sem')
+                  fh.a.h(5),[r*[1 1]/(nr+1) 1])%,'sem')
 end
 r = find(rs==0);
 xlim(ds([1 end])); xticks(ds); xticklabels(2.^ds);
-xlabel('dimensions')
-ylabel(measures{s})
-title('Estimate vs d')
+title(sprintf('%s, %u simulations each',measures{s},nsims))
 
 for d = nd:-1:1
    plotErrorPatch(ns,cat(3,estimates{s,d,r})',...
-                  fh.a.h(10),[1 d*[1 1]/(nd+1)])%,'sem')
+                  fh.a.h(6),[1 d*[1 1]/(nd+1)])%,'sem')
 end
 xlim(ns([1 end])); xticks(ns); xticklabels(2.^ns);
-xlabel('samples')
 ylabel(measures{s})
-title('Estimate vs number of samples')
 
-axtivate(13)
+axtivate(10)
 for d = nd:-1:1
    a = permute(indexm(cat(3,sigtest{s,d,:}),n),[2 3 1]);
    plot(rs,100*mean(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
@@ -306,10 +309,9 @@ end
 plot(rs([1 end]),100*sigthresh*[1 1],'--k')
 axis([rs([1 end]) 0 max(ylim)]); xticks(rs); xticklabels(2.^rs);
 xlabel('radius ratio')
-ylabel('False positive rate (%)')
-title({'False positive rate';'vs r-ratio'})
+ylabel('false positive rate (%)')
 
-axtivate(14)
+axtivate(11)
 for r = nr:-1:1
    a = permute(indexm(cat(3,sigtest{s,:,r}),n),[2 3 1]);
    plot(ds,100*mean(a),'-','LineWidth',2,'Color',[[r r]/(nr+1) 1])
@@ -318,10 +320,9 @@ r = find(rs==0);
 plot(ds([1 end]),100*sigthresh*[1 1],'--k')
 axis([ds([1 end]) 0 max(ylim)]); xticks(ds); xticklabels(2.^ds);
 xlabel('dimensions')
-ylabel('False positive rate (%)')
-title({'False positive rate';'vs dimensions'})
+title(sprintf('false positive rate, %u simulations each',nsims))
 
-axtivate(15)
+axtivate(12)
 for d = nd:-1:1
    a = cat(3,sigtest{s,d,r})';
    plot(ns,100*mean(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
@@ -329,11 +330,16 @@ end
 plot(ns([1 end]),100*sigthresh*[1 1],'--k')
 axis([ns([1 end]) 0 max(ylim)]); xticks(ns); xticklabels(2.^ns);
 xlabel('samples')
-ylabel('False positive rate (%)')
-title({'False positive rate';'vs number of samples'})
 
-matchy(fh.a.h(end-2:end),'y')
+matchy(fh.a.h(10:12),'y')
 
+%keyboard
+batchPlotRefine(fh,fp);
+%set(findall(fh.a.h(2).Children,'Color',linecol),'LineWidth',4)
+hideAxes(sampax,'x','y');
+hideAxes(sampax,'x'); %% TODO: need to fix above line
+hideAxes(fh.a.h([3 5 11 12]),'y');
+hideAxes(fh.a.h(4:6),'x');
 printFig;
 
 
@@ -373,7 +379,7 @@ function hyp = generateScenario(s,d,r)
 %    d: (scalar) the dimensionality of the hyperspheres
 %    r: (scalar) the radius of one hypersphere (the other(s) is/are 1)
    switch s
-      case 1 % OVERLAP. Null distribution: 0 overlap.
+      case {1,7} % OVERLAP. Null distribution: 0 overlap.
          hyp = Hypersphere([zeros(1,d);r+1 zeros(1,d-1)],[r 1]);
       case 2 % INTER-CENTER DISTANCE. Null distribution: 0 distance.
          hyp = Hypersphere( zeros(2,d),[r 1]);

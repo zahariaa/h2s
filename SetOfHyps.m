@@ -245,6 +245,8 @@ classdef SetOfHyps < Hypersphere
          else
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
             bootsNperms = Hypersphere.estimate(points,self.categories,N,testtype,CVDISTS,varargin{:});
+            marginSamps = marginSampling(points,self.categories,N,'jackknife');
+            bootsNperms = [bootsNperms marginSamps];
             bootsNperms = bootsNperms.meanAndMerge;
             self.ci = bootsNperms.ci;
             if islogical(self.distsCV)
@@ -275,8 +277,12 @@ classdef SetOfHyps < Hypersphere
          end
          if numel(self.ci.bootstraps)>0
             radii_boot   = cat(1,self.ci.bootstraps.radii);
+            overlap_boot =       self.ci.bootstraps.overlap;
             margin_boot  =       self.ci.bootstraps.margins;
             dist_boot    = cat(1,self.ci.bootstraps.dists);
+         end
+         if numel(self.ci.jackknives)>0
+            margin_jack  =       self.ci.jackknives.margins;
          end
          %% COMPUTE SIGNIFICANCE (smaller values more significant)
          % helper functions
@@ -290,14 +296,13 @@ classdef SetOfHyps < Hypersphere
             % Overlap/margin is significant if 0 does not exceed the lowest 5% range
             for i = 1:nc2
                self.sigp.ov(i) = ciprctile(overlap_boot(:,i),0);
-               % self.sigp.ma(i) = ciprctile( margin_boot(:,i),0);
+               self.sigp.ma(i) = ciprctile( margin_boot(:,i),0);
             end
          end
          if numel(self.ci.jackknives)>0
             for i = 1:nc2
                self.sigp.ma(i) = ciprctile( margin_jack(:,i),0);
             end
-            self.sigp.ov = 1-self.sigp.ma;
          end
          if ~any(strcmpi(varargin,'mcmc')) && numel(self.ci.permutations)>0
             % At what percentile confidence interval of permuted distances does
@@ -549,7 +554,7 @@ classdef SetOfHyps < Hypersphere
       % hyps.plotOverlapErrors
       % 
       % SEE ALSO HYPERSPHERE.SHOW, SETOFHYPS.SIGNIFICANCE
-         if isempty(self.sig), sigov = true(1,numel(self.margins));
+         if isempty(self.sig), sigov = false(1,numel(self.margins));
          else                  sigov = sum([self.sig.ov;self.sig.ma]);
          end
          if isempty(self.msflips), self.msflips = zeros(size(sigov));
@@ -1212,6 +1217,9 @@ classdef SetOfHyps < Hypersphere
          elseif strcmpi(boxpart,'diagonal') % plot as circles!
             ix = repmat(1:max(2,nchoosek(n,2)),[2 1]);
             if FIRSTORDER, colors = mat2cell(self.categories.colors,ones(n,1)); end
+         elseif nVals == n^2
+            [ixx,ixy] = meshgrid(1:n,1:n);
+            ix = [ixx(:)'; ixy(:)'];
          end
          for i = 1:nVals
             if ~all(colors{i}==1)
@@ -1259,9 +1267,11 @@ classdef SetOfHyps < Hypersphere
          elseif ischar(SIGTYPE), SIGTYPE = {SIGTYPE};
          end
 
-         CVDISTS = numel(self.ci.permutations) && any(cat(1,self.ci.permutations.distsCV));
+         CVDISTS = numel(self.ci.permutations)>0 && any(any(cat(1,self.ci.permutations.distsCV)));
 
          for sig = SIGTYPE; sig = [sig{1} 'p'];
+            if isempty(strfind(sig,'sig')), sig = ['sig' sig]; end
+
             fn = fieldnames(self.(sig))';
             DIFF = ~isempty(self.(sig).ra);
    

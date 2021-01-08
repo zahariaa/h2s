@@ -33,8 +33,8 @@ for d = ds
       [points,categories] = randnsimplex_of_nballs(groundtruth.centers,50,...
                                                    groundtruth.radii);
    
-      [model,high] = hypersphere2sphere(points,categories,[],dimLow);
-      model = SetOfHyps(model,categories,groundtruth);
+      model = Hypersphere.estimate(points,categories).h2s(dimLow);
+      model = SetOfHyps.stressUpdate(groundtruth);
       model = model.significance(points,1000);
       %keyboard
       testhi = SetOfHyps('estimate',points,categories,groundtruth);%,100).merge;
