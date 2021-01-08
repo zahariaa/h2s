@@ -47,7 +47,7 @@ for d = ds
    model = SetOfHyps(model).stressUpdate(groundtruth);
    % model = model.significance(points,1000);
    %keyboard
-   testhi = SetOfHyps('estimate',points,categories,groundtruth,1000);
+   testhi = SetOfHyps.estimate(points,categories,groundtruth,1000).meanAndMerge;
    axtivate(fh.a.h((i-1)*nconditions+j));  model.show;
 
    for MDS_INIT = {'mdsinit'} %{'mdsinit' 'randinit'}

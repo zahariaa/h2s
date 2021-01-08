@@ -30,7 +30,7 @@ for d = ds
    [points,categories] = randnsimplex_of_nballs(groundtruth.centers,50,...
                                                 groundtruth.radii);
 
-   hi = SetOfHyps('estimate',points,categories);%,100).merge;
+   hi = SetOfHyps.estimate(points,categories);%,100).merge;
    rfixed = hi.h2s(true); % MDS_INIT & FIXEDRADII=true
    rfixed.sig = rfixed.significance(points);
 

@@ -33,14 +33,9 @@ for d = ds
       [points,categories] = randnsimplex_of_nballs(groundtruth.centers,50,...
                                                    groundtruth.radii);
    
-      model = Hypersphere.estimate(points,categories).h2s(dimLow);
-      model = SetOfHyps.stressUpdate(groundtruth);
-      model = model.significance(points,1000);
       %keyboard
-      testhi = SetOfHyps('estimate',points,categories,groundtruth);%,100).merge;
-      testhi = testhi.significance(points,1000);
+      testhi = SetOfHyps.estimate(points,categories,groundtruth,1000).meanAndMerge;
    
-      %axtivate(fh.a.h(i*2*nconditions+j));  model.show;
       for MDS_INIT = {'randinit' 'mdsinit'}
          testlo = testhi.h2s([dimLow ninits],MDS_INIT{1});
          testlo = testlo.stressUpdate(groundtruth);
@@ -51,7 +46,6 @@ for d = ds
          drawnow;
       end
    end
-   %[groundtruth.overlap;model.overlap;testlo.overlap]
    i = i+1;
 end
 

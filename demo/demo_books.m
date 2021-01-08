@@ -41,7 +41,7 @@ end
 %% COMPUTE
 booksel = 1:6;%[1:3 6:7];
 cats = Categories(vectors,titles);
-hi   = SetOfHyps('estimate',freq,cats.select(booksel),1);
+hi   = SetOfHyps.estimate(freq,cats.select(booksel),1);
 %% PLOT
 figure; imagesc(freq); colorbar
 figure; hi.h2s(3).show; cats.select(booksel).legend;

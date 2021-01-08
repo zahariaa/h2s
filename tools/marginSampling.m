@@ -52,16 +52,21 @@ if exist('cats','var') %&& ~isempty(cats)
          notthiscat = cell2mat_concat(arrayfun(@(c) setdiff(1:nCats,c),thiscat,'UniformOutput',false));
 
          % combine hyps and embed categories
-         fullhyps = cellfun(@(x) x(1),hyps);
-         loocats = cats.leaveoneout;
-         catix = ones(1,nCats);
-         for i = 1:n
-            ii = cats.vectors(i,:);
-            catix(ii) = catix(ii) + 1;
-            hyps{ii}(catix(ii)) fullhyps = loocats(i);
-            finalhyps(i) = concat([hyps{ii}(catix(ii)) fullhyps(notthiscat(1,:))],loocats(i))
+         if ~iscell(hyps)
+            hyps = num2cell([vectify(hyps(2:end,:)) reshape(hyps(1,notthiscat),size(notthiscat))],2);
+            hyps = cell2mat_concat(cellfun(@(h,c) concat(h,c),...
+                             hyps,num2cell(cats.leaveoneout),'UniformOutput',false))';
+         else
+            fullhyps = cellfun(@(x) x(1),hyps);
+            loocats = cats.leaveoneout;
+            catix = ones(1,nCats);
+            for i = 1:n
+               ii = cats.vectors(i,:);
+               catix(ii) = catix(ii) + 1;
+               finalhyps(i) = concat([hyps{ii}(catix(ii)) fullhyps(notthiscat(1,:))],loocats(i))
+            end
+            hyps = finalhyps;
          end
-         hyps = finalhyps;
    end
    return
 end

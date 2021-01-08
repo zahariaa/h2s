@@ -1000,7 +1000,7 @@ classdef SetOfHyps < Hypersphere
          if ~exist('alpha','var') || isempty(alpha)
             alpha  = [1 1 1]; % for testing gradients with hyperparameters
          end
-         if isa(radii_and_centers,'SetOfHyps'), lo = radii_and_centers;
+         if isa(radii_and_centers,'Hypersphere'), lo = radii_and_centers;
          else % recurse and combine
             nc = size(radii_and_centers,1)/n;
             lo = SetOfHyps(mat2cell(radii_and_centers(:,2:end),repmat(nc,[n 1])),...

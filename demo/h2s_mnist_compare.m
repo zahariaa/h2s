@@ -96,23 +96,25 @@ if ~exist('points2D','var')
          end
       end   
    end
-   save(h2sfile,'hi','lo','cats','nlayers','points2D')
+   save(h2sfile,'points2D','-append')
    fprintf('Saved h2s to %s     \n',h2sfile);
 end
-keyboard
+%keyboard
+%for i = 1:7; hi.lenet(i).h2s(3).toJSON(sprintf('%s%u',model,i));end
 
 %% PLOT
-fh = newfigure([3 nlayers+2],[],[],sprintf( 'combo_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
-fh = newfigure([1 nlayers+2],fh,[],sprintf('stats2_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
+fh = newfigure([3 nlayers+2],   sprintf( 'combo_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
+fh = newfigure([1 nlayers+2],fh,sprintf('stats2_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
 for i = 1:nlayers+2
    if i==1,            titlestr = 'Raw images';
    elseif i<nlayers+2, titlestr = sprintf('Layer %u',i-1);
    else                titlestr = 'Final readout';
    end
+   lo.(model)(i) = lo.(model)(i).importStats(hi.(model)(i));
    lo.(model)(i).show(fh.a(1).h(i));                               title(titlestr);
    lo.(model)(i).showValues(fh.a(1).h(i+nlayers+2),hi.(model)(i));
    hi.(model)(i).showSig(fh.a(1).h(i+2*(nlayers+2)));
-   hi.(model)(i).showSig(fh.a(2).h(i),hi.sec(i));                  title(titlestr);
+   hi.(model)(i).showSig(fh.a(2).h(i),'diff');                     title(titlestr);
 end
 
 %% Supplementary figure

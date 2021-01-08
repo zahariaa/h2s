@@ -13,7 +13,7 @@ if ~exist('dimLow','var'), dimLow = 3; end
 nax = numel(ax);
 
 %% hypersphere to sphere visualization
-hyp   = SetOfHyps('estimate',pointsOrDistMat,categories,varargin{:});
+hyp   = SetOfHyps.estimate(pointsOrDistMat,categories,varargin{:});
 model = hyp.h2s(dimLow);
 model.show(ax(1),titleStr);
 

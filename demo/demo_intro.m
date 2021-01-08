@@ -1,7 +1,7 @@
 % demo_intro: generates introductory explanation figure and hinton diagram
 %    explantatory figure (#6)
 
-INTROFIG = true; % true = fig 1, false = fig 6
+INTROFIG = false; % true = fig 1, false = fig 6
 n        = 50;   % points per category
 nCats    = 4;
 dotsz    = 6;
@@ -41,7 +41,7 @@ end
 
 
 %% PLOT
-for itype = 1;%0;%1:-1:0
+for itype = 0;%1:-1:0
 planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
    orig = SetOfHyps(v{itype+1},r{itype+1},Categories({n*ones(1,numel(r{itype+1}))}));
    if ~INTROFIG  && itype==0
@@ -105,7 +105,7 @@ planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
    % export spheres in png
    axis(axis*1.1)
 
-   subplotResize(fh.a.h,[],0.01); printFig([],[],'png',200);
+  % subplotResize(fh.a.h,[],0.01); printFig([],[],'png',200);
    delete([sh(:);circ(:);plane]);   % delete spheres, intersection circles, and plane for pdf
 
    for i=1:nCats % Plot centers and radii
@@ -142,14 +142,11 @@ planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
    papsz = [5.75 5.75/3];
    set(fh.f,'Renderer','painters','PaperUnits','inches','PaperSize',papsz,...
        'PaperPosition',[0.01*papsz papsz],'PaperPositionMode','manual');
-   printFig;
+   %printFig;
 end
 
 %% TEST NEW STRESS FUNCTION
 low  = SetOfHyps(model);
-if ~INTROFIG  && itype==0
-low.categories.colors = low.categories.colors([1 4 3 2],:);
-end
 low.stressUpdate(orig);
 new  = low.h2s(orig,2)%orig.h2s
 % Calculate significance
