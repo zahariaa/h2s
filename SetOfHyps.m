@@ -289,7 +289,13 @@ classdef SetOfHyps < Hypersphere
             % What percentile confidence interval of bootstrapped overlap/margins contains 0?
             % Overlap/margin is significant if 0 does not exceed the lowest 5% range
             for i = 1:nc2
-               self.sigp.ma(i) = ciprctile(margin_boot(:,i),0);
+               self.sigp.ov(i) = ciprctile(overlap_boot(:,i),0);
+               % self.sigp.ma(i) = ciprctile( margin_boot(:,i),0);
+            end
+         end
+         if numel(self.ci.jackknives)>0
+            for i = 1:nc2
+               self.sigp.ma(i) = ciprctile( margin_jack(:,i),0);
             end
             self.sigp.ov = 1-self.sigp.ma;
          end
