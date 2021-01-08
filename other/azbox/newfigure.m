@@ -25,6 +25,7 @@ end
 
 if ~exist('fp','var') || isempty(fp);      figsetup; end
 if exist('fhin','var') && ~isempty(fhin); fh = fhin; end
+if ~exist('fh','var') || isempty(fh);     fh = struct('a',[],'f',[]); end
 
 ftmp = figure;
 if verLessThan('matlab','8.4'), fh.f=[fh.f ftmp];
