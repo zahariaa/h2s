@@ -120,7 +120,7 @@ end
 %% Supplementary figure
 ms=5;
 chunk = 1:1000;
-fh = newfigure([4 nlayers+2],fh,[],sprintf('compare_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
+fh = newfigure([4 nlayers+2],fh,sprintf('compare_%s_eps%0.2f_h2s%u',model,epsilon,dimLow));
 for i = 1:nlayers+2
    if i==1,            titlestr = 'Raw images';
    elseif i<nlayers+2, titlestr = sprintf('Layer %u',i-1);
