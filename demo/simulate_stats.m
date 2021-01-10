@@ -220,18 +220,6 @@ switch mnames{s} % normalization factor, depending on statistical test
    case  'radii',              normfactor = @(r)     2^-rs(r);
 end
 
-%% Are the signifiance tests significantly performing correctly?
-ptests = NaN(nd,nn,nr,nm);
-for d = 1:nd
-   for r = 1:nr
-      for n = 1:nn
-         sigcount = [nsims 0] + [-1 1]*sum(sigtest{s,d,r}(n,:));
-         ptests(d,n,r,s) = testCountDistribution_chi2(sigcount,[1-sigthresh sigthresh]);
-      end
-   end
-end
-
-
 %% Plot analyses
 d = 1;
 r = find(rs==0);
