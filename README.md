@@ -3,7 +3,7 @@
 hypersphere2sphere(h2s) is a visualization method for conveying the relationships between high-dimensional, labeled data distributions. h2s summarizes each labeled distribution as a sphere (in 3D) or circle (in 2D).
 
 <p align="center">
-  <img src="demo/lenet_compare_ver3ab.png" width="750" title="h2s can visualize, for example, the activations in each layer of a convolutional neural network to images of handwritten (MNIST) digits" />
+  <img src="docs/lenet_compare_ver3ab.png" width="750" title="h2s can visualize, for example, the activations in each layer of a convolutional neural network to images of handwritten (MNIST) digits" />
   <br>
   <i>h2s can visualize, for example, the activations in each layer of a convolutional neural network to images of handwritten (MNIST) digits.</i><br>
 </p>
@@ -13,7 +13,7 @@ hypersphere2sphere(h2s) is a visualization method for conveying the relationship
 The h2s algorithm proceeds in two steps:
 
 <p align="center">
-  <img src="demo/intro_v7.png" width="400" title="h2s fits hyperspheres enclosing high-dimensional, labeled data distributions and represents them in a low-dimensional visualization space, either perfectly (a), or approximately (b)" />
+  <img src="docs/intro_v7.png" width="400" title="h2s fits hyperspheres enclosing high-dimensional, labeled data distributions and represents them in a low-dimensional visualization space, either perfectly (a), or approximately (b)" />
   <br>
   <i>h2s fits hyperspheres enclosing high-dimensional, labeled data distributions and represents them in a low-dimensional visualization space, either perfectly (a), or approximately (b).</i><br>
 </p>
@@ -137,7 +137,7 @@ Hypersphere.estimate(data,cats).show; % (show runs h2s automatically if there ar
 ```
 
 <p align="center">
-  <img src="demo/demoh2s.svg" width="300" title="plotDynamics visualizes the statistics of interest in a set of times series plots" />
+  <img src="docs/demoh2s.svg" width="300" title="plotDynamics visualizes the statistics of interest in a set of times series plots" />
   <br>
   <i>Another fit of the 2-dimensional representation from (b) in the h2s algorithm figure above. The ground truth generating 3d data had all 4 spheres touching at a single point each -- a configuration that is impossible to perfectly represent in 2d.</i><br>
 </p>
@@ -250,13 +250,13 @@ figure;
 lo.plotDynamics;
 ```
 <p align="center">
-  <img src="demo/RDMs_srd_weighted_S2.gif" title="h2s can dynamically visualize the changes in brain response patterns over time to different categories of images" />
+  <img src="docs/RDMs_srd_weighted_S2.gif" title="h2s can dynamically visualize the changes in brain response patterns over time to different categories of images" />
   <br>
   <i>h2s can dynamically visualize the changes in brain response patterns over time to different categories of images.</i><br>
 </p>
 
 <p align="center">
-  <img src="demo/comparisons-S2.png" width="500" title="plotDynamics visualizes the statistics of interest in a set of times series plots" />
+  <img src="docs/comparisons-S2.png" width="500" title="plotDynamics visualizes the statistics of interest in a set of times series plots" />
   <br>
   <i>plotDynamics visualizes the statistics of interest in a set of times series plots.</i><br>
 </p>
