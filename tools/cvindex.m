@@ -63,7 +63,7 @@ classdef cvindex
       end
       function ix = train(obj,i)        % Output training set for i'th fold
          a = 1:obj.nCV;
-         ix = vectify(obj.rp{a(~ismembc(a,i))}); % faster than rp{setdiff(a,i)}
+         ix = vertcat(obj.rp{a(~ismembc(a,i))}); % faster than rp{setdiff(a,i)}
       end
       function ix = test(obj,i)         % Output test set for i'th fold
          ix = obj.rp{i};
