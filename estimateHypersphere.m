@@ -111,6 +111,7 @@ STRATIFIED = true;     % stratified bootstrap (default)
 NORMALIZE  = false;    % pre-normalize points
 CVDISTS    = true;     % distances are cross-validated by default
 cvdists    = false;    % placeholder if don't have cross-validated distance values
+LOORADII   = false;
 ESTIMATOR  = 'meandist';
 DBUGPLOT   = false;
 VERBOSE    = false;
@@ -134,6 +135,7 @@ for v = 1:numel(varargin)
          case 'raw';         NORMALIZE  = false; varargin{v} = [];
          case 'nocvdists';     CVDISTS  = false;
          case 'cvdists';       CVDISTS  = true;
+         case 'looradii';     LOORADII  = true;
          case 'independent'; INDEPENDENT= true;  varargin{v} = [];
          case 'joint';       INDEPENDENT= false; varargin{v} = [];
          case {'meandist','distance','mcmc','maxradius','jointml',...
@@ -243,17 +245,19 @@ if exist('categories','var') && numel(categories.labels)>1
 %          end
 %       else
          [p,ix] = categories.slice(points);
+         cbooted = ~arrayfun(@(x) islogical(x.vectors),categories);
+         loos = cell(1,numel(p)); loos(cbooted) = {'looradii'};
          if CVDISTS, cvs = cellfun(@(i) cvindex(i,2,'rebase'),ix); end
 %       end
 
       % Recursive call
       if ~CVDISTS
-         hyp = cellfun(@(x) estimateHypersphere(x,'raw',nBootstraps,varargin{:}),...
-                            p,'UniformOutput',false);
+         hyp = cellfun(@(x,loo) estimateHypersphere(x,'raw',nBootstraps,loo,varargin{:}),...
+                                p,loos,'UniformOutput',false);
          cvdists = false;
       else
-         [hyp,loc_cv] = cellfun(@(x,cv) estimateHypersphere(x,'raw',nBootstraps,cv,varargin{:}),...
-                                     p,num2cell(cvs),'UniformOutput',false);
+         [hyp,loc_cv] = cellfun(@(x,cv,loo) estimateHypersphere(x,'raw',nBootstraps,cv,loo,varargin{:}),...
+                                     p,num2cell(cvs),loos,'UniformOutput',false);
          % Compute cross-validated distances
          cvdists = cvCenters2cvSqDists(loc_cv);
       end
@@ -339,17 +343,12 @@ switch(ESTIMATOR)
       [loc,rad] = objfcn(points);
       if CVDISTS, loc_cv = cell2mat_concat(cv.crossvalidate(objfcn,points)); end
    case 'meandist'
-      % dists = pdist(points,'Euclidean');
-      % cv = cvindex(n,10);
-      % loc = mean(cell2mat_concat(cv.crossvalidate(@mean,points)));
-
       %% estimate radius via skew-based MVUEs
-      radii = sqrt(sum(points.^2,2));
-      dvarrad = log2(std(radii/median(radii)))+log2(d)/1.5;
-      if dvarrad > -0.5 % Assume Gaussian
-         rad = mvue_gaussian(points,d,n);
-      else              % Assume Uniform
-         rad = stdPer(d)*std(radii) + median(radii);
+      if LOORADII
+         rad = cvindex(n,n).crossvalidate(@(p) meanDist(p,true),points);
+         rad = mean([rad{:}]);
+      else
+         rad = meanDist(points);
       end
 end
 
@@ -368,6 +367,24 @@ end
 
 
 %% HELPER FUNCTIONS
+function rad = meanDist(points,CENTER)
+   [n,d] = size(points);
+   if exist('CENTER','var') && ~isempty(CENTER) && CENTER
+      loc    =  mean(points,1); % optimises L2 cost (same as L1 force equilibrium)
+      points = points - repmat(loc,[n 1]);
+   end
+   % dists = pdist(points,'Euclidean');
+   % cv = cvindex(n,10);
+   % loc = mean(cell2mat_concat(cv.crossvalidate(@mean,points)));
+
+   radii = sqrt(sum(points.^2,2));
+   dvarrad = log2(std(radii/median(radii)))+log2(d)/1.5;
+   if dvarrad > -0.5 % Assume Gaussian
+      rad = mvue_gaussian(points,d,n);
+   else              % Assume Uniform
+      rad = stdPer(d)*std(radii) + median(radii);
+   end
+end
 function v = stdPer(d)
 expectedStds = [1.2733    1.0115    0.8796    0.8107    0.8384    0.8638    0.9579    1.0403    1.1938  1.4268    1.8384    2.4485];
 v = interp1(2.^(1:12),expectedStds,d);
