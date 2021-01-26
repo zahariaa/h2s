@@ -240,7 +240,7 @@ showCIs(estimates{s,d,r}(n,:),squeeze(bootprc{s,d,r}(n,:,:)),sigtest{s,d,r}(n,:)
 
 axtivate(3)
 if s==2, bootcentered = bootsamps{s,d,r,n};
-else     bootcentered = bootsamps{s,d,r,n}-repmat(mean(bootsamps{s,d,r,n},3),[1 nboots]);
+else     bootcentered = bootsamps{s,d,r,n}-repmat(mean(bootsamps{s,d,r,n},2),[1 nboots]);
 end
 plot([0 nsims],[0 0],'k-')
 hb = histogram(bootcentered,100,'Normalization','pdf',...
@@ -271,6 +271,7 @@ for d = nd:-1:1
                      .*(ones(nsims,1)*arrayfun(normfactor,1:nr)),...
                   fh.a.h(4),[1 d*[1 1]/(nd+1)])%,'sem')
 end
+if s~=2, plot(rs([1 end]),[0 0],'k-'); end
 xlim(rs([1 end])); xticks(rs); xticklabels(2.^rs);
 ylabel(measures{s})
 
@@ -278,6 +279,7 @@ for r = nr:-1:1
    plotErrorPatch(ds,squeeze(indexm(cat(3,estimates{s,:,r}),n))*normfactor(r),...
                   fh.a.h(5),[r*[1 1]/(nr+1) 1])%,'sem')
 end
+if s~=2, plot(ds([1 end]),[0 0],'k-'); end
 r = find(rs==0);
 xlim(ds([1 end])); xticks(ds); xticklabels(2.^ds);
 title(sprintf('%s, %u simulations each',measures{s},nsims))
@@ -286,6 +288,7 @@ for d = nd:-1:1
    plotErrorPatch(ns,cat(3,estimates{s,d,r})',...
                   fh.a.h(6),[1 d*[1 1]/(nd+1)])%,'sem')
 end
+if s~=2, plot(ns([1 end]),[0 0],'k-'); end
 xlim(ns([1 end])); xticks(ns); xticklabels(2.^ns);
 ylabel(measures{s})
 
