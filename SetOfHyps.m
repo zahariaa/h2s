@@ -282,6 +282,7 @@ classdef SetOfHyps < Hypersphere
             dist_boot    = cat(1,self.ci.bootstraps.dists);
          end
          if numel(self.ci.jackknives)>0
+            overlap_jack =       self.ci.jackknives.overlap;
             margin_jack  =       self.ci.jackknives.margins;
          end
          %% COMPUTE SIGNIFICANCE (smaller values more significant)
@@ -292,10 +293,26 @@ classdef SetOfHyps < Hypersphere
          % What percentile confidence interval of bootstrapped margins contains 0?
 
          if numel(self.ci.bootstraps)>0
+            if numel(self.ci.jackknives)>0
+               for i = 1:nc2
+                  self.sigp.ov = ones(1,nc2);
+                  for thresh = [0.05 0.01 0.001]
+                     ci = bca(self.overlap(i),overlap_boot(:,i),overlap_jack(:,i),thresh);
+                     % Is 0 below the 90% BCa CI (e.g., in the bottom 5%)?
+                     if ci(1)>0 % NOTE THIS IS NOT A P-VALUE, BUT H0
+                        self.sigp.ov(i) = thresh/2;
+                     end
+                  end
+               end
+            else
+               for i = 1:nc2
+                  self.sigp.ov(i) = ciprctile(overlap_boot(:,i),0);
+               end
+            end
+
             % What percentile confidence interval of bootstrapped overlap/margins contains 0?
             % Overlap/margin is significant if 0 does not exceed the lowest 5% range
             for i = 1:nc2
-               self.sigp.ov(i) = ciprctile(overlap_boot(:,i),0);
                self.sigp.ma(i) = ciprctile( margin_boot(:,i),0);
             end
          end

@@ -70,7 +70,7 @@ nm = numel(measures);
 % keyboard
 
 basedir = '';%'/moto/nklab/users/az2522/';
-simfolder = '20200929/';%'20201215/';%'20200929/';
+simfolder = '20210126/';%'20200929/';%'20201215/';%'20200929/';
 simfolder = [basedir 'data/statsim/' simfolder];
 if ~exist(simfolder,'dir'), mkdir(simfolder); end
 simfile = @(s,d,r,n) sprintf('%s%ss%g_d%g_r%g_n%g.mat',simfolder,estimator,s,d,r,n);
@@ -84,7 +84,6 @@ end
 
 DISPLAYED = false;
 FINISHED  = false;
-[di,ri,ni]= deal(0);
 for d = 1:nd
    for r = 1:nr
       % Generate points for the different scenarios
