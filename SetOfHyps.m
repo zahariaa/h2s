@@ -245,7 +245,7 @@ classdef SetOfHyps < Hypersphere
          else
             % Compute confidence intervals on bootstrapped overlaps & radii for significance
             bootsNperms = Hypersphere.estimate(points,self.categories,N,testtype,CVDISTS,varargin{:});
-            marginSamps = marginSampling(points,self.categories,N,'jackknife');
+            marginSamps = marginSampling(points,self.categories,'jackknife');
             bootsNperms = [bootsNperms marginSamps];
             bootsNperms = bootsNperms.meanAndMerge;
             self.ci = bootsNperms.ci;
@@ -294,29 +294,32 @@ classdef SetOfHyps < Hypersphere
 
          if numel(self.ci.bootstraps)>0
             if numel(self.ci.jackknives)>0
+               self.sigp.ov = ones(1,nc2);
+               self.sigp.ma = ones(1,nc2);
                for i = 1:nc2
-                  self.sigp.ov = ones(1,nc2);
                   for thresh = [0.05 0.01 0.001]
                      ci = bca(self.overlap(i),overlap_boot(:,i),overlap_jack(:,i),thresh);
-                     % Is 0 below the 90% BCa CI (e.g., in the bottom 5%)?
+                     % Is 0 below the 95% BCa CI?
                      if ci(1)>0 % NOTE THIS IS NOT A P-VALUE, BUT H0
                         self.sigp.ov(i) = thresh/2;
+                     end
+                     ci = bca(self.margins(i),margin_boot(:,i),margin_jack(:,i),thresh);
+                     % Is 0 below the 95% BCa CI?
+                     if ci(1)>0 % NOTE THIS IS NOT A P-VALUE, BUT H0
+                        self.sigp.ma(i) = thresh/2;
                      end
                   end
                end
             else
-               for i = 1:nc2
-                  self.sigp.ov(i) = ciprctile(overlap_boot(:,i),0);
-               end
-            end
-
             % What percentile confidence interval of bootstrapped overlap/margins contains 0?
             % Overlap/margin is significant if 0 does not exceed the lowest 5% range
-            for i = 1:nc2
-               self.sigp.ma(i) = ciprctile( margin_boot(:,i),0);
+               for i = 1:nc2
+                  self.sigp.ov(i) = ciprctile(overlap_boot(:,i),0);
+                  self.sigp.ma(i) = ciprctile( margin_boot(:,i),0);
+               end
             end
          end
-         if numel(self.ci.jackknives)>0
+         if numel(self.ci.bootstraps)==0 && numel(self.ci.jackknives)>0
             for i = 1:nc2
                self.sigp.ma(i) = ciprctile( margin_jack(:,i),0);
             end

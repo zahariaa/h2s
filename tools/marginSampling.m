@@ -34,7 +34,12 @@ end
 [n,d,f] = size(points);
 
 %% recurse on each category
-if ~exist('N'  ,'var') || isempty(N), N = 1000; end
+if ~exist('N'  ,'var') || isempty(N)
+   switch lower(samplingMethod)
+      case 'bootstrap'; N = 1000;
+      case 'jackknife'; N = n;
+   end
+end
 if exist('cats','var') %&& ~isempty(cats)
    nCats = size(cats.vectors,2);
    hyps = cellfun(@(p) marginSampling(p,N,samplingMethod),cats.slice(points),...
@@ -44,7 +49,6 @@ if exist('cats','var') %&& ~isempty(cats)
       case 'bootstrap' % NOT YET IMPLEMENTED
          % hyps = cell2mat_concat(cellfun(@(h) h.concat(cats),num2cell(hyps,2),...
          %          'UniformOutput',false))';
-%% OR ACTUALLY JUST CALL ESTIMATEHYPERSPHERE STRAIGHT UP HERE
          hyps = estimateHypersphere(points,cats,'maxradius','bootstrap',N);
       case 'jackknife'
          % actually have to combine hyps for leave one out over *ALL* points
