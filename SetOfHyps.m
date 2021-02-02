@@ -282,8 +282,10 @@ classdef SetOfHyps < Hypersphere
             dist_boot    = cat(1,self.ci.bootstraps.dists);
          end
          if numel(self.ci.jackknives)>0
+            radii_jack   = cat(1,self.ci.jackknives.radii);
             overlap_jack =       self.ci.jackknives.overlap;
             margin_jack  =       self.ci.jackknives.margins;
+            dist_jack    = cat(1,self.ci.jackknives.dists);
          end
          %% COMPUTE SIGNIFICANCE (smaller values more significant)
          % helper functions
@@ -342,12 +344,42 @@ classdef SetOfHyps < Hypersphere
 
          %% SECOND-ORDER COMPARISONS
          if numel(self.ci.bootstraps)>0
-            for i = 1:nc2
-               self.sigdiffp.ra(i) = ciprctileFuTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
-            end
-            for i = 1:nc2c2
-               self.sigdiffp.ov(i) = ciprctileFuTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
-               self.sigdiffp.di(i) = ciprctileFuTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
+            if numel(self.ci.jackknives)>0
+               self.sigdiffp.ra = ones(1,nc2);
+               self.sigdiffp.ov = ones(1,nc2c2);
+               self.sigdiffp.di = ones(1,nc2c2);
+               for i = 1:nc2c2
+                  for thresh = [0.05 0.01 0.001]
+                     if i <= nc2 % radii
+                     ci = bca(diff(self.radii(ix(:,i))),diff(radii_boot(:,ix(:,i)),[],2),...
+                                                        diff(radii_jack(:,ix(:,i)),[],2),thresh);
+                     % Is 0 below the 95% BCa CI?
+                     if ci(1)>0 || ci(2)<0 % NOTE THIS IS NOT A P-VALUE, BUT H0
+                        self.sigdiffp.ra(i) = thresh/2;
+                     end
+                     end
+                     ci = bca(diff(self.overlap(ixc2(:,i))),diff(overlap_boot(:,ixc2(:,i)),[],2),...
+                                                            diff(overlap_jack(:,ixc2(:,i)),[],2),thresh);
+                     % Is 0 below the 95% BCa CI?
+                     if ci(1)>0 || ci(2)<0 % NOTE THIS IS NOT A P-VALUE, BUT H0
+                        self.sigdiffp.ov(i) = thresh/2;
+                     end
+                     ci = bca(diff(self.dists(ixc2(:,i))),diff(dist_boot(:,ixc2(:,i)),[],2),...
+                                                          diff(dist_jack(:,ixc2(:,i)),[],2),thresh);
+                     % Is 0 below the 95% BCa CI?
+                     if ci(1)>0 || ci(2)<0 % NOTE THIS IS NOT A P-VALUE, BUT H0
+                        self.sigdiffp.di(i) = thresh/2;
+                     end
+                  end
+               end
+            else
+               for i = 1:nc2
+                  self.sigdiffp.ra(i) = ciprctileFuTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
+               end
+               for i = 1:nc2c2
+                  self.sigdiffp.ov(i) = ciprctileFuTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
+                  self.sigdiffp.di(i) = ciprctileFuTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
+               end
             end
             self.sigdiffp.ma = self.sigdiffp.ov; % Margin/overlap sigdiff is same bc smaller tail
          end
