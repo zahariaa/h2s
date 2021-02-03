@@ -5,7 +5,7 @@ function [sigtest,estimates,hyps,groundtruth] = simulate_stats(drn,s,estimator,n
 % # of simulations
 if ~exist('nsims' ,'var') || isempty(nsims ), nsims  = 1000; end
 % # of bootstraps during statistical testing
-if ~exist('nboots','var') || isempty(nboots), nboots = 1000; end
+if ~exist('nboots','var') || isempty(nboots), nboots = 5000; end
 if ~exist('s'     ,'var') || isempty(   s  ),      s = 1;    end
 if ~exist('estimator','var') || isempty(estimator),estimator=[]; end
 % s is the scenario chosen from the following:
@@ -70,7 +70,7 @@ nm = numel(measures);
 % keyboard
 
 basedir = '';%'/moto/nklab/users/az2522/';
-simfolder = '20210126/';%'20200929/';%'20201215/';%'20200929/';
+simfolder = '20210203/';%'20210126/';%'20200929/';%'20201215/';%'20200929/';
 simfolder = [basedir 'data/statsim/' simfolder];
 if ~exist(simfolder,'dir'), mkdir(simfolder); end
 simfile = @(s,d,r,n) sprintf('%s%ss%g_d%g_r%g_n%g.mat',simfolder,estimator,s,d,r,n);
