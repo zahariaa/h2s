@@ -24,6 +24,7 @@ if ~exist('estimator','var') || isempty(estimator),estimator=[]; end
 sigthresh = 0.05;
 ds =  1:7; % # of dimensions
 rs = -1:3; % radius ratios
+if s==3, rs = 0; end % DISABLE RADIUS RATIOS FOR RADIUS DIFFERENCE TEST
 ns =  4:10; % # of samples to test
 nd = numel(ds);
 nr = numel(rs);
@@ -89,7 +90,9 @@ for d = 1:nd
       % Generate points for the different scenarios
       gt     = generateScenario(s,2^ds(d),2^rs(r));
       nballs = numel(gt.radii);
-      nc2    = nchoosek(nballs,2);
+      if s==3, nc2 = nballs;
+      else     nc2 = nchoosek(nballs,2);
+      end
       nc2c2  = nchoosek(max(2,nc2),2);
 
       for n = 1:nn
@@ -157,11 +160,10 @@ for d = 1:nd
                   fprintf('\nSaved checkpoint          ')
                end
             end
-            sigtmp = sigtmp(:,1+2*(mod(s,3)==0).*round(s/3)); % pick 3rd for s=3 and 5th for s=6
+            sigtmp = sigtmp(:,1+4*(s==6)); % pick 5th for s=6
             switch s
                case {1,2,7}; bootmp = bootmp(:,1,:);
-               case    3   ; bootmp = diff(bootmp(:, 2:3 ,:),[],2); % difference of  last two measures
-               case  {4,5} ; bootmp = diff(bootmp(:, 1:2 ,:),[],2); % difference of first two measures
+               case {3,4,5}; bootmp = diff(bootmp(:, 1:2 ,:),[],2); % difference of first two measures
                case    6   ; bootmp = diff(bootmp(:,[1 6],:),[],2); % difference of first & last measures
             end
             % save in-progress fits
@@ -197,8 +199,7 @@ for d = 1:nd
          try
          switch s
             case {1,2,7}; estimates{s,d,r}(n,:) =             cat(1,hyps{s,d,r}(n,:).(mnames{s}));
-            case    3   ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],2:3),[],2);
-            case  {4,5} ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
+            case {3,4,5}; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],1:2),[],2);
             case    6   ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],[1 6]),[],2);
          end
          varestms(s,d,r,n) = var(estimates{s,d,r}(n,:));
@@ -266,6 +267,7 @@ xlabel('variance (full data)')
 ylabel(sprintf('variance (%s)',testrslt{s}))
 logAxis('xy')
 
+if s~=3
 for d = nd:-1:1
    plotErrorPatch(rs,squeeze(indexm(cat(3,estimates{s,d,:}),n)) ...
                      .*(ones(nsims,1)*arrayfun(normfactor,1:nr)),...
@@ -274,12 +276,21 @@ end
 if s~=2, plot(rs([1 end]),[0 0],'k-','Tag','phyaxwidth'); end
 xlim(rs([1 end])); xticks(rs); xticklabels(2.^rs);
 ylabel(measures{s})
+end
 
+if s~=3
 for r = nr:-1:1
    plotErrorPatch(ds,squeeze(indexm(cat(3,estimates{s,:,r}),n))*normfactor(r),...
                   fh.a.h(5),[r*[1 1]/(nr+1) 1])%,'sem')
 end
 r = find(rs==0);
+else
+for n = nn:-1:1
+   plotErrorPatch(ds,squeeze(indexm(cat(3,estimates{s,:,r}),n))*normfactor(r),...
+                  fh.a.h(5),[n*[1 1]/(nn+1) 1])%,'sem')
+end
+n = min(5,numel(ns));
+end
 if s~=2, plot(ds([1 end]),[0 0],'k-','Tag','phyaxwidth'); end
 xlim(ds([1 end])); xticks(ds); xticklabels(2.^ds);
 title(sprintf('%s, %u simulations each',measures{s},nsims))
@@ -292,6 +303,7 @@ if s~=2, plot(ns([1 end]),[0 0],'k-','Tag','phyaxwidth'); end
 xlim(ns([1 end])); xticks(ns); xticklabels(2.^ns);
 ylabel(measures{s})
 
+if s~=3
 axtivate(10)
 for d = nd:-1:1
    a = permute(indexm(cat(3,sigtest{s,d,:}),n),[2 3 1]);
@@ -301,13 +313,22 @@ plot(rs([1 end]),100*sigthresh*[1 1],'--k')
 axis([rs([1 end]) 0 max(ylim)]); xticks(rs); xticklabels(2.^rs);
 xlabel('radius ratio')
 ylabel('false positive rate (%)')
+end
 
 axtivate(11)
+if s~=3
 for r = nr:-1:1
    a = permute(indexm(cat(3,sigtest{s,:,r}),n),[2 3 1]);
    plot(ds,100*mean(a),'-','LineWidth',2,'Color',[[r r]/(nr+1) 1])
 end
 r = find(rs==0);
+else
+for n = nn:-1:1
+   a = permute(indexm(cat(3,sigtest{s,:,r}),n),[2 3 1]);
+   plot(ds,100*mean(a),'-','LineWidth',2,'Color',[[n n]/(nn+1) 1])
+end
+n = min(5,numel(ns));
+end
 plot(ds([1 end]),100*sigthresh*[1 1],'--k')
 axis([ds([1 end]) 0 max(ylim)]); xticks(ds); xticklabels(2.^ds);
 xlabel('dimensions')
@@ -370,11 +391,11 @@ function hyp = generateScenario(s,d,r)
 %    d: (scalar) the dimensionality of the hyperspheres
 %    r: (scalar) the radius of one hypersphere (the other(s) is/are 1)
    switch s
-      case {1,7} % OVERLAP. Null distribution: 0 overlap.
+      case {1,3,7} % OVERLAP. Null distribution: 0 overlap.
          hyp = Hypersphere([zeros(1,d);r+1 zeros(1,d-1)],[r 1]);
       case 2 % INTER-CENTER DISTANCE. Null distribution: 0 distance.
          hyp = Hypersphere( zeros(2,d),[r 1]);
-      case {3,4,5} % (Need 3+ balls.)
+      case {4,5} % (Need 3+ balls.)
          % RADIUS DIFFERENCE. Null distribution: radii are the same.
          % OVERLAP DIFFERENCE. Null distribution: overlaps are the same.
          % INTER-CENTER DISTANCE DIFFERENCE. Null distribution: distances are the same.
