@@ -203,7 +203,10 @@ for d = 1:nd
             case    6   ; estimates{s,d,r}(n,:) = diff(indexm(cat(1,hyps{s,d,r}(n,:).(mnames{s})),[],[1 6]),[],2);
          end
          varestms(s,d,r,n) = var(estimates{s,d,r}(n,:));
-         varboots{s,d,r,n} = var(bootsamps{s,d,r,n});
+         if s==2, bootcentered = squeeze(bootsamps{s,d,r,n});
+         else     bootcentered = squeeze(bsxfun(@minus,bootsamps{s,d,r,n},mean(bootsamps{s,d,r,n},3)));
+         end
+         varboots{s,d,r,n} = var(bootcentered);
          if strcmp(sigOrDiff,'sig')
          bootprc{s,d,r}(n,:,:) = prctile([-Inf(nsims,1) squeeze(bootsamps{s,d,r,n})]',...
                                          [sigthresh*100 100])';
@@ -253,19 +256,20 @@ xlabel('pdf')
 matchy(fh.a.h(2:3),'y')
 
 showVar(varboots{s,d,r,n},varestms(s,d,r,n),2^ds(d),2^ns(n),'variance',fh.a.h(8))
+delete(fh.a.h(8).Title)
 
 axtivate(9)
 for d = nd:-1:1
    for r = nr:-1:1
       for n = nn:-1:1
-         plot(log10(varestms(s,d,r,n)),log10(mean(varboots{s,d,r,n})),'o','Color',[1 d*[1 1]/(nd+1)])
+         plot(log10(varestms(s,d,r,n)),log10(mean(varboots{s,d,r,n})),'.','Color',[1 d*[1 1]/(nd+1)])
       end
    end
 end
-plot([min(axis) max(axis)],[min(axis) max(axis)],'k--')
+plot([min(axis) max(axis)],[min(axis) max(axis)],'k-','Tag','phyaxwidth')
 xlabel('variance (full data)')
 ylabel(sprintf('variance (%s)',testrslt{s}))
-logAxis('xy')
+%logAxis('xy')
 
 if s~=3
 for d = nd:-1:1
@@ -346,12 +350,39 @@ xlabel('samples')
 matchy(fh.a.h(10:12),'y')
 
 %keyboard
+fh.a.ex = fh.a.h(9);
 batchPlotRefine(fh,fp);
 %set(findall(fh.a.h(2).Children,'Color',linecol),'LineWidth',4)
-hideAxes(sampax,'x','y');
-hideAxes(sampax,'x'); %% TODO: need to fix above line
-hideAxes(fh.a.h([3 5 11 12]),'y');
+%hideAxes(sampax,'x','y');
+%hideAxes(sampax,'x'); %% TODO: need to fix above line
+if s~=3, hideAxes(fh.a.h([3 5 11 12]),'y');
+else     hideAxes(fh.a.h([3 12]),'y');
+end
 hideAxes(fh.a.h(4:6),'x');
+fp.signif = 6;
+fh.a.ex = fh.a.h([1:8 10:12]);
+batchPlotRefine(fh,fp);
+% manually logify ticklabels
+for xy = 'xy'
+   labs = findobj(fh.a.h(9),'tag',['phyplot_' xy 'ticklabel']);
+   for i = 1:numel(labs)
+      labs(i).String = sprintf('%1g',10^str2num(labs(i).String));
+   end
+end
+
+for i = 1:2%3
+   sampsz = (2^(i+4))*ones(1,nballs);
+   gttmp = generateScenario(s,2,2^rs(rShown(i)));
+   gttmp.plotSamples(sampsz,sampax(i));
+   set(get(gca,'Children'),fp.dots{:})
+   if i==2
+      gttmp.show
+      xlabel({'simulated null hypothesis:';['zero ' measures{s}]},'FontSize',fp.txtsz);
+   end
+   title(sprintf('%u samples each,\n%1.1f:1 radius ratio',sampsz(1),2^rs(rShown(i))),'FontSize',fp.txtsz,'FontWeight','normal')
+end
+
+
 printFig;
 
 
