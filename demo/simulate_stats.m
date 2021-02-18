@@ -247,7 +247,8 @@ axtivate(3)
 if s==2, bootcentered = squeeze(bootsamps{s,d,r,n});
 else     bootcentered = squeeze(bootsamps{s,d,r,n})-repmat(mean(bootsamps{s,d,r,n},3),[1 nboots]);
 end
-hb = histogram(bootcentered,100,'Normalization','pdf',...
+binEdges = linspace(min(0,1.1*min(bootprc{s,d,r}(n,:,1))),1.1*max(bootprc{s,d,r}(n,:,2)),100);
+hb = histogram(bootcentered,         'BinEdges',binEdges,   'Normalization','pdf',...
                'Orientation','horizontal','FaceColor','none','EdgeColor',[0 0 0],'DisplayStyle','stairs');
 he = histogram(estimates{s,d,r}(n,:),'BinEdges',hb.BinEdges,'Normalization','pdf',...
                'Orientation','horizontal','FaceColor','none','EdgeColor',[0.5 0.5 0.5],'DisplayStyle','stairs');
