@@ -56,8 +56,8 @@ if ~exist('includeFigs','var') || isempty(includeFigs)
    if isfield(fh.a,'ex')
       hands       = cellfun(@ishandle,{fh.a.ex},'UniformOutput',false);
       hands       = cellfun(@all,hands) .* ~cellfun(@isempty,hands);
-      toExclude   = cellfun(@all,{fh.a.ex}) .* ~cellfun(@isempty,{fh.a.ex}) .* ~hands;
-      includeFigs = includeFigs(~toExclude);
+      %toExclude   = cellfun(@all,{fh.a.ex}) .* ~cellfun(@isempty,{fh.a.ex}) .* ~hands;
+      %includeFigs = includeFigs(~toExclude);
    end
 end
 
