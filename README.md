@@ -1,4 +1,5 @@
 # hypersphere2sphere (h2s)
+*(Python implementation is in development — watch this space)*
 
 hypersphere2sphere(h2s) is a visualization method for conveying the relationships between high-dimensional, labeled data distributions. h2s summarizes each labeled distribution as a sphere (in 3D) or circle (in 2D).
 
