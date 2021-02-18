@@ -274,6 +274,7 @@ classdef SetOfHyps < Hypersphere
             else
                dist_perm   = cat(1,self.ci.permutations.dists);
             end
+            radii_perm     = cat(1,self.ci.permutations.radii);
          end
          if numel(self.ci.bootstraps)>0
             radii_boot   = cat(1,self.ci.bootstraps.radii);
@@ -352,6 +353,11 @@ classdef SetOfHyps < Hypersphere
                self.sigdiffp.ra(i) = ciprctileFuTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
             end
             self.sigdiffp.ma = self.sigdiffp.ov; % Margin/overlap sigdiff is same bc smaller tail
+         end
+         if ~any(strcmpi(varargin,'mcmc')) && numel(self.ci.permutations)>0
+            for i = 1:nc2
+               self.sigdiffp.ra(i) = ciprctileFuTail(diff(  radii_perm(:,  ix(:,i)),[],2),diff(self.radii(ix(:,i))));
+            end
          end
 
          self = self.nullHypothesisRejected(0.05);
