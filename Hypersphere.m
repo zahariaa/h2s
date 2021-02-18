@@ -297,8 +297,7 @@ classdef Hypersphere < handle
             cbooted = ~arrayfun(@(x) islogical(x.vectors),[self.categories])';
             cjacked =  arrayfun(@(x) sum(~~x.vectors(:))==(size(x.vectors,1)-1),...
                                      [self.categories])';
-            cpermed = ~cfull  & ~cbooted;
-            cpermed = cbooted & ~cjacked;
+            cpermed = ~cfull  & ~cbooted & ~cjacked;
 
             ci.bootstraps   = self(cbooted);
             ci.jackknives   = self(cjacked);
