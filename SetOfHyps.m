@@ -344,30 +344,9 @@ classdef SetOfHyps < Hypersphere
 
          %% SECOND-ORDER COMPARISONS
          if numel(self.ci.bootstraps)>0
-            if numel(self.ci.jackknives)>0
-               self.sigdiffp.ov = ones(1,nc2c2);
-               self.sigdiffp.di = ones(1,nc2c2);
-               for i = 1:nc2c2
-                  for thresh = [0.05 0.01 0.001]
-                     ci = bca(diff(self.overlap(ixc2(:,i))),diff(overlap_boot(:,ixc2(:,i)),[],2),...
-                                                            diff(overlap_jack(:,ixc2(:,i)),[],2),thresh);
-                     % Is 0 below the 95% BCa CI?
-                     if ci(1)>0 || ci(2)<0 % NOTE THIS IS NOT A P-VALUE, BUT H0
-                        self.sigdiffp.ov(i) = thresh/2;
-                     end
-                     ci = bca(diff(self.dists(ixc2(:,i))),diff(dist_boot(:,ixc2(:,i)),[],2),...
-                                                          diff(dist_jack(:,ixc2(:,i)),[],2),thresh);
-                     % Is 0 below the 95% BCa CI?
-                     if ci(1)>0 || ci(2)<0 % NOTE THIS IS NOT A P-VALUE, BUT H0
-                        self.sigdiffp.di(i) = thresh/2;
-                     end
-                  end
-               end
-            else
-               for i = 1:nc2c2
-                  self.sigdiffp.ov(i) = ciprctileFuTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
-                  self.sigdiffp.di(i) = ciprctileFuTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
-               end
+            for i = 1:nc2c2
+               self.sigdiffp.ov(i) = ciprctileFuTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
+               self.sigdiffp.di(i) = ciprctileFuTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
             end
             for i = 1:nc2
                self.sigdiffp.ra(i) = ciprctileFuTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
@@ -1323,7 +1302,6 @@ classdef SetOfHyps < Hypersphere
             for this_thresh = threshes
                for f = fn; f=f{1};
                   if DIFF || (CVDISTS && strcmpi(f,'di')), t =   this_thresh/2;
-                  %elseif ~DIFF && ~strcmpi(f,'di'), t = 1-this_thresh;
                   else                                     t =   this_thresh;
                   end
                   % Use False Discovery Rate correction for significance computation
