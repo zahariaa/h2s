@@ -245,7 +245,7 @@ showCIs(estimates{s,d,r}(n,:),squeeze(bootprc{s,d,r}(n,:,:)),sigtest{s,d,r}(n,:)
 
 axtivate(3)
 if s==2, bootcentered = squeeze(bootsamps{s,d,r,n});
-else     bootcentered = squeeze(bootsamps{s,d,r,n})-repmat(mean(bootsamps{s,d,r,n},3),[1 nboots]);
+else     bootcentered = bsxfun(@minus,squeeze(bootsamps{s,d,r,n}),mean(bootsamps{s,d,r,n},3));
 end
 binEdges = linspace(min(0,1.1*min(bootprc{s,d,r}(n,:,1))),1.1*max(bootprc{s,d,r}(n,:,2)),100);
 hb = histogram(bootcentered,         'BinEdges',binEdges,   'Normalization','pdf',...
