@@ -26,7 +26,7 @@ end
 %% compute final output
 data.x{nlayers+2} = label2resp(maxix(data.x{nlayers+1}(chunk,:),[],2)'-1,chunk);
 
-h2sfile = sprintf('dara/mnist_%s_eps%0.2f_h2s.mat',model,epsilon);
+h2sfile = sprintf('data/mnist_%s_eps%0.2f_h2s.mat',model,epsilon);
 if exist(h2sfile,'file'), load(h2sfile); fprintf('Loaded h2s from %s\n',h2sfile);
 else
    %% Construct labels
