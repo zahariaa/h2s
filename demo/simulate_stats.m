@@ -235,7 +235,7 @@ nShown = [1 nn  1 nn];
 dShown = [1  1 nd nd];
 rShown = [1 nr  1 nr];
 
-fp.DESTINATION = '1col'; fp.pap.sz = [7.5 3.5];
+fp.DESTINATION = '1col'; fp.pap.sz = [7.5 3];
 figsetup;
 fp.dots{2} = 3; fp.nticks = [-1 4];
 
@@ -250,12 +250,17 @@ if s==2, bootcentered = squeeze(bootsamps{s,d,r,n});
 else     bootcentered = bsxfun(@minus,squeeze(bootsamps{s,d,r,n}),mean(bootsamps{s,d,r,n},3));
 end
 binEdges = linspace(min(0,1.1*min(bootprc{s,d,r}(n,:,1))),1.1*max(bootprc{s,d,r}(n,:,2)),100);
-hb = histogram(bootcentered,         'BinEdges',binEdges,   'Normalization','pdf',...
-               'Orientation','horizontal','FaceColor','none','EdgeColor',[0 0 0],'DisplayStyle','stairs');
-he = histogram(estimates{s,d,r}(n,:),'BinEdges',hb.BinEdges,'Normalization','pdf',...
+hb = histogram(bootcentered,         'BinEdges',binEdges,   'Normalization','probability',...
                'Orientation','horizontal','FaceColor','none','EdgeColor',[0.5 0.5 0.5],'DisplayStyle','stairs');
-plot([0 max([hb.Values he.Values])],[0 0],'k-','Tag','phyaxwidth')
-xlabel('pdf')
+he = histogram(estimates{s,d,r}(n,:),'BinEdges',hb.BinEdges,'Normalization','probability',...
+               'Orientation','horizontal','FaceColor','none','EdgeColor',[0 0 0],'DisplayStyle','stairs');
+if s==2
+   ylim([0 max(ylim)])
+else 
+   plot([0 max([hb.Values he.Values])],[0 0],'k-','Tag','phyaxwidth')
+   ylim([-1 1]*max(abs(ylim)))
+end
+xlabel('probability')
 matchy(fh.a.h(2:3),'y')
 
 showVar(varboots{s,d,r,n},varestms(s,d,r,n),2^ds(d),2^ns(n),'variance',fh.a.h(8))
@@ -274,16 +279,12 @@ xlabel('variance (full data)')
 ylabel(sprintf('variance (%s)',testrslt{s}))
 %logAxis('xy')
 
-if s~=3
 for d = nd:-1:1
-   plotErrorPatch(rs,squeeze(indexm(cat(3,estimates{s,d,:}),n)) ...
-                     .*(ones(nsims,1)*arrayfun(normfactor,1:nr)),...
+   plotErrorPatch(ns,cat(3,estimates{s,d,r})',...
                   fh.a.h(4),[1 d*[1 1]/(nd+1)])%,'sem')
 end
-if s~=2, plot(rs([1 end]),[0 0],'k-','Tag','phyaxwidth'); end
-xlim(rs([1 end])); xticks(rs); xticklabels(2.^rs);
+xlim(ns([1 end])); xticks(ns); xticklabels(2.^ns);
 ylabel(measures{s})
-end
 
 if s~=3
 for r = nr:-1:1
@@ -298,29 +299,39 @@ for n = nn:-1:1
 end
 n = min(5,numel(ns));
 end
-if s~=2, plot(ds([1 end]),[0 0],'k-','Tag','phyaxwidth'); end
 xlim(ds([1 end])); xticks(ds); xticklabels(2.^ds);
-title(sprintf('%s, %u simulations each',measures{s},nsims))
-
-for d = nd:-1:1
-   plotErrorPatch(ns,cat(3,estimates{s,d,r})',...
-                  fh.a.h(6),[1 d*[1 1]/(nd+1)])%,'sem')
-end
-if s~=2, plot(ns([1 end]),[0 0],'k-','Tag','phyaxwidth'); end
-xlim(ns([1 end])); xticks(ns); xticklabels(2.^ns);
-ylabel(measures{s})
 
 if s~=3
+for d = nd:-1:1
+   plotErrorPatch(rs,squeeze(indexm(cat(3,estimates{s,d,:}),n)) ...
+                     .*(ones(nsims,1)*arrayfun(normfactor,1:nr)),...
+                  fh.a.h(6),[1 d*[1 1]/(nd+1)])%,'sem')
+end
+xlim(rs([1 end])); xticks(rs); xticklabels(2.^rs);
+ylabel(measures{s})
+end
+
+for a = 4:(5+(s~=3))
+   axtivate(a);
+   if s==2
+      ylim([0 max(ylim)])
+   else 
+      plot([min(xlim) max(xlim)],[0 0],'k-','Tag','phyaxwidth')
+      ylim([-1 1]*max(abs(ylim)))
+   end
+end
+
 axtivate(10)
 for d = nd:-1:1
-   a = permute(indexm(cat(3,sigtest{s,d,:}),n),[2 3 1]);
-   plot(rs,100*mean(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
+   a = cat(3,sigtest{s,d,r})';
+   plot(ns,100*mean(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
 end
-plot(rs([1 end]),100*sigthresh*[1 1],'--k')
-axis([rs([1 end]) 0 max(ylim)]); xticks(rs); xticklabels(2.^rs);
-xlabel('radius ratio')
+plot(ns([1 end]),100*sigthresh*[1 1],'--k')
+axis([ns([1 end]) 0 max(ylim)]); xticks(ns); xticklabels(2.^ns);
+xlabel('samples')
 ylabel('false positive rate (%)')
-end
+
+matchy(fh.a.h(10:12),'y')
 
 axtivate(11)
 if s~=3
@@ -339,21 +350,27 @@ end
 plot(ds([1 end]),100*sigthresh*[1 1],'--k')
 axis([ds([1 end]) 0 max(ylim)]); xticks(ds); xticklabels(2.^ds);
 xlabel('dimensions')
-title(sprintf('false positive rate, %u simulations each',nsims))
 
+if s~=3
 axtivate(12)
 for d = nd:-1:1
-   a = cat(3,sigtest{s,d,r})';
-   plot(ns,100*mean(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
+   a = permute(indexm(cat(3,sigtest{s,d,:}),n),[2 3 1]);
+   plot(rs,100*mean(a),'-','LineWidth',2,'Color',[1 [d d]/(nd+1)])
 end
-plot(ns([1 end]),100*sigthresh*[1 1],'--k')
-axis([ns([1 end]) 0 max(ylim)]); xticks(ns); xticklabels(2.^ns);
-xlabel('samples')
+plot(rs([1 end]),100*sigthresh*[1 1],'--k')
+axis([rs([1 end]) 0 max(ylim)]); xticks(rs); xticklabels(2.^rs);
+xlabel('radius ratio')
+end
 
-matchy(fh.a.h(10:12),'y')
+%% HACK
+if s == 4
+for i = 10:12
+   axtivate(i); ylim([0 9]);
+end
+end
 
 %keyboard
-fh.a.ex = fh.a.h(9);
+fh.a.ex = fh.a.h(8:9);
 batchPlotRefine(fh,fp);
 %set(findall(fh.a.h(2).Children,'Color',linecol),'LineWidth',4)
 %hideAxes(sampax,'x','y');
@@ -361,9 +378,22 @@ batchPlotRefine(fh,fp);
 if s~=3, hideAxes(fh.a.h([3 5 11 12]),'y');
 else     hideAxes(fh.a.h([3 12]),'y');
 end
+% different ticks for variance-probability plot
+fh.a.ex = fh.a.h([1:7 9:12]);
+fp.nticks = [4 4]; fp.signif = 1;
+batchPlotRefine(fh,fp);
+
+% different ticks for variance-variance plot
 hideAxes(fh.a.h(4:6),'x');
-fp.signif = 6;
+if s < 4
+   fp.nticks = [8 8]; fp.signif = 6;
+else
+   fp.nticks = [7 7]; fp.signif = 6;
+end
 fh.a.ex = fh.a.h([1:8 10:12]);
+for ax = fh.a.h([2:6 8:12])
+   axtivate(ax); axis square
+end
 batchPlotRefine(fh,fp);
 % manually logify ticklabels
 for xy = 'xy'
@@ -373,18 +403,24 @@ for xy = 'xy'
    end
 end
 
+if any(rs==0)
+   rShown = [find(rs~=0,1) find(rs==0,1)];
+end
+if numel(rShown)==1, rShown = rShown*[1 1]; end
+
 for i = 1:2%3
-   sampsz = (2^(i+4))*ones(1,nballs);
+   sampsz = (2^(3*i+1))*ones(1,nballs);
    gttmp = generateScenario(s,2,2^rs(rShown(i)));
    gttmp.plotSamples(sampsz,sampax(i));
-   set(get(gca,'Children'),fp.dots{:})
+   set(get(sampax(i),'Children'),fp.dots{:})
+   titlestr = {sprintf('%u samples each',sampsz(1));
+               sprintf('%1.1f:1 radius ratio',2^rs(rShown(i)))};
+   gttmp.show
    if i==2
-      gttmp.show
-      xlabel({'simulated null hypothesis:';['zero ' measures{s}]},'FontSize',fp.txtsz);
+      titlestr = [titlestr;'simulated null hypothesis:';['zero ' measures{s}]];
    end
-   title(sprintf('%u samples each,\n%1.1f:1 radius ratio',sampsz(1),2^rs(rShown(i))),'FontSize',fp.txtsz,'FontWeight','normal')
+   title(titlestr,'FontSize',fp.txtsz,'FontWeight','normal')
 end
-
 
 printFig;
 
@@ -474,16 +510,22 @@ function showCIs(estimates,bootprc,sigtest,measure,d,n,ax)
 
    nsims = numel(estimates);
    for i = 1:nsims
-      if sigtest(i), linecol = [0   0   0  ];
-      else           linecol = [0.5 0.5 0.5];
+      plot([i i],bootprc(i,:),'-','Color',[0.5 0.5 0.5],'LineWidth',2)
+      if sigtest(i)
+         plot(i,estimates(i),'ko','MarkerFaceColor','w','LineWidth',1.5)
+      else
+         plot(i,estimates(i),'wo','MarkerFaceColor','k','LineWidth',1.5)
       end
-      plot([i i],bootprc(i,:),'-','Color',linecol,'LineWidth',2)
-      plot(i,estimates(i),'wo','MarkerFaceColor',linecol,'LineWidth',1.5)
+      
    end
-   plot([0 nsims],[0 0],'k-')
    ylabel(sprintf('%s estimates',measure))
    xlabel('simulation #')
    title(sprintf('all simulations (%ud, %u samples/ea)',d,n))
+   if strcmpi(measure,'distance')
+      ylim([0 max(ylim)])
+   else
+      plot([0 nsims],[0 0],'k-')
+   end
 end
 
 function showVar(varboots,varestms,d,n,xlab,ax)
@@ -491,8 +533,8 @@ function showVar(varboots,varestms,d,n,xlab,ax)
    axtivate(ax);
 
    hb = histogram(varboots,'Normalization','probability','FaceColor',[0 0 0],'EdgeColor','none');
-   plot([1 1]*varestms,[0 0.25],'w-' ,'LineWidth',3)
-   plot([1 1]*varestms,[0 0.25],'k--','LineWidth',2)
+   plot([1 1]*varestms,[0 1.1*max(hb.Values)],'w-' ,'LineWidth',3)
+   plot([1 1]*varestms,[0 1.1*max(hb.Values)],'k--','LineWidth',2)
    ylabel('probability')
    xlabel(xlab)
    title(sprintf('(%ud, %u samples/ea)',d,n))
