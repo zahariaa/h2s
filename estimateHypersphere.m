@@ -207,8 +207,6 @@ if exist('categories','var') && numel(categories.labels)>1
       %                              catperm,'UniformOutput',false);
       % hyp = cell2mat_concat(hyp);
       loc_cv = cell(numel(catperm),1);
-      pointsCentered = categories.slice(points);
-      pointsCentered = cellfun(@(x) bsxfun(@minus,x,mean(x)),pointsCentered,'UniformOutput',false);
       if CVDISTS
          parfor iboot = 1:numel(catperm)
             [hyp(iboot),loc_cv{iboot}] = estimateHypersphere(points,catperm(iboot),'raw',varargin{:});
@@ -216,14 +214,6 @@ if exist('categories','var') && numel(categories.labels)>1
       else
          parfor iboot = 1:numel(catperm)
             hyp(iboot) = estimateHypersphere(points,catperm(iboot),'raw',varargin{:});
-
-            if categories.ispermuted && islogical(categories.vectors)
-               % permuted radius estimates computed after centering
-               %   (incompatible with distance label permutation, must be done separately,
-               %   but will recombine results)
-               hyptmp = estimateHypersphere(pointsCentered,catperm(iboot),'raw',varargin{:});
-               hyp(iboot).radii = hyptmp.radii;
-            end
          end
       end
    else % mcmc or single sample (of bootstrap or not)
@@ -267,7 +257,6 @@ if exist('categories','var') && numel(categories.labels)>1
          % Compute cross-validated distances
          cvdists = cvCenters2cvSqDists(loc_cv);
       end
-
       switch(ESTIMATOR)
          case 'mcmc'
             % do some fancy combining
