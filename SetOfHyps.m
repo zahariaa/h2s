@@ -398,10 +398,17 @@ classdef SetOfHyps < Hypersphere
       function self = importStats(self,hypsTarget)
       % SetOfHyps.importStats: copy stats (sig, sigp, sigdiff, sigdiffp, ci)
       %   from another SetOfHyps object. Also force msflips refresh.
+      % 
+      % Also refills PostCenters fields if they are empty (useful for loading
+      %    from file).
          felds = {'ci', 'sig', 'sigp', 'sigdiff', 'sigdiffp'};
          for f = felds; f=f{1};
             self.(f) = hypsTarget.(f);
          end
+
+         if isempty(self.dists),       self       =       self.setPostCenters; end
+         if isempty(hypsTarget.dists), hypsTarget = hypsTarget.setPostCenters; end
+
          [~,~,~,self.msflips] = self.stress(Hypersphere(self),hypsTarget);
       end
 
