@@ -363,7 +363,7 @@ classdef SetOfHyps < Hypersphere
                end
             end
             for i = 1:nc2c2
-               self.sigdiffp.ov(i) = ciprctileFuTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
+               self.sigdiffp.ov(i) = ciprctileFuTail(diff(overlap_boot(:,ixc2(:,i)),[],2),0);
                self.sigdiffp.di(i) = ciprctileFuTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
             end
             self.sigdiffp.ma = self.sigdiffp.ov; % Margin/overlap sigdiff is same bc smaller tail
@@ -784,8 +784,13 @@ classdef SetOfHyps < Hypersphere
 
          n = numel(self.radii);
          % Time to get a-plottin'
+         if strcmpi(DIFF,'sig')
          self.elaborateHinton(statsmat(sigThresh.ov-sigThresh.ma,sigThresh.di,sigThresh.ra),...
                               'color',ax,DIFF)
+         else
+         self.elaborateHinton(statsmat(sigThresh.ov,sigThresh.di,sigThresh.ra),...
+                              'color',ax,DIFF)
+         end
          if strcmpi(DIFF,'sig'), title('Significant values')
          else                    title('Significant differences')
          end
