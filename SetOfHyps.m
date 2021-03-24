@@ -345,12 +345,26 @@ classdef SetOfHyps < Hypersphere
 
          %% SECOND-ORDER COMPARISONS
          if numel(self.ci.bootstraps)>0
+            if numel(self.ci.jackknives)>0
+               self.sigdiffp.ra = ones(1,nc2);
+               for i = 1:nc2
+                  for thresh = [0.05 0.01 0.001]
+                     ci = bca(diff(self.radii(ix(:,i))),diff(radii_boot(:,ix(:,i)),[],2),...
+                                                        diff(radii_jack(:,ix(:,i)),[],2),thresh);
+                     % Is 0 below the 95% BCa CI?
+                     if ci(1)>0 || ci(2)<0 % NOTE THIS IS NOT A P-VALUE, BUT H0
+                        self.sigdiffp.ra(i) = thresh/2;
+                     end
+                  end
+               end
+            else
+               for i = 1:nc2
+                  self.sigdiffp.ra(i) = ciprctileFuTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
+               end
+            end
             for i = 1:nc2c2
                self.sigdiffp.ov(i) = ciprctileFuTail(diff(-margin_boot(:,ixc2(:,i)),[],2),0);
                self.sigdiffp.di(i) = ciprctileFuTail(diff(   dist_boot(:,ixc2(:,i)),[],2),0);
-            end
-            for i = 1:nc2
-               self.sigdiffp.ra(i) = ciprctileFuTail(diff(  radii_boot(:,  ix(:,i)),[],2),0);
             end
             self.sigdiffp.ma = self.sigdiffp.ov; % Margin/overlap sigdiff is same bc smaller tail
          end

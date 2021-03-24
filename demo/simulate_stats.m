@@ -5,7 +5,7 @@ function [sigtest,estimates,hyps,groundtruth] = simulate_stats(drn,s,estimator,n
 % # of simulations
 if ~exist('nsims' ,'var') || isempty(nsims ), nsims  = 1000; end
 % # of bootstraps during statistical testing
-if ~exist('nboots','var') || isempty(nboots), nboots = 1000; end
+if ~exist('nboots','var') || isempty(nboots), nboots = 5000; end
 if ~exist('s'     ,'var') || isempty(   s  ),      s = 1;    end
 if ~exist('estimator','var') || isempty(estimator),estimator=[]; end
 % s is the scenario chosen from the following:
@@ -34,8 +34,8 @@ if strcmpi(estimator,'mcmc')
    testtype = repmat({'bootstrap' },[1 7]);
    testrslt = repmat({'bootstraps'},[1 7]);
 else
-   testtype = [{'bootstrap'  'permute'      'permute'     } repmat({'bootstrap' },[1 3]) {'bootstrap' }];
-   testrslt = [{'bootstraps' 'permutations' 'permutations'} repmat({'bootstraps'},[1 3]) {'jackknives'}];
+   testtype = [{'bootstrap'  'permute'      } repmat({'bootstrap' },[1 4]) {'bootstrap' }];
+   testrslt = [{'bootstraps' 'permutations' } repmat({'bootstraps'},[1 4]) {'jackknives'}];
 end
 measures = {'overlap', 'distance', 'radius difference', ...
             'overlap difference', 'distance difference','overlap difference',...
@@ -71,7 +71,9 @@ nm = numel(measures);
 % keyboard
 
 basedir = '';%'/moto/nklab/users/az2522/';
-simfolder = '20210224/';%'20210210/';%'20210203/';%'20210126/';%'20200929/';%'20201215/';%'20200929/';
+%simfolder = '20210203/'; % 1ov and 3ra
+simfolder = '20200929/'; % 2di, 4ov, 5di
+% '20210224/';%'20210210/';%'20210203/';%'20210126/';%'20200929/';%'20201215/';%'20200929/';
 simfolder = [basedir 'data/statsim/' simfolder];
 if ~exist(simfolder,'dir'), mkdir(simfolder); end
 simfile = @(s,d,r,n) sprintf('%s%ss%g_d%g_r%g_n%g.mat',simfolder,estimator,s,d,r,n);
