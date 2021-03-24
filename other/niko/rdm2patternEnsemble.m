@@ -1,5 +1,6 @@
-function [patterns,errorSSQ]=rdm2patternEnsemble(rdm,nDim,distanceMeasure)
+function [patterns,errorSSQ]=rdm2patternEnsemble(rdm,nDim,distanceMeasure,VERBOSE)
 
+if ~exist('VERBOSE','var') || isempty(VERBOSE), VERBOSE = false; end
 
 %% preparations
 rdm=squareRDMs(unwrapRDMs(rdm));
@@ -61,7 +62,7 @@ while true;
         nSmallProgressSteps = nSmallProgressSteps+1;
     end
 
-    if mod(iterationCount,100)==0 && false,
+    if VERBOSE && mod(iterationCount,100)==0 && false,
         showRDMs(cat(3,rdm,dists),100); 
         subplot(2,2,1); title('target RDM');
         subplot(2,2,2); title('RDM of re-embedded points');
@@ -92,15 +93,16 @@ while true;
     
 end
 
-showRDMs(cat(3,rdm,dists),100);
-subplot(2,2,1); title('target RDM');
-subplot(2,2,2); title('RDM of re-embedded points');
-subplot(2,2,4); cla; hold on;
-plot([zeros(100,1) 100*randn(100,1)]', [zeros(100,1) 100*randn(100,1)]','Color',[0.7 0.7 0.7]);
-plot(rdm(:),dists(:),'k.');
-mx=max([rdm(:);dists(:)])
-axis square; axis([0 mx 0 mx]);
-xlabel('target RDM'); ylabel('pattern RDM');
-
+if VERBOSE
+   showRDMs(cat(3,rdm,dists),100);
+   subplot(2,2,1); title('target RDM');
+   subplot(2,2,2); title('RDM of re-embedded points');
+   subplot(2,2,4); cla; hold on;
+   plot([zeros(100,1) 100*randn(100,1)]', [zeros(100,1) 100*randn(100,1)]','Color',[0.7 0.7 0.7]);
+   plot(rdm(:),dists(:),'k.');
+   mx=max([rdm(:);dists(:)])
+   axis square; axis([0 mx 0 mx]);
+   xlabel('target RDM'); ylabel('pattern RDM');
+end
 
 
