@@ -7,23 +7,23 @@ dimLow = 3;
 
 
 %% define categories
-controlledHumanFaces =  zeros(62,1); controlledHumanFaces(1:14)=1;
-humanFaces =  zeros(62,1); humanFaces(15:20)=1;
-animalFaces =  zeros(62,1); animalFaces(21:26)=1;
-humanBodies =  zeros(62,1); humanBodies(27:32)=1;
-animalBodies =  zeros(62,1); animalBodies(33:38)=1;
-artificialObjects =  zeros(62,1); artificialObjects(39:44)=1;
-naturalObjects =  zeros(62,1); naturalObjects(45:50)=1;
-artificialScenes =  zeros(62,1); artificialScenes(51:56)=1;
-naturalScenes =  zeros(62,1); naturalScenes(57:62)=1;
+controlledHumanFaces =  false(62,1); controlledHumanFaces(1:14)=true;
+humanFaces =  false(62,1); humanFaces(15:20)=true;
+animalFaces =  false(62,1); animalFaces(21:26)=true;
+humanBodies =  false(62,1); humanBodies(27:32)=true;
+animalBodies =  false(62,1); animalBodies(33:38)=true;
+artificialObjects =  false(62,1); artificialObjects(39:44)=true;
+naturalObjects =  false(62,1); naturalObjects(45:50)=true;
+artificialScenes =  false(62,1); artificialScenes(51:56)=true;
+naturalScenes =  false(62,1); naturalScenes(57:62)=true;
 
 
 
 %% roll all subsets and supersets into one
-allcategories.vectors = [humanFaces+animalFaces+humanBodies+animalBodies ... % animate
-                         artificialObjects+naturalObjects+artificialScenes+naturalScenes ... % inanimate
-                         humanFaces+animalFaces humanBodies+animalBodies ... % faces & bodies
-                         artificialObjects+naturalObjects artificialScenes+naturalScenes ... % objects & scenes
+allcategories.vectors = [humanFaces | animalFaces | humanBodies | animalBodies ... % animate
+                         artificialObjects | naturalObjects | artificialScenes | naturalScenes ... % inanimate
+                         humanFaces | animalFaces humanBodies | animalBodies ... % faces & bodies
+                         artificialObjects | naturalObjects artificialScenes | naturalScenes ... % objects & scenes
                          humanFaces animalFaces humanBodies animalBodies artificialObjects naturalObjects artificialScenes naturalScenes]; % all
 allcategories.labels  = {'animate' 'inanimate' 'faces' 'bodies' 'objects' 'scenes' ...
                          'humanFaces' 'animalFaces' 'humanBodies' 'animalBodies' 'artificialObjects' 'naturalObjects' 'artificialScenes' 'naturalScenes'};
@@ -52,7 +52,7 @@ avgRDMs=nan(1,1891,2);
 
 selectedROIs = [1 4 2 6 3 7];
 nROIs        = numel(selectedROIs);
-fh = newfigure([nROIs/2 2*2],'trans62');
+fh = newfigure([nROIs/2 3*2],'trans62');
 figrowI = 0;
 
 for roiI = selectedROIs
@@ -87,16 +87,22 @@ for roiI = selectedROIs
     % hs2s & MDS
     titleStr = any2str(roi.hemisphere{hemisphereI},' \bf',roi.name{roiI},'\rm (',roi.size(roiSizeI),' vox)');
     figrowI = figrowI + 1;
+    roirow = ceil(figrowI/2);
+    roicol = mod(figrowI-1,2)*3;
+    roiplt = (roirow-1)*2*3 + roicol + 1;
     
-    % % use embedded points
-    % % re-embed as points in 100-dimensional space to reflect the representational geometry
-    % [patterns,errorSSQ] = rdm2patternEnsemble(avgRdm_nonNeg,100,'Euclidean');
+    % use embedded points
+    % re-embed as points in 100-dimensional space to reflect the representational geometry
+    [patterns,errorSSQ] = rdm2patternEnsemble(avgRdm_nonNeg,100,'Euclidean');
     % hyp(roiI) = HS2SandMDS(patterns,ac.select(3:6),fh.a.h(figrowI*2+(-1:0)),...
-    %                        titleStr,dimLow,1000);
+    %                        titleStr,dimLow,100);
+    hyp(roiI) = Hypersphere.estimate(patterns,ac.select(3:6),5000).meanAndMerge;
+    hyp(roiI).h2s(dimLow).show(fh.a.h(roiplt))
+    hyp(roiI).showSig(fh.a.h(roiplt+(1:2)))
 
-    % direct to distance-based estimator
-    hyp(roiI) = HS2SandMDS(avgRdm_nonNeg,ac.select(3:6),fh.a.h(figrowI*2+(-1:0)),...
-                           titleStr,dimLow,'distance',1000);
+    % % direct to distance-based estimator
+    % hyp(roiI) = HS2SandMDS(avgRdm_nonNeg,ac.select(3:6),fh.a.h(figrowI*2+(-1:0)),...
+    %                        titleStr,dimLow,'distance',1000);
     drawnow;
    % keyboard
    % figure(2);subplot(3,2,figrowI);hyp(roiI).show;
@@ -113,17 +119,16 @@ end
 figure;plotErrorPatch(1:4,hyp(7).radii,hyp(7).ci.radii)
 figure;hist(reshape([hyp(7).ci.bootstraps.radii],4,[])')
 
-keyboard
 %% Finish up comparison figure
 papsz = [4 3];
 set(fh.f,'PaperUnits','inches','PaperSize',papsz,'PaperPosition',[0.01*papsz papsz],'PaperPositionMode','manual');
-set(findobj(fh.f,'type','line'),'MarkerSize',3); % make dots slightly smaller
-subplotResize(fh.f,0.01,0.01);
-set(fh.a.h(11)   ,'CameraViewAngle',5  );
-set(fh.a.h([3 7]),'CameraViewAngle',3.5);
-set(fh.f,'Renderer','painters');   printFig;
-delete(fh.a.h(2:2:end));
-set(fh.f,'Renderer','openGL');     printFig(fh.f,[],'png',1200);
+%set(findobj(fh.f,'type','line'),'MarkerSize',3); % make dots slightly smaller
+for f = 1:2; subplotResize(fh.f(f),0.01,0.01); end
+set(fh.a(1).h(16)   ,'CameraViewAngle',5  );
+set(fh.a(1).h([4 9]),'CameraViewAngle',3.5);
+set(fh.f(2),'Renderer','painters');   printFig;
+delete(fh.a(1).h(setdiff(1:nROIs*3,1:3:nROIs*3)));
+set(fh.f(1),'Renderer','openGL');     printFig(fh.f(1),[],'png',1200);
 
 
 
