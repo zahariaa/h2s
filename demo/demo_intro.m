@@ -3,11 +3,11 @@
 
 INTROFIG = false; % true = fig 1, false = fig 6
 n        = 50;   % points per category
-nCats    = 4;
 dotsz    = 6;
 
 %% Simulate data
 if INTROFIG
+   nCats    = 4;
    points = randnball(nCats*n,3);
    points = {points(1:n*(nCats-1),:), points};
    
@@ -21,6 +21,7 @@ if INTROFIG
    v{1}(2,3)=-0.5;
    r = {[0.75 1 1.25],[1 1 1 1]};
 else
+   nCats    = 6;
    v{1} = [9 0 0; [9 9]/sqrt(2) 0; [4 4]/sqrt(2) 0; 0 0 0] - [1;1;1;1]*[6 0 0];
    r = {1:4,ones(1,6)/sqrt(3/2)};
 
@@ -41,7 +42,7 @@ end
 
 
 %% PLOT
-for itype = 0;%1:-1:0
+for itype = 1%0;%1:-1:0
 planelim = (3*~INTROFIG + 5*(~INTROFIG&&itype==0))+2;
    orig = SetOfHyps(v{itype+1},r{itype+1},Categories({n*ones(1,numel(r{itype+1}))}));
    if ~INTROFIG  && itype==0
@@ -150,7 +151,7 @@ low  = SetOfHyps(model);
 low.stressUpdate(orig);
 new  = low.h2s(orig,2)%orig.h2s
 % Calculate significance
-orig = orig.significance(points{itype+1},2000);
+orig = orig.significance(points{itype+1},5000);
 % Plot
 fh = newfigure([3 2],'compare'); low.show(fh.a.h(1));
                                  new.show(fh.a.h(2));
@@ -167,7 +168,7 @@ printFig(fh.f,[],'eps')
 
 fh = newfigure([1 4],'stats');
 new.show(fh.a.h(1));
-new.showValues(low,fh.a.h(2))
+new.showValues(orig,fh.a.h(2))
 orig.showSig(fh.a.h(3:4));
 matchy(fh.a.h(2:4))
 % Print
